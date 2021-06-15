@@ -44,7 +44,7 @@ def positions(t, vehicle_id):
 
 class treeNode():               #一个节点是一个棋面，包含以下所有信息
     def __init__(self, state, parent):
-        self.state = state                    # 很重要，通过state连接到圈叉游戏的类（包括棋面、玩家和一堆函数）
+        self.state = state                    # 很重要，通过state连接到下棋游戏的类（包括棋面、玩家和一堆函数）
         self.isTerminal = state.isTerminal()  # 通过这种方法，将isTerminal从圈叉的类中连接到了treeNode类中
         self.isFullyExpanded = self.isTerminal
         self.parent = parent
