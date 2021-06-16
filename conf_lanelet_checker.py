@@ -7,25 +7,6 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-#  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-path_scenario_download = os.path.abspath('D:\OneDrive - tongji.edu.cn\Desktop\Study/1_Codes/1_CommonRoad\commonroad'
-                                         '-scenarios\scenarios\hand-crafted')
-# 文件名
-id_scenario = 'ZAM_Tjunction-1_282_T-1'
-
-path_scenario = os.path.join(path_scenario_download, id_scenario + '.xml')
-# read in scenario and planning problem set
-scenario, planning_problem_set = CommonRoadFileReader(path_scenario).open()
-# retrieve the first planning problem in the problem set
-planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
-
-# lanelet_network
-lanelet_network = scenario.lanelet_network
-
-# 主车所在lanelet
-incoming_lanelet_id_sub = 50195
-direction_sub = 1
-
 
 def conf_lanelet_checker(ln, incoming_lanelet_id: int, direction: int):
     """
@@ -153,7 +134,8 @@ def conf_lanelet_checker(ln, incoming_lanelet_id: int, direction: int):
     print("intersection no.", id_intersect)
     print("incoming_lanelet_id", id_incoming)
     print("lanelet id of subjective car:", sub_lanelet_id_in_intersection)
-
+   
+    lanelet_network = ln
     # 提取路口内的lanelet的id列表
     inter_laneletid_list = check_in_intersection_lanelets()
     print("all lanelets:", inter_laneletid_list)
@@ -165,4 +147,22 @@ def conf_lanelet_checker(ln, incoming_lanelet_id: int, direction: int):
 
 
 if __name__ == '__main__':
+    #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
+    path_scenario_download = os.path.abspath('D:\OneDrive - tongji.edu.cn\Desktop\Study/1_Codes/1_CommonRoad\commonroad'
+                                            '-scenarios\scenarios\hand-crafted')
+    # 文件名
+    id_scenario = 'ZAM_Tjunction-1_282_T-1'
+
+    path_scenario = os.path.join(path_scenario_download, id_scenario + '.xml')
+    # read in scenario and planning problem set
+    scenario, planning_problem_set = CommonRoadFileReader(path_scenario).open()
+    # retrieve the first planning problem in the problem set
+    planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
+
+    # lanelet_network
+    lanelet_network = scenario.lanelet_network
+
+    # 主车所在lanelet
+    incoming_lanelet_id_sub = 50195
+    direction_sub = 1
     cl_info = conf_lanelet_checker(lanelet_network, incoming_lanelet_id_sub, direction_sub)

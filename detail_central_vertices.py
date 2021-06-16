@@ -4,20 +4,10 @@ import numpy as np
 import os
 import math
 import matplotlib.pyplot as plt
-from scenario_extract_intersection import plot_lanelet
+from utils import plot_lanelet
 from commonroad.common.file_reader import CommonRoadFileReader
 
-#  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-path_scenario_download = os.path.abspath(
-    'D:\OneDrive - tongji.edu.cn\Desktop\Study/1_Codes/1_CommonRoad\commonroad-scenarios/scenarios/hand-crafted')
-# 文件名
-id_scenario = 'ZAM_Tjunction-1_56_T-1'
 
-path_scenario = os.path.join(path_scenario_download, id_scenario + '.xml')
-# read in scenario and planning problem set
-scenario, planning_problem_set = CommonRoadFileReader(path_scenario).open()
-# lanelets
-lanelets = scenario.lanelet_network.lanelets
 
 
 def detail_cv(cv):  # 将原车道中心线上的点加密为0.1m间隔的点
@@ -85,6 +75,17 @@ def get_lane_feature(cv):  # cv: central vertice
 
 
 if __name__ == '__main__':
+        #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
+    path_scenario_download = os.path.abspath(
+        'D:\OneDrive - tongji.edu.cn\Desktop\Study/1_Codes/1_CommonRoad\commonroad-scenarios/scenarios/hand-crafted')
+    # 文件名
+    id_scenario = 'ZAM_Tjunction-1_56_T-1'
+
+    path_scenario = os.path.join(path_scenario_download, id_scenario + '.xml')
+    # read in scenario and planning problem set
+    scenario, planning_problem_set = CommonRoadFileReader(path_scenario).open()
+    # lanelets
+    lanelets = scenario.lanelet_network.lanelets
     for lanelet in lanelets:
         cv_original = lanelet.center_vertices
         cv_info = detail_cv(cv_original)

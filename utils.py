@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-
 def plot_lanelet_network(lanelet_network):
     for lanelet in lanelet_network.lanelets:
         plot_lanelet(lanelet)
