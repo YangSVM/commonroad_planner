@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from utils import plot_lanelet
 from commonroad.common.file_reader import CommonRoadFileReader
 
-
+import time
 
 
 def detail_cv(cv):  # 将原车道中心线上的点加密为0.1m间隔的点
@@ -76,8 +76,9 @@ def get_lane_feature(cv):  # cv: central vertice
 
 if __name__ == '__main__':
         #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-    path_scenario_download = os.path.abspath(
-        'D:\OneDrive - tongji.edu.cn\Desktop\Study/1_Codes/1_CommonRoad\commonroad-scenarios/scenarios/hand-crafted')
+    # path_scenario_download = os.path.abspath(
+    #     'D:\OneDrive - tongji.edu.cn\Desktop\Study/1_Codes/1_CommonRoad\commonroad-scenarios/scenarios/hand-crafted')
+    path_scenario_download = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
     # 文件名
     id_scenario = 'ZAM_Tjunction-1_56_T-1'
 
@@ -86,9 +87,13 @@ if __name__ == '__main__':
     scenario, planning_problem_set = CommonRoadFileReader(path_scenario).open()
     # lanelets
     lanelets = scenario.lanelet_network.lanelets
+    plt.figure(1)
     for lanelet in lanelets:
         cv_original = lanelet.center_vertices
+        # t1 = time.time()
         cv_info = detail_cv(cv_original)
+        # t2 = time.time()
+        # print('total time\n',t1-t2)
         cv_new = cv_info[0]
         plot_lanelet(lanelet)
         plt.plot(cv_new[0][:], cv_new[1][:], 'b*')

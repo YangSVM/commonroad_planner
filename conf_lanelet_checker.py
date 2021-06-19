@@ -198,6 +198,31 @@ def potential_conf_lanelet_checker(lanelet_network, cl_info):
     return cl_potential_info
 
 
+def potential_conf_lanelet_checkerv2(lanelet_network, cl_info):
+    """
+    check [potential] conflict lanelets when driving in a incoming lanelet
+
+    :param ln: lanelet network of the scenario
+    :param cl_info: 直接冲突lanelet的Conf_lanelet类【.id:路口内的冲突lanelet的id；.conf_point:对应的冲突点位置】
+    :return: dict_lanelet_parent. 直接冲突lanelet_id ->父节点ID列表。若没有父节点则为None。【注意】仅有一个父节点时，字典的value为一个值的列表。
+    """
+
+    dict_parent_lanelet = {}
+    for conf_lanelet_id in cl_info. id:
+        conf_lanlet = lanelet_network.find_lanelet_by_id(conf_lanelet_id)
+        parents= conf_lanlet.predecessor
+        if parents is not None:
+            for parent in parents:
+                if parent not in dict_parent_lanelet.keys():
+                    parent_lanelet = lanelet_network.find_lanelet_by_id(parent)
+
+                    child_lanelet_ids = parent_lanelet.successor
+                    dict_parent_lanelet[parent] = child_lanelet_ids
+
+    return dict_parent_lanelet
+
+
+
 if __name__ == '__main__':
     #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
     path_scenario_download = os.path.abspath('D:\OneDrive - tongji.edu.cn\Desktop\Study/1_Codes/1_CommonRoad\commonroad'

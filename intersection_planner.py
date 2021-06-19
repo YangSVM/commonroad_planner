@@ -6,7 +6,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from conf_lanelet_checker import conf_lanelet_checker, potential_conf_lanelet_checker
+from conf_lanelet_checker import conf_lanelet_checker, potential_conf_lanelet_checker, potential_conf_lanelet_checkerv2
 from detail_central_vertices import detail_cv
 
 from commonroad.geometry.shape import Rectangle
@@ -17,10 +17,10 @@ from vehiclemodels import parameters_vehicle3
 from commonroad.visualization.mp_renderer import MPRenderer
 
 
-# 计算沿着道路中心线的路程. p2 - p1（正数说明p2在道路后方）
-# 直线的时候，保证是直线距离；曲线的时候，近似正确
+
 def distance_lanelet(center_line, s, p1, p2):
-    '''
+    ''' 计算沿着道路中心线的路程. p2 - p1（正数说明p2在道路后方）
+         直线的时候，保证是直线距离；曲线的时候，近似正确
     Args: 
         center_line: 道路中心线；
         s : 道路中心线累积距离;
@@ -44,25 +44,31 @@ def distance_lanelet(center_line, s, p1, p2):
     return s[i2] - s[i1]
 
 
-def sort_conf_point(ego_pos, conf_points, cv, cv_s):
-    ''' 给冲突点按照离自车的距离 由近到远 排序。如果自车越过该冲突点，则删除
+def sort_conf_point(ego_pos, dict_lanelet_conf_point, cv, cv_s):
+    ''' 给冲突点按照离自车的距离 由近到远 排序。
     params: 
         center_line: 道路中心线；
         s : 道路中心线累积距离;
         p1, p2: 点1， 点2
     returns:
-        id: conf_points 的下标排序
+        sorted_lanelet: conf_points 的下标排序
+        i_ego: sorted_lanelet[i_ego]则是自车需要考虑的最近的lanelet
     '''
+    conf_points = list(dict_lanelet_conf_point.values())
+    lanelet_ids = list(dict_lanelet_conf_point.keys())
     distance = []
     for conf_point in conf_points:
         distance.append(distance_lanelet(cv, cv_s, ego_pos, conf_point))
     distance = np.array(distance)
     id = np.argsort(distance)
     id_reverse = id[::-1]
-    distance_sorted = distance[id_reverse]
-    id_reverse = id_reverse[distance_sorted>0]
 
-    return id_reverse
+    distance_sorted = distance[id_reverse]
+    i_ego = np.where(distance_sorted>0)[0].min()
+    
+    sorted_lanelet = lanelet_ids[id_reverse]
+
+    return sorted_lanelet, i_ego
 
 
 def find_reference(s, ref_cv, ref_orientation,  ref_cv_len):
@@ -70,6 +76,44 @@ def find_reference(s, ref_cv, ref_orientation,  ref_cv_len):
     id = np.searchsorted(ref_cv_len, s)
 
     return ref_cv[:, id], ref_orientation[id]
+
+
+class IntersectionInfo():
+    ''' 提取交叉路口的冲突信息
+    '''
+    def __init__(self, cl) -> None:
+        '''
+        params:
+            cl: Conf_Lanelet类
+        '''
+        self.dict_lanelet_conf_point = {}
+        for i in range(len(cl.id)):
+            self.dict_lanelet_conf_point[cl.id[i]] = cl.conf_point[i]
+
+        self.dict_lanelet_agent ={}
+        self.dict_parent_lanelet = {}
+        self.dict_lanelet_potential_agent = {}
+        self.sorted_lanelet = []
+        self.i_ego = 0
+
+    def extend2list(self, lanelet_network):
+        '''为了适应接口。暂时修改
+        '''
+        conf_potential_lanelets = []
+        conf_potential_points = []
+        ids = self.dict_lanelet_conf_point.keys
+        conf_points =  self.dict_lanelet_conf_point.values
+
+        for id, conf_point in zip(ids, conf_points):
+            conf_lanlet = lanelet_network.find_lanelet_by_id(id)
+            id_predecessors = conf_lanlet.predecessor
+            # 排除没有父节点的情况
+            if id_predecessors is not None:
+                # 多个父节点
+                for id_predecessor in id_predecessors:
+                    conf_potential_lanelets.append(id_predecessor)
+                    conf_potential_points.append(conf_point)
+        return conf_potential_lanelets, conf_potential_points
 
 class IntersectionPlanner():
     def __init__(self, scenario, state_init, goal) -> None:
@@ -87,6 +131,7 @@ class IntersectionPlanner():
         lanelet_network = scenario.lanelet_network
         DT = scenario.dt
         
+
         # --------------- 检索地图，检查冲突lanelet和冲突点 ---------------------
         # 搜索结果： cl_info: ;conf_lanelet_potentials
         incoming_lanelet_id_sub = 50195
@@ -94,10 +139,9 @@ class IntersectionPlanner():
         # cl_info: 两个属性。id: 直接冲突lanelet的ID list。conf_point：对应的冲突点坐标list。
         cl_info = conf_lanelet_checker(lanelet_network, incoming_lanelet_id_sub, direction_sub)
         
-        # 潜在冲突lanelet
-        cl_potential_info = potential_conf_lanelet_checker(lanelet_network, cl_info)
+        iinfo = IntersectionInfo(cl_info)
+        iinfo.dict_parent_lanelet = potential_conf_lanelet_checkerv2(lanelet_network, cl_info)
 
-        
         # ---------------- 运动规划 --------------
         ego_state = self.state_init
         
@@ -115,52 +159,29 @@ class IntersectionPlanner():
         state_list = []
         state_list.append(ego_state)
         for  i in T:
-            dict_lanelet_agent= self.conf_agent_checker(cl_info.id, cl_info.conf_point, i)
-            print('直接冲突车辆',dict_lanelet_agent)
-            
-            # 间接冲突车辆
-            dict_lanelet_agent_potential = self.conf_agent_checker(cl_potential_info.id, cl_potential_info.conf_point, i)
-            print('间接冲突车辆',dict_lanelet_agent_potential)
 
-            # 冲突点排序. 所有的冲突点都在cl_info.
-            
+            dict_lanelet_agent= self.conf_agent_checker(iinfo.dict_lanelet_conf_point, i)
+            print('直接冲突车辆',dict_lanelet_agent)
+            iinfo.dict_lanelet_agent = dict_lanelet_agent
+
+            # 间接冲突车辆
+            dict_lanelet_agent_potential = self.potential_conf_agent_checker(iinfo.dict_lanelet_conf_point, iinfo.dict_parent_lanelet,  i)
+            print('间接冲突车辆',dict_lanelet_agent_potential)
+            iinfo.dict_lanelet_agent_potential = dict_lanelet_agent_potential
+
             # 运动规划
             isConfFound = False
-            a_thre = 0          # 非交互式情况，协作加速度阈值(threshold) 设置为0
-            seq_conf_point = sort_conf_point(ego_state.position, cl_info.conf_point, ref_cv, ref_s)
-            for i_conf_point in seq_conf_point:
-                lanelet_id = cl_info.id[i_conf_point]
+            # 冲突点排序
+            iinfo.sorted_lanelet, iinfo.i_ego = sort_conf_point(ego_state.position, iinfo.dict_lanelet_conf_point, ref_cv, ref_s)
+
+            # 
+            for i_lanelet in range(iinfo.i_ego, len(iinfo.sorted_lanelet)):
+                lanelet_id = iinfo.sorted_lanelet[i_lanelet]
                 # 直接冲突
                 if lanelet_id in dict_lanelet_agent.keys():
                     a  = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, cl_info.conf_point[i_conf_point],
                      lanelet_id, dict_lanelet_agent[lanelet_id], scenario, i)
-                    if a < a_thre:
-                        print('直接冲突 - 避让这辆车', a)
-                        v0 = ego_state.velocity
-                        v = v0 - a_max *DT
-                        if v<0:
-                            v = 0
-                        s += v*DT
-                        position, orientation = find_reference(s, ref_cv, ref_orientation,  ref_s)
-                        ego_state.position = position
-                        ego_state.velocity = v
-                        ego_state.orientation = orientation
-                        ego_state.time_step = i
-                        tmp_state = ego_state
-                        state_list.append(tmp_state)
-                    else:
-                        print('直接冲突 - 加速通过', a)
-                        v0 = ego_state.velocity
-                        v = v0 + a_max *DT
 
-                        s += v*DT
-                        position, orientation = find_reference(s, ref_cv, ref_orientation,  ref_s)
-                        ego_state.position = position
-                        ego_state.velocity = v
-                        ego_state.orientation = orientation
-                        ego_state.time_step = i
-                        tmp_state = ego_state
-                        state_list.append(tmp_state)
                                         
                 # 如果没有直接冲突车辆，看间接冲突车辆。
                 else:
@@ -221,19 +242,49 @@ class IntersectionPlanner():
         return ego_vehicle
 
 
-    def motion_planner(self, a):
+    def motion_planner(self, a, ego_state0, s):
         ''''根据他车协作加速度，规划自己的运动轨迹；
         params:
             a: 协作加速度
         returns:
-
+            ego_state: 自车下一时刻的状态
         '''
+        DT = self.scenario.dt
+        a_max =3
+        a_thre = 0          # 非交互式情况，协作加速度阈值(threshold) 设置为0
+        if a < a_thre:
+            print('直接冲突 - 避让这辆车', a)
+            v0 = ego_state0.velocity
+            v = v0 - a_max *DT
+            if v<0:
+                v = 0
+            s += v*DT
+            position, orientation = find_reference(s, ref_cv, ref_orientation,  ref_s)
+            ego_state0.position = position
+            ego_state0.velocity = v
+            ego_state0.orientation = orientation
+            ego_state0.time_step = i
+            tmp_state = ego_state0
+        else:
+            print('直接冲突 - 加速通过', a)
+            v0 = ego_state0.velocity
+            v = v0 + a_max *DT
 
-    def conf_agent_checker(self, conf_lanelet_ids, conf_points, T):
-        '''  找conf_lanelets中最靠近冲突点的车，为冲突车辆
+            s += v*DT
+            position, orientation = find_reference(s, ref_cv, ref_orientation,  ref_s)
+            ego_state0.position = position
+            ego_state0.velocity = v
+            ego_state0.orientation = orientation
+            ego_state0.time_step = i
+            tmp_state = ego_state0
+            state_list.append(tmp_state)
+        
+
+
+    def conf_agent_checker(self, dict_lanelet_conf_points, T):
+        '''  找直接冲突点 conf_lanelets中最靠近冲突点的车，为冲突车辆
         params:
-            conf_lanelet_ids:  列表。
-            conf_points: 
+            dict_lanelet_conf_points: 字典。直接冲突点的lanelet_id->冲突点位置
             T: 仿真时间步长
         returns:
             [!!!若该lanelet上没有障碍物，则没有这个lanelet的key。]
@@ -242,10 +293,10 @@ class IntersectionPlanner():
         '''
         scenario = self.scenario
         lanelet_network = scenario.lanelet_network
+        conf_lanelet_ids = list(dict_lanelet_conf_points.keys())            # 所有冲突lanelet列表
 
         dict_lanelet_agent = {}         # 字典。key: lanelet, obs_id ;
         dict_lanelet_d ={}          # 字典。key: lanelet, value: distacne .到冲突点的路程
-        dict_lanelet_s = {}         # 保存已有的中心线距离。避免重复计算。
             
         n_obs = len(scenario.obstacles)
         # 暴力排查场景中的所有车
@@ -258,30 +309,29 @@ class IntersectionPlanner():
             lanelet_ids = lanelet_network.find_lanelet_by_position([pos])[0]
             # 可能在多条车道上，现在每个都做检查
             for lanelet_id in lanelet_ids:
-                # 修改。使用函数map_obstacle_to_lanelets
-                # 不能仅用位置判断车道。车的朝向也需要考虑
+                # 不能仅用位置判断车道。车的朝向也需要考虑?暂不考虑朝向。因为这样写不美。可能在十字路口倒车等
                 lanelet = lanelet_network.find_lanelet_by_id(lanelet_id)
                 res = lanelet.get_obstacles([ scenario.obstacles[i]], T)
                 if  scenario.obstacles[i] not in res:
                     continue
-                # 考虑车的朝向和车道的朝向不能超过180度
-                # Corner case: 在十字路口倒车
+
+                # 如果该车在 冲突lanelet上
                 if lanelet_id in conf_lanelet_ids:
                     lanelet_center_line = lanelet_network.find_lanelet_by_id(lanelet_id).center_vertices
 
                     # 插值函数
-                    lanelet_center_line, _,  new_add_len = detail_cv(lanelet_center_line)
+                    lanelet_center_line, _,  lanelet_center_line_s = detail_cv(lanelet_center_line)
 
-                    if lanelet_id not in dict_lanelet_d:
-                        dict_lanelet_s[lanelet_id] = new_add_len
-                    conf_point = conf_points[conf_lanelet_ids.index(lanelet_id)]
-                    d_obs2conf_point = distance_lanelet(lanelet_center_line, dict_lanelet_s[lanelet_id], pos, conf_point)
+                    conf_point = dict_lanelet_conf_points[lanelet_id]
+                    d_obs2conf_point = distance_lanelet(lanelet_center_line, lanelet_center_line_s, pos, conf_point)
                     
                     # 车辆已经通过冲突点，跳过循环
                     # 可能有问题...在冲突点过了一点点的车怎么搞？
                     if d_obs2conf_point< -2 - scenario.obstacles[i].obstacle_shape.length/2:
+                        # 如果超过冲突点一定距离。不考虑该车
                         break
                     if lanelet_id not in dict_lanelet_d:
+                        # 该lanelet上出现的第一辆车
                         dict_lanelet_d[lanelet_id] = d_obs2conf_point
                         dict_lanelet_agent[lanelet_id] = scenario.obstacles[i].obstacle_id
                     else:           
@@ -290,6 +340,26 @@ class IntersectionPlanner():
                             dict_lanelet_agent[lanelet_id] = scenario.obstacles[i].obstacle_id
             
         return dict_lanelet_agent
+
+
+    def potential_conf_agent_checker(self, dict_lanelet_conf_point, dict_parent_lanelet,  T):
+        '''找间接冲突点
+        params:
+            dict_lanelet_conf_point:
+            dict_parent_lanelet: 间接冲突lanelet->子节点列表。
+            T:
+        returns:
+            dict_lanelet_potential_agent: 间接冲突lanelet->冲突智能体列表。
+        '''
+        # 即使一辆车多个意图可能相撞，但是只用取一个值就行。任一个冲突点都是靠近终点。
+
+        dict_parent_conf_point = {}         # 可能冲突lanelet -> 随意一个冲突点；因为越靠近终点的就是最需要的车辆。
+        for parent, kids in dict_parent_lanelet.items():
+            dict_parent_conf_point[parent] = dict_lanelet_conf_point[kids[0]]
+        dict_lanelet_potential_agent = self.conf_agent_checker(dict_parent_conf_point)
+
+        return dict_lanelet_potential_agent
+
 
     def compute_acc4cooperate(self, ego_state, ref_cv, ref_s, conf_point, conf_lanelet_id,obstacle_id, scenario, T, successor_id = None):
         '''计算单辆车的协作加速度。用于之后的运动规划。协作加速度为，自车匀速到达冲突点，他车同时到达该点需要的加速度

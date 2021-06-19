@@ -8,7 +8,6 @@ import os
 
 
 from detail_central_vertices import detail_cv
-from intersection_planner import IntersectionPlanner
 from intersection_planner import distance_lanelet
 import numpy as np
 import matplotlib.pyplot as plt
@@ -113,10 +112,8 @@ def edit_scenario4test(scenario, ego_init_pos):
     conf_point = []
     for i in range(len(lanelet_ids)):
         conf_point.append(ego_init_pos)
-    ip = IntersectionPlanner(scenario, ego_init_pos, [0,0])
 
-    dict_lanelet_agent =ip. conf_agent_checker(lanelet_ids, conf_point, 0)
-    obstacle_remain = [agent for agent in dict_lanelet_agent.values()]
+    obstacle_remain = [252, 254,234,126]
     obstacle_remove = []
     for i in range(len(scenario.obstacles)):
         obstacle_id = scenario.obstacles[i].obstacle_id
@@ -125,7 +122,6 @@ def edit_scenario4test(scenario, ego_init_pos):
         obstacle_remove.append(obstacle_id)
     for obstalce_id_remove in obstacle_remove:
         scenario.remove_obstacle(scenario.obstacle_by_id(obstalce_id_remove))
-    scenario.remove_obstacle(scenario.obstacle_by_id(237))
     return scenario
 
 if __name__=='__main__':
