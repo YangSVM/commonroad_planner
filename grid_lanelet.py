@@ -1,17 +1,17 @@
 # -*- coding: UTF-8 -*-
-from typing import NewType
 from commonroad.common.file_reader import CommonRoadFileReader
+from commonroad.scenario.obstacle import Obstacle
 from commonroad.scenario.scenario import Scenario
 from commonroad.visualization.draw_dispatch_cr import draw_object
 
 import os
+
+
+from detail_central_vertices import detail_cv
+from intersection_planner import IntersectionPlanner
+from intersection_planner import distance_lanelet
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy.core.defchararray import str_len
-
-from intersection_planner import conf_agent_checker
-from detail_central_vertices import detail_cv
-from intersection_planner import distance_lanelet
 
 
 def lanelet_network2grid(lanelet_network):
@@ -59,28 +59,49 @@ def lanelet_network2grid(lanelet_network):
     return lanelet_id
 
 
-def ego_pos2tree(ego_pos,  lanelet_ids, lanelet_network):
+def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network, scenario):
     '''通过自车位置，标记对应的1。并且返回自车位置相对于左上角lanelet的中心线的frenet坐标系的距离。
     param: ego_pos:车辆位置.[x,y]
     param: lanelet_ids:lanelet网格矩阵。每个位置为对应的lanelet_id.
     param: lanlet_network. common-road lanelet_network
     return: grid: 与lanelet_ids维度相同的矩阵。自车在的位置为1，其余为0
-    return: d: 自车位置相对于左上角lanelet的中心线的frenet坐标系的沿中心线方向距离
+    return: ego_s: 自车位置相对于左上角lanelet的中心线的frenet坐标系的沿中心线方向距离
+    return: obstacle_states: 他车状态矩阵。m(车道数)*2. 表示每条道路上车的状态，每条道路上最多一辆车。如果该车道上没有车，则是[-1,-1]
+        如果有车，则是[s, v]。s表示frenet坐标系(s-d)坐标值.v是他车沿车方向速度。
 
     '''
-    grid = np.zeros(lanelet_ids.shape)
+    grid = np.zeros(lanelet_id_matrix.shape)
     lanelet_id = lanelet_network.find_lanelet_by_position([ego_pos])[0]
     for lanelet_id_i in lanelet_id:
-        index = np.where(lanelet_ids == lanelet_id_i)
+        index = np.where(lanelet_id_matrix == lanelet_id_i)
         grid[index] =1
     # 取lanelet_ids中左上角的中心线为frenet坐标系参考线，返回自车当前的s
-    lanelet00 = lanelet_network.find_lanelet_by_id(lanelet_ids[0, 0])
+    lanelet00 = lanelet_network.find_lanelet_by_id(lanelet_id_matrix[0, 0])
     center_vertices = lanelet00.center_vertices
     cv, _,s_cv = detail_cv(center_vertices)
     # 找最近点
-    s = distance_lanelet(cv, s_cv, center_vertices[0,:],ego_pos)
+    ego_s = distance_lanelet(cv, s_cv, center_vertices[0,:],ego_pos)
 
-    return grid, s
+    shape = lanelet_id_matrix.shape
+    obstacle_states = -1*np.ones((shape[0],2))
+    obstacles = scenario.obstacles
+    for i in range(len(lanelet_id_matrix)):
+        lanelet = lanelet_network.find_lanelet_by_id(lanelet_id_matrix[i, 0])
+        obstacles_on = lanelet.get_obstacles(obstacles)
+        if len(obstacles_on) == 0:
+            continue
+        elif len(obstacles_on) ==1:
+            obstacle = obstacles_on[0]
+        else:
+            print('warninig: 多辆车')
+            obstacle = obstacles_on[0]
+        state = obstacle.state_at_time(0)
+        s = distance_lanelet(cv, s_cv, center_vertices[0,:],state.position)
+        obstacle_states[i, 0] = s
+        obstacle_states[i, 1] = state.velocity
+
+
+    return grid, ego_s, obstacle_states
 
 
 def edit_scenario4test(scenario, ego_init_pos):
@@ -92,8 +113,9 @@ def edit_scenario4test(scenario, ego_init_pos):
     conf_point = []
     for i in range(len(lanelet_ids)):
         conf_point.append(ego_init_pos)
+    ip = IntersectionPlanner(scenario, ego_init_pos, [0,0])
 
-    dict_lanelet_agent = conf_agent_checker(scenario, lanelet_ids, conf_point, 0)
+    dict_lanelet_agent =ip. conf_agent_checker(lanelet_ids, conf_point, 0)
     obstacle_remain = [agent for agent in dict_lanelet_agent.values()]
     obstacle_remove = []
     for i in range(len(scenario.obstacles)):
@@ -103,6 +125,7 @@ def edit_scenario4test(scenario, ego_init_pos):
         obstacle_remove.append(obstacle_id)
     for obstalce_id_remove in obstacle_remove:
         scenario.remove_obstacle(scenario.obstacle_by_id(obstalce_id_remove))
+    scenario.remove_obstacle(scenario.obstacle_by_id(237))
     return scenario
 
 if __name__=='__main__':
@@ -125,7 +148,7 @@ if __name__=='__main__':
     # ---------------可视化修改后的场景 ------------------------------
     plt.figure(figsize=(25, 10))
     # 画一小段展示一下
-    for  i in range(10):
+    for  i in range(0):
         plt.clf()
         draw_parameters = {
             'time_begin':i, 
@@ -146,7 +169,13 @@ if __name__=='__main__':
     # 提供初始状态。位于哪个lanelet，距离lanelet 末端位置
     lanelet_network  = scenario.lanelet_network
     lanelet_id_matrix  = lanelet_network2grid(lanelet_network)
+    print('lanelet_id_matrix: ', lanelet_id_matrix)
 
     # 在每次规划过程中，可能需要反复调用这个函数得到目前车辆所在的lanelet，以及相对距离
-    grid, d =ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network)
-    print('grid',grid,'d',d)
+    grid, ego_d, obstacle_states =ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario)
+    print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
+    v_ego = planning_problem.initial_state.velocity
+    print('自车初始速度： ', v_ego)
+    print('他车矩阵', obstacle_states)
+
+
