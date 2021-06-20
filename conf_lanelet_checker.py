@@ -18,19 +18,6 @@ class Conf_Lanelet:
         self.conf_point = conf_point
 
 
-class Conf_Potential_Lanelet:
-    '''冲突lanelet类
-        id: 路口内的冲突lanelet的id列表
-        conf_point: 对应的冲突点位置 列表
-    '''
-    def __init__(self, id=None, conf_point=None, successor=None):
-        if id is not None:
-            assert len(id) == len(conf_point) == len(successor)
-        self.id = id                
-        self.conf_point = conf_point
-        self.successor = successor
-
-
 def conf_lanelet_checker(ln, incoming_lanelet_id: int, direction: int):
     """
     check conflict lanelets when driving in a incoming lanelet
@@ -162,40 +149,6 @@ def conf_lanelet_checker(ln, incoming_lanelet_id: int, direction: int):
     cl = check_conf_lanelets(lanelet_network, inter_laneletid_list, sub_lanelet_id_in_intersection)
     print("conflict lanelets", cl.id)
     return cl
-
-
-def potential_conf_lanelet_checker(lanelet_network, cl_info):
-    """
-    check [potential] conflict lanelets when driving in a incoming lanelet
-
-    :param ln: lanelet network of the scenario
-    :param cl_info: 直接冲突lanelet的Conf_lanelet类【.id:路口内的冲突lanelet的id；.conf_point:对应的冲突点位置】
-    :return: 间接冲突Conf_lanelet类
-    """
-    conf_lanelet_potentials = []            # 潜在冲突lanelet列表。每个成员是conf_lanelet的父节点列表，可能有多个父节点
-    for conf_lanelet_id in cl_info. id:
-        conf_lanlet = lanelet_network.find_lanelet_by_id(conf_lanelet_id)
-        conf_lanelet_potentials.append(conf_lanlet.predecessor)
-
-
-
-    conf_potential_lanelets = []
-    conf_potential_points = []
-    conf_potential_successor = []
-    for id, conf_point in zip(cl_info.id, cl_info.conf_point):
-        conf_lanlet = lanelet_network.find_lanelet_by_id(id)
-        id_predecessors = conf_lanlet.predecessor
-        # 排除没有父节点的情况
-        if id_predecessors is not None:
-            # 多个父节点
-            for id_predecessor in id_predecessors:
-                conf_potential_lanelets.append(id_predecessor)
-                conf_potential_points.append(conf_point)
-                conf_potential_successor.append(id)
-    
-    cl_potential_info = Conf_Potential_Lanelet(conf_potential_lanelets, conf_potential_points, conf_potential_successor)
-
-    return cl_potential_info
 
 
 def potential_conf_lanelet_checkerv2(lanelet_network, cl_info):

@@ -173,5 +173,6 @@ if __name__=='__main__':
     v_ego = planning_problem.initial_state.velocity
     print('自车初始速度： ', v_ego)
     print('他车矩阵', obstacle_states)
+    print('单独提取',obstacle_states[0][0])
 
 
