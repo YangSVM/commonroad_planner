@@ -6,16 +6,24 @@ from commonroad.visualization.draw_dispatch_cr import draw_object
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import copy
 
 from conf_lanelet_checker import conf_lanelet_checker, potential_conf_lanelet_checkerv2
 from detail_central_vertices import detail_cv
 
 from commonroad.geometry.shape import Rectangle
 from commonroad.scenario.obstacle import DynamicObstacle, ObstacleType
-from commonroad.scenario.trajectory import Trajectory
+from commonroad.scenario.trajectory import Trajectory, State
 from commonroad.prediction.prediction import TrajectoryPrediction
 from vehiclemodels import parameters_vehicle3
 from commonroad.visualization.mp_renderer import MPRenderer
+
+'''
+缺少要素：
+    1. 如何系统的考虑前车的影响？目前场景没有前车
+    2. 全局lanelet规划器。比如路口在行驶的过程中，如何知道此时应该前行还是右转。
+
+'''
 
 
 
@@ -64,7 +72,11 @@ def sort_conf_point(ego_pos, dict_lanelet_conf_point, cv, cv_s):
     id = np.argsort(distance)
 
     distance_sorted = distance[id]
-    i_ego = np.where(distance_sorted>0)[0].min()
+    index = np.where(distance_sorted>0)[0]
+    if len(index) == 0:
+        i_ego  = len(distance)
+    else:
+        i_ego = index.min()
     
     sorted_lanelet = lanelet_ids[id]
 
@@ -74,7 +86,9 @@ def sort_conf_point(ego_pos, dict_lanelet_conf_point, cv, cv_s):
 def find_reference(s, ref_cv, ref_orientation,  ref_cv_len):
     ref_cv, ref_orientation,  ref_cv_len = np.array(ref_cv), np.array(ref_orientation), np.array(ref_cv_len)
     id = np.searchsorted(ref_cv_len, s)
-
+    if id >= ref_orientation.shape[0]:
+        print('end of reference line, please stop !')
+        id =   ref_orientation.shape[0]-1
     return ref_cv[:, id], ref_orientation[id]
 
 
@@ -151,7 +165,8 @@ class IntersectionPlanner():
         # 计算车辆前进的参考轨迹
         cv1 = lanelet_network.find_lanelet_by_id(incoming_lanelet_id_sub).center_vertices
         cv2 = lanelet_network.find_lanelet_by_id(50209).center_vertices
-        cv =  np.concatenate((cv1, cv2), axis=0)
+        cv3 = lanelet_network.find_lanelet_by_id(50203).center_vertices
+        cv =  np.concatenate((cv1, cv2,cv3), axis=0)
         ref_cv, ref_orientation,  ref_s = detail_cv(cv)
 
         T= [x for x in range(100)]
@@ -168,7 +183,7 @@ class IntersectionPlanner():
             iinfo.dict_lanelet_agent = dict_lanelet_agent
 
             # 间接冲突车辆
-            dict_lanelet_potential_agent = self.potential_conf_agent_checker(iinfo.dict_lanelet_conf_point, iinfo.dict_parent_lanelet,  t)
+            dict_lanelet_potential_agent = self.potential_conf_agent_checker(iinfo.dict_lanelet_conf_point, iinfo.dict_parent_lanelet, [50195,50209], t)
             print('间接冲突车辆',dict_lanelet_potential_agent)
             iinfo.dict_lanelet_potential_agent = dict_lanelet_potential_agent
 
@@ -186,34 +201,36 @@ class IntersectionPlanner():
                 if lanelet_id in dict_lanelet_agent.keys():
                     sorted_conf_agent.append(iinfo.dict_lanelet_agent[lanelet_id])
                     dict_agent_lanelets[sorted_conf_agent[-1]] = [lanelet_id]
-                # else:
-                #     # 查找父节点
-                #     lanelet = lanelet_network.find_lanelet_by_id(lanelet_id)
-                #     for parent_lanelet_id in lanelet.predecessor:
-                #         if parent_lanelet_id not in dict_lanelet_potential_agent.keys():
-                #             # 如果是None, 没有父节点，也会进入该循环
-                #             continue
-                #         else:
-                #             if sorted_conf_agent[-1] not in dict_agent_lanelets.keys():
-                #                 sorted_conf_agent.append(iinfo.dict_lanelet_potential_agent[parent_lanelet_id])
-                #                 dict_agent_lanelets[sorted_conf_agent[-1]] = [parent_lanelet_id, lanelet_id]
-                #             continue
+                else:
+                    # 查找父节点
+                    lanelet = lanelet_network.find_lanelet_by_id(lanelet_id)
+                    for parent_lanelet_id in lanelet.predecessor:
+                        if parent_lanelet_id not in dict_lanelet_potential_agent.keys():
+                            # 如果是None, 没有父节点，也会进入该循环
+                            continue
+                        else:
+                            sorted_conf_agent.append(iinfo.dict_lanelet_potential_agent[parent_lanelet_id])
+                            if sorted_conf_agent[-1] not in dict_agent_lanelets.keys():                                
+                                dict_agent_lanelets[sorted_conf_agent[-1]] = [parent_lanelet_id, lanelet_id]
+                            continue
             iinfo.sorted_conf_agent =  sorted_conf_agent
             iinfo.dict_agent_lanelets = dict_agent_lanelets
             print('车辆重要性排序：', iinfo.sorted_conf_agent)
             print('对应车辆可能lanelet：', iinfo.dict_agent_lanelets)
 
-            # 目前。根据未来两辆车进行决策
-            o1_id, o2_id = iinfo.sorted_conf_agent[0],  iinfo.sorted_conf_agent[1]
-            lanelet_ids1 = iinfo.dict_agent_lanelets[o1_id]
-            conf_point1 = iinfo.dict_lanelet_conf_point[lanelet_ids1[-1]]
-            lanelet_ids2 = iinfo.dict_agent_lanelets[o2_id]
-            conf_point2 = iinfo.dict_lanelet_conf_point[lanelet_ids1[-1]]
-            a1 = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point1, lanelet_ids1, o1_id,t)
-            a2 = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point2, lanelet_ids2, o2_id,t)
-            ego_state = self.motion_planner(a1, a2,  ego_state, s, [ref_cv, ref_orientation, ref_s], t)
-            state_list.append(ego_state)
+            # 目前。根据未来两辆车进行决策。不够两辆车怎么搞？
+            n_o = min(len(iinfo.sorted_conf_agent), 2)
+            o_ids = []
+            a = [ ]
+            for i in range(n_o):
+                o_ids.append(iinfo.sorted_conf_agent[i])
+                lanelet_ids = iinfo.dict_agent_lanelets[o_ids[i]]
+                conf_point = iinfo.dict_lanelet_conf_point[lanelet_ids[-1]]
+                a.append(self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids, o_ids[i],t)) 
 
+            ego_state, s = self.motion_planner(a,  ego_state, s, [ref_cv, ref_orientation, ref_s], t)
+            # tmp_state = copy.deepcopy(ego_state)
+            state_list.append(ego_state)
 
         # create the planned trajectory starting at time step 1
         ego_vehicle_trajectory = Trajectory(initial_time_step=1, state_list=state_list[1:])
@@ -232,18 +249,27 @@ class IntersectionPlanner():
         return ego_vehicle
 
 
-    def motion_planner(self, a1, a2, ego_state0, s, ref_info, t): 
+    def motion_planner(self, a, ego_state0, s, ref_info, t): 
         ''''根据他车协作加速度，规划自己的运动轨迹；
         params:
             a: 协作加速度
         returns:
             ego_state: 自车下一时刻的状态
         '''
+        if len(a) >1:
+            a1 = a[0]
+            a2 = a[1]
+        elif len(a) ==1:
+            a1 = a[0]
+            a2 =a[0]
+        else:
+            a1 = 100
+            a2= 100
         DT = self.scenario.dt
         a_max =3
         a_thre = 0          # 非交互式情况，协作加速度阈值(threshold) 设置为0
         if a1 < a_thre or a2<a_thre:
-            print('直接冲突 - 避让这辆车', a1, a2)
+            print(' 避让这辆车', a1, a2)
             v0 = ego_state0.velocity
             v = v0 - a_max *DT
             if v<0:
@@ -251,20 +277,20 @@ class IntersectionPlanner():
             s += v*DT
 
         else:
-            print('直接冲突 - 加速通过', a1, a2)
+            print(' 加速通过', a1, a2)
             v0 = ego_state0.velocity
             v = v0 + a_max *DT
             s += v*DT
 
         ref_cv, ref_orientation,  ref_s = ref_info
         position, orientation = find_reference(s,  ref_cv, ref_orientation,  ref_s )
-        ego_state0.position = position
-        ego_state0.velocity = v
-        ego_state0.orientation = orientation
-        ego_state0.time_step = t
-        tmp_state = ego_state0
+        tmp_state = State()
+        tmp_state.position = position
+        tmp_state.velocity = v
+        tmp_state.orientation = orientation
+        tmp_state.time_step = t
 
-        return tmp_state        
+        return tmp_state, s        
 
 
     def conf_agent_checker(self, dict_lanelet_conf_points, T):
@@ -328,8 +354,8 @@ class IntersectionPlanner():
         return dict_lanelet_agent
 
 
-    def potential_conf_agent_checker(self, dict_lanelet_conf_point, dict_parent_lanelet,  T):
-        '''找间接冲突点
+    def potential_conf_agent_checker(self, dict_lanelet_conf_point, dict_parent_lanelet,  ego_lanelets,T):
+        '''找间接冲突lanelet.
         params:
             dict_lanelet_conf_point:
             dict_parent_lanelet: 间接冲突lanelet->子节点列表。
@@ -344,6 +370,12 @@ class IntersectionPlanner():
             for kid in kids:
                 if kid in dict_lanelet_conf_point.keys():
                     dict_parent_conf_point[parent] = dict_lanelet_conf_point[kid]
+        
+        # 删除前车影响：
+        for ego_lanelet in ego_lanelets:
+            if ego_lanelet in dict_parent_conf_point.keys():
+                dict_parent_conf_point.pop(ego_lanelet)
+
         dict_lanelet_potential_agent = self.conf_agent_checker(dict_parent_conf_point, T)
 
         return dict_lanelet_potential_agent
@@ -393,14 +425,14 @@ class IntersectionPlanner():
 
         conf_cvs, _, conf_s = detail_cv(conf_cvs)
 
-        s = distance_lanelet(conf_cv, conf_s, p, conf_point)
+        s = distance_lanelet(conf_cvs, conf_s, p, conf_point)
         a = 2*(s-v*t)/(t**2)
         return a
 
 
 if __name__=='__main__':
     #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-    path_scenario_download = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
+    path_scenario_download = os.path.abspath('/home/tiecun/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
     # 文件名
     id_scenario = 'ZAM_Tjunction-1_282_T-1'
 

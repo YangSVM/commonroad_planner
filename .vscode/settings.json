@@ -6,5 +6,6 @@
     "python.analysis.extraPaths": [
         "/home/tiecun/catkin_ws/devel/lib/python2.7/dist-packages",
         "/opt/ros/melodic/lib/python2.7/dist-packages"
-    ]
+    ],
+    "python.pythonPath": "/home/tiecun/anaconda3/envs/cr37/bin/python"
 }
