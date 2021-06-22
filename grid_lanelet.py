@@ -144,7 +144,7 @@ if __name__=='__main__':
     # ---------------可视化修改后的场景 ------------------------------
     plt.figure(figsize=(25, 10))
     # 画一小段展示一下
-    for  i in range(0):
+    for  i in range(10):
         plt.clf()
         draw_parameters = {
             'time_begin':i, 

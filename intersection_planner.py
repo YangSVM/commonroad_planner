@@ -20,7 +20,7 @@ from commonroad.visualization.mp_renderer import MPRenderer
 
 '''
 缺少要素：
-    1. 如何系统的考虑前车的影响？目前场景没有前车
+    1. 如何系统的考虑前车的影响？目前场景没有前车: 考虑在前车期望速度。
     2. 全局lanelet规划器。比如路口在行驶的过程中，如何知道此时应该前行还是右转。
 
 '''
@@ -169,10 +169,10 @@ class IntersectionPlanner():
         cv =  np.concatenate((cv1, cv2,cv3), axis=0)
         ref_cv, ref_orientation,  ref_s = detail_cv(cv)
 
-        T= [x for x in range(100)]
+        T= [x for x in range(400)]
         # T = [70]
         s = distance_lanelet(ref_cv, ref_s, cv1[0,:],ego_state.position) # 已经有参考轨迹，直接计算行驶路程
-
+        s_list= [s]
         a_max = 3
         state_list = []
         state_list.append(ego_state)
@@ -229,6 +229,7 @@ class IntersectionPlanner():
                 a.append(self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids, o_ids[i],t)) 
 
             ego_state, s = self.motion_planner(a,  ego_state, s, [ref_cv, ref_orientation, ref_s], t)
+            s_list.append(s)
             # tmp_state = copy.deepcopy(ego_state)
             state_list.append(ego_state)
 
@@ -246,8 +247,19 @@ class IntersectionPlanner():
         ego_vehicle = DynamicObstacle(obstacle_id=100, obstacle_type=ego_vehicle_type,
                                     obstacle_shape=ego_vehicle_shape, initial_state=self.state_init,
                                     prediction=ego_vehicle_prediction)
+        
+        self.analysis_intersection(s_list, scenario)
         return ego_vehicle
 
+
+    def  analysis_intersection(self, s_list, scenario):
+        '''分析自车运动轨迹，画出相应的s-t图
+        params:
+            ego_vehicle
+        returns:
+        '''
+
+        return 0
 
     def motion_planner(self, a, ego_state0, s, ref_info, t): 
         ''''根据他车协作加速度，规划自己的运动轨迹；
@@ -411,6 +423,9 @@ class IntersectionPlanner():
         state = conf_agent.state_at_time(T)
         p, v = state.position, state.velocity
 
+        if np.linalg.norm(p-pos) < 5:
+            print('warning: too close!')
+
         conf_cvs = []
         if not isinstance(conf_lanelet_ids, Iterable):
             conf_lanelet = scenario.lanelet_network.find_lanelet_by_id(conf_lanelet_ids)
@@ -432,7 +447,7 @@ class IntersectionPlanner():
 
 if __name__=='__main__':
     #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-    path_scenario_download = os.path.abspath('/home/tiecun/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
+    path_scenario_download = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
     # 文件名
     id_scenario = 'ZAM_Tjunction-1_282_T-1'
 
@@ -468,7 +483,7 @@ if __name__=='__main__':
 
     # plot the scenario and the ego vehicle for each time step
     plt.figure(1)
-    for i in range(0, 40):
+    for i in range(0, 400):
         rnd = MPRenderer()
         scenario.draw(rnd, draw_params={'time_begin': i})
         ego_vehicle.draw(rnd, draw_params={'time_begin': i, 'dynamic_obstacle': {
