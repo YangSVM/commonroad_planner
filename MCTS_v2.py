@@ -1,5 +1,8 @@
-from __future__ import division
+# 该版本写于0623，解决了之前2.0版本中存在的几处bug，并设计了与奕彬场景提取的外部接口。
+# 外部输入信息：障碍车位置（矩阵形式，包括位置、速度），以及自车状态 [车道，位置，速度]。
+# 该版本实现功能，在一个5车道直行场景中，向最上方车道并线（并线要求的截止位置，设定于本代码中的edge[3]），并且每个车道只有一个障碍车
 
+from __future__ import division
 import time
 import math
 import random
@@ -28,23 +31,10 @@ def transform(node):
         if len(node.children.items()) == 0:
             return 0
 
-def positions(t, vehicle_id):
-    vehicleP = 0
-    vehicleV = 0
-    if vehicle_id == 0:
-        vehicleP = 100 + 7 * t
-        vehicleV = 7
-    if vehicle_id == 1:
-        vehicleP = 100 + 8 * t
-        vehicleV = 8
-    if vehicle_id == 2:
-        vehicleP = 50 + 10 * t
-        vehicleV = 10
-    return (vehicleP,vehicleV)
 
 class treeNode():               #一个节点是一个棋面，包含以下所有信息
     def __init__(self, state, parent):
-        self.state = state                    # 很重要，通过state连接到下棋游戏的类（包括棋面、玩家和一堆函数）
+        self.state = state                    # 很重要，通过state连接到圈叉游戏的类（包括棋面、玩家和一堆函数）
         self.isTerminal = state.isTerminal()  # 通过这种方法，将isTerminal从圈叉的类中连接到了treeNode类中
         self.isFullyExpanded = self.isTerminal
         self.parent = parent
@@ -89,7 +79,7 @@ class mcts():
                 self.executeRound() #在循环次数内，不断重复该循环。没有参数输入，节点状态在循环内更新
         else:
             for i in range(self.searchLimit):
-                print(i)
+                #print(i)
                 self.executeRound()
         self.node1 = self.root
         self.output = transform(self.node1)
@@ -108,6 +98,7 @@ class mcts():
         node = self.selectNode(self.root)   #每轮的节点选择都是从根节点（初始棋面）开始的。输出node：一个expand后的新棋面。
         # print(node.state.board)
         # print(node.state.laststep)
+        #print(node.state.reward)
         reward = self.rollout(node.state)   #基于该新棋面，rollout至结尾。当前对应了随机策略。输出rollout结束时的结果（+1、-1、0）。
         self.backpropogate(node, reward)    #基于新棋面，更新路径上节点的value。
 
@@ -132,7 +123,7 @@ class mcts():
     def backpropogate(self, node, reward):   #基于父节点关系，反向更新路径上的信息。输入当前节点和基于它的rollout结果。
         while node is not None:
             node.numVisits += 1              #更新当前节点的总访问次数
-            node.totalReward = 0.5 * (reward + node.totalReward)     #更细当前节点的reward
+            node.totalReward = 0.5 * reward + 0.5 * node.totalReward     #更细当前节点的reward
             node = node.parent               #指向当前节点父节点（root是初始棋面）
 
     def getBestChild(self, node, explorationValue):  #拓展过程，寻找最佳节点（当eV为0，则是纯贪心）
@@ -149,21 +140,46 @@ class mcts():
         return random.choice(bestNodes)   #如果有多个相同的，则随机选择一个子节点（棋面）
 
 class NaughtsAndCrossesState():                            # 连接到treeNode的state中
-    def __init__(self):
-        self.board = [[0, 0, 0, 0], [0, 0, 0, 0],[0, 0, 0, 0]]     # 表示一个具体的棋面
+    def __init__(self,b,Vmatrix):
+        self.board = [[0, 0, 0, 0], [0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0],[0, 0, 0, 0]]     # 表示一个具体的棋面
         self.currentPlayer = 1
         self.laststep = [2, 0]
         self.target = [0,3]
 
-        self.reward = 0
-        self.edge = [75, 120, 200]
-        self.lastlane = [2, 0]
-        self.laststate = [20, 15]
+        self.reward = 100
+        self.edge = [75, 120, 300]
+        self.lastlane = [b[0], 0]
+        self.laststate = [b[1], b[2]]
         self.T = 0
         self.Tstep = 3
+        self.state0 = Vmatrix[0]
+        self.state1 = Vmatrix[1]
+        self.state2 = Vmatrix[2]
+        self.state3 = Vmatrix[3]
+        self.state4 = Vmatrix[4]
 
     def getCurrentPlayer(self):                            # 输入：node.state
         return self.currentPlayer
+
+    def positions(self, t, vehicle_id):
+        vehicleP = 0
+        vehicleV = 0
+        if vehicle_id == 0:
+            vehicleP = self.state0[0] + self.state0[1] * t
+            vehicleV = self.state0[1]
+        if vehicle_id == 1:
+            vehicleP = self.state1[0] + self.state1[1] * t
+            vehicleV = self.state1[1]
+        if vehicle_id == 2:
+            vehicleP = self.state2[0] + self.state2[1] * t
+            vehicleV = self.state2[1]
+        if vehicle_id == 3:
+            vehicleP = self.state3[0] + self.state3[1] * t
+            vehicleV = self.state3[1]
+        if vehicle_id == 4:
+            vehicleP = self.state4[0] + self.state4[1] * t
+            vehicleV = self.state4[1]
+        return (vehicleP, vehicleV)
 
     def getPossibleActions(self):                          # 输入：node.state
         possibleActions = []
@@ -171,12 +187,12 @@ class NaughtsAndCrossesState():                            # 连接到treeNode�
         if self.lastlane[0] <= 0:  # 不能在最上
             flag1 = 1
         else:
-            if (self.laststate[0] + self.Tstep * self.laststate[1]) >= positions(self.T + self.Tstep, self.lastlane[0] - 1)[0]:  # 并道后在车前
-                if self.laststate[0] <= positions(self.T, self.lastlane[0] - 1)[0]:  # 不能并道之前在车后
+            if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.positions(self.T + self.Tstep, self.lastlane[0] - 1)[0]:  # 并道后在车前
+                if self.laststate[0] <= self.positions(self.T, self.lastlane[0] - 1)[0]:  # 不能并道之前在车后
                     flag1 = 1
             else:  # 并道后在车后
-                aa = positions(self.T + self.Tstep, self.lastlane[0] - 1)[1]
-                if (positions(self.T + self.Tstep, self.lastlane[0] - 1)[0] - (self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.1 * (
+                aa = self.positions(self.T + self.Tstep, self.lastlane[0] - 1)[1]
+                if (self.positions(self.T + self.Tstep, self.lastlane[0] - 1)[0] - (self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.1 * (
                         self.laststate[1] * self.laststate[1] - aa * aa):
                     flag1 = 1  # 不能小于安全车距
         if self.lastlane[0] >= 2:  # 不能超过纵向距离约束（非目标lanelet）
@@ -187,15 +203,15 @@ class NaughtsAndCrossesState():                            # 连接到treeNode�
 
         # 在考虑向下并线
         flag2 = 0
-        if self.lastlane[0] >= 2:  # 不能在最下
+        if self.lastlane[0] >= 4:  # 不能在最下
             flag2 = 1
         else:
-            if (self.laststate[0] + self.Tstep * self.laststate[1]) >= positions(self.T + self.Tstep, self.lastlane[0] + 1)[0]:  # 并道后在车前
-                if self.laststate[0] <= positions(self.T, self.lastlane[0] + 1)[0]:  # 不能并道前在车后
+            if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.positions(self.T + self.Tstep, self.lastlane[0] + 1)[0]:  # 并道后在车前
+                if self.laststate[0] <= self.positions(self.T, self.lastlane[0] + 1)[0]:  # 不能并道前在车后
                     flag2 = 1
             else:  # 并道后在车后
-                aa = positions(self.T + self.Tstep, self.lastlane[0] + 1)[1]
-                if (positions(self.T + self.Tstep, self.lastlane[0] + 1)[0] - (self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.1 * (
+                aa = self.positions(self.T + self.Tstep, self.lastlane[0] + 1)[1]
+                if (self.positions(self.T + self.Tstep, self.lastlane[0] + 1)[0] - (self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.1 * (
                         self.laststate[1] * self.laststate[1] - aa * aa):
                     flag2 = 1  # 不能小于安全车距
         if self.lastlane[0] >= 0:  # 不能超过纵向距离约束（非目标lanelet）
@@ -210,11 +226,16 @@ class NaughtsAndCrossesState():                            # 连接到treeNode�
             flag3 = 1
         else:
             if self.lastlane[0] >= 1:  # 不能超过纵向距离约束（非目标lanelet）
-                if (self.laststate[0] + self.Tstep * self.laststate[1] + 0.5 * self.Tstep * self.Tstep) >= self.edge[2]:
+                st = self.laststate[0] + self.Tstep * self.laststate[1] + 0.5 * self.Tstep * self.Tstep
+                if st >= self.edge[2]:
                     flag3 = 1
-            aa = positions(self.T + self.Tstep, self.lastlane[0])[1]
-            if (self.laststate[0] + 3) >= aa:
-                if (positions(self.T + self.Tstep, self.lastlane[0])[0] - (
+            if (self.laststate[0] + self.Tstep * self.laststate[1] + 0.5 * self.Tstep * self.Tstep) >= \
+                    self.positions(self.T + self.Tstep, self.lastlane[0])[0]:  # 行为完成后在障碍车之前
+                if self.laststate[0] <= self.positions(self.T, self.lastlane[0])[0]:  # 行为开始前，不能在障碍车之后
+                    flag3 = 1
+            else:  # 行为完成后，在障碍车后方
+                aa = self.positions(self.T + self.Tstep, self.lastlane[0])[1]
+                if (self.positions(self.T + self.Tstep, self.lastlane[0])[0] - (
                         self.laststate[0] + self.Tstep * self.laststate[1] + 0.5 * self.Tstep * self.Tstep)) <= 0.1 * (
                         self.laststate[1] * self.laststate[1] - aa * aa):
                     flag3 = 1  # 不能小于安全车距
@@ -227,11 +248,16 @@ class NaughtsAndCrossesState():                            # 连接到treeNode�
             flag4 = 1
         else:
             if self.lastlane[0] >= 1:  # 不能超过纵向距离约束（非目标lanelet）
-                if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.edge[2]:
+                st = self.laststate[0] + self.Tstep * self.laststate[1]
+                if st >= self.edge[2]:
                     flag4 = 1
-            aa = positions(self.T + self.Tstep, self.lastlane[0])[1]
-            if self.laststate[0] >= aa:
-                if (positions(self.T + self.Tstep, self.lastlane[0])[0] - (
+            if (self.laststate[0] + self.Tstep * self.laststate[1]) >= \
+                    self.positions(self.T + self.Tstep, self.lastlane[0])[0]:  # 行为完成后在障碍车之前
+                if self.laststate[0] <= self.positions(self.T, self.lastlane[0])[0]:  # 行为开始前，不能在障碍车之后
+                    flag4 = 1
+            else:  # 行为完成后，在障碍车后方
+                aa = self.positions(self.T + self.Tstep, self.lastlane[0])[1]
+                if (self.positions(self.T + self.Tstep, self.lastlane[0])[0] - (
                         self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.1 * (
                         self.laststate[1] * self.laststate[1] - aa * aa):
                     flag4 = 1  # 不能小于安全车距
@@ -244,8 +270,19 @@ class NaughtsAndCrossesState():                            # 连接到treeNode�
             flag5 = 1
         else:
             if self.lastlane[0] >= 1:  # 不能超过纵向距离约束（非目标lanelet）
-                if (self.laststate[0] + self.Tstep * self.laststate[1] - 0.5 * self.Tstep * self.Tstep) >= self.edge[2]:
+                st = self.laststate[0] + self.Tstep * self.laststate[1] - 0.5 * self.Tstep * self.Tstep
+                if st >= self.edge[2]:
                     flag5 = 1
+            if (self.laststate[0] + self.Tstep * self.laststate[1] - 0.5 * self.Tstep * self.Tstep) >= \
+                    self.positions(self.T + self.Tstep, self.lastlane[0])[0]:  # 行为完成后在障碍车之前
+                if self.laststate[0] <= self.positions(self.T, self.lastlane[0])[0]:  # 行为开始前，不能在障碍车之后
+                    flag5 = 1
+            else:  # 行为完成后，在障碍车后方
+                aa = self.positions(self.T + self.Tstep, self.lastlane[0])[1]
+                if (self.positions(self.T + self.Tstep, self.lastlane[0])[0] - (
+                        self.laststate[0] + self.Tstep * self.laststate[1] - 0.5 * self.Tstep * self.Tstep)) <= 0.1 * (
+                        self.laststate[1] * self.laststate[1] - aa * aa):
+                    flag5 = 1  # 不能小于安全车距
         if flag5 == 0:  # 满足所有条件时，可以向上换道
             possibleActions.append(Action(player=self.currentPlayer, x=1, y=1, act=5))
 
@@ -287,13 +324,15 @@ class NaughtsAndCrossesState():                            # 连接到treeNode�
             newState.lastlane[0] = self.lastlane[0]
         if action.act == 7:
             newState.laststate[0] = self.laststate[0] + self.Tstep * 10
-            newState.laststate[1] = 10
+            newState.laststate[1] = 20
             newState.lastlane[0] = self.lastlane[0]
 
         newState.T = self.T + self.Tstep
-        newState.reward = self.reward - 1 - 0.05 * newState.lastlane[0] -0.05 * (300-self.laststate[0])
-        if action.act == 6:
+        newState.reward = self.reward - 10 - 100 * newState.lastlane[0] - 0.5 * (400-newState.laststate[0])
+        if action.act == 2:
             newState.reward = newState.reward - 100
+        if action.act == 6:
+            newState.reward = newState.reward - 100000
         return newState
 
     def isTerminal(self):                                # 因为treeNode中定义了连接，输入node.isTerminal
@@ -324,7 +363,9 @@ class Action():
         return hash((self.x, self.y, self.player, self.act))
 
 if __name__=="__main__":
-    initialState = NaughtsAndCrossesState()
+    ini = [[80,10],[80,10],[0,0],[0,0],[0,0]]
+    b = [0,50,15]
+    initialState = NaughtsAndCrossesState(b,ini)
     searcher = mcts(iterationLimit=5000) #改变循环次数或者时间
     action = searcher.search(initialState=initialState) #一整个类都是其状态
-    # print(action)
+    #print(action.act)
