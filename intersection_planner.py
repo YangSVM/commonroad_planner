@@ -279,7 +279,7 @@ class IntersectionPlanner():
             a2= 100
         DT = self.scenario.dt
         a_max =3
-        a_thre = 0          # 非交互式情况，协作加速度阈值(threshold) 设置为0
+        a_thre = 3          # 非交互式情况，协作加速度阈值(threshold) 设置为0
         if a1 < a_thre or a2<a_thre:
             print(' 避让这辆车', a1, a2)
             v0 = ego_state0.velocity
@@ -416,7 +416,7 @@ class IntersectionPlanner():
         d_ego2cp = distance_lanelet(ref_cv, ref_s, pos, conf_point)
         t4ego2pass.append(d_ego2cp / v)
         t4ego2pass = np.array(t4ego2pass)
-        t_thre = 0.5
+        t_thre = 0
         t = t4ego2pass + t_thre
 
         conf_agent = scenario.obstacle_by_id(obstacle_id)
