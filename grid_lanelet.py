@@ -58,11 +58,12 @@ def lanelet_network2grid(lanelet_network):
     return lanelet_id
 
 
-def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network, scenario):
+def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network, scenario, T):
     '''通过自车位置，标记对应的1。并且返回自车位置相对于左上角lanelet的中心线的frenet坐标系的距离。
     param: ego_pos:车辆位置.[x,y]
     param: lanelet_ids:lanelet网格矩阵。每个位置为对应的lanelet_id.
     param: lanlet_network. common-road lanelet_network
+    param: T: 仿真步长。乘以0.1即为时间。
     return: grid: 与lanelet_ids维度相同的矩阵。自车在的位置为1，其余为0
     return: ego_s: 自车位置相对于左上角lanelet的中心线的frenet坐标系的沿中心线方向距离
     return: obstacle_states: 他车状态矩阵。m(车道数)*2. 表示每条道路上车的状态，每条道路上最多一辆车。如果该车道上没有车，则是[-1,-1]
@@ -86,7 +87,7 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network, scenario):
     obstacles = scenario.obstacles
     for i in range(len(lanelet_id_matrix)):
         lanelet = lanelet_network.find_lanelet_by_id(lanelet_id_matrix[i, 0])
-        obstacles_on = lanelet.get_obstacles(obstacles)
+        obstacles_on = lanelet.get_obstacles(obstacles, T)
         if len(obstacles_on) == 0:
             continue
         elif len(obstacles_on) ==1:
@@ -94,7 +95,7 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network, scenario):
         else:
             print('warninig: 多辆车')
             obstacle = obstacles_on[0]
-        state = obstacle.state_at_time(0)
+        state = obstacle.state_at_time(T)
         s = distance_lanelet(cv, s_cv, center_vertices[0,:],state.position)
         obstacle_states[i, 0] = s
         obstacle_states[i, 1] = state.velocity
@@ -168,7 +169,8 @@ if __name__=='__main__':
     print('lanelet_id_matrix: ', lanelet_id_matrix)
 
     # 在每次规划过程中，可能需要反复调用这个函数得到目前车辆所在的lanelet，以及相对距离
-    grid, ego_d, obstacle_states =ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario)
+    T = 50           # 5*0.1=0.5.返回0.5s时周车的状态。注意下面函数返回的自车状态仍然是初始时刻的。
+    grid, ego_d, obstacle_states =ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, T)
     print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
     v_ego = planning_problem.initial_state.velocity
     print('自车初始速度： ', v_ego)
