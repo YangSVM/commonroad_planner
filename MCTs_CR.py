@@ -1,4 +1,6 @@
 # -*- coding: UTF-8 -*-
+# 写于0623，用于调用 MCTs_v2 以及 grid_lanelet 两个代码的接口。
+
 from typing import NewType
 from commonroad.common.file_reader import CommonRoadFileReader
 from commonroad.scenario.scenario import Scenario
@@ -14,9 +16,8 @@ from intersection_planner import distance_lanelet
 from grid_lanelet import edit_scenario4test
 from grid_lanelet import lanelet_network2grid
 from grid_lanelet import ego_pos2tree
-from MCTs_02 import NaughtsAndCrossesState
-from MCTs_02 import mcts
-from MCTs_02 import vehicles
+from MCTs_v2 import NaughtsAndCrossesState
+from MCTs_v2 import mcts
 
 if __name__ == '__main__':
     # -------------- 固定写法。从common road中读取场景 -----------------
@@ -38,10 +39,9 @@ if __name__ == '__main__':
     grid, d = ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network)
     print('grid', grid, 'd', d)
 
-    a = [[100, 5], [100, 5], [50, 10]]
-    ini = vehicles(a)
-    b = [2, 20, 15]
-    initialState = NaughtsAndCrossesState(b)
+    b = [2, 50, 15]
+    ini = [[80, 10], [80, 10], [0, 0], [0, 0], [0, 0]]
+    initialState = NaughtsAndCrossesState(b, ini)
     searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
     action = searcher.search(initialState=initialState)  # 一整个类都是其状态
     print(action.act)
