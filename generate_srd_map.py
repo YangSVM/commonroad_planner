@@ -35,11 +35,11 @@ class Srd_map():
         if current_lanelet.adj_right_same_direction:
             right_lanelet = ln.find_lanelet_by_id(current_lanelet.adj_right)
             right_cv = np.array(right_lanelet.center_vertices)
-            self.cv_left = right_cv
+            self.cv_right = right_cv
             if not right_lanelet.successor == []:
                 right_lanelet_successor = ln.find_lanelet_by_id(right_lanelet.successor[0])
                 right_cv_successor = np.array(right_lanelet_successor.center_vertices)
-                self.cv_right = np.concatenate((self.cv_left, right_cv_successor), axis=0)
+                self.cv_right = np.concatenate((self.cv_right, right_cv_successor), axis=0)
 
 
 if __name__ == '__main__':
