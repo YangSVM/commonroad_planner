@@ -138,7 +138,7 @@ class IntersectionPlanner():
     def __init__(self, scenario, planning_problem, route) -> None:
         self.scenario = scenario
         self.state_init = planning_problem.initial_state
-        self.goal = planning_problem.initial_state
+        self.goal = planning_problem.goal
         self.route = route
 
 
@@ -314,7 +314,7 @@ class IntersectionPlanner():
         return tmp_state, s
 
     def conf_agent_checker(self, dict_lanelet_conf_points, T):
-        '''  找直接冲突点 conf_lanelets中最靠近冲突点的车，为冲突车辆
+        """  找直接冲突点 conf_lanelets中最靠近冲突点的车，为冲突车辆
         params:
             dict_lanelet_conf_points: 字典。直接冲突点的lanelet_id->冲突点位置
             T: 仿真时间步长
@@ -322,7 +322,7 @@ class IntersectionPlanner():
             [!!!若该lanelet上没有障碍物，则没有这个lanelet的key。]
             字典dict_lanelet_agent: lanelet-> obstacle_id。可以通过scenario.obstacle_by_id(obstacle_id)获得该障碍物。
            [option] 非必要字典dict_lanelet_d: lanelet - > distance。障碍物到达冲突点的距离。负数说明过了冲突点一定距离
-        '''
+        """
         scenario = self.scenario
         lanelet_network = scenario.lanelet_network
         conf_lanelet_ids = list(dict_lanelet_conf_points.keys())  # 所有冲突lanelet列表
@@ -451,8 +451,8 @@ class IntersectionPlanner():
 
 if __name__ == '__main__':
     #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-    # path_scenario_download = os.path.abspath('/home/zxc/Downloads/commonroad-scenarios/scenarios/hand-crafted')
-    path_scenario_download = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
+    path_scenario_download = os.path.abspath('/home/zxc/Downloads/commonroad-scenarios/scenarios/hand-crafted')
+    # path_scenario_download = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
     # 文件名
     id_scenario = 'ZAM_Tjunction-1_282_T-1'
 
