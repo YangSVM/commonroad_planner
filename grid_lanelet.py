@@ -1,5 +1,4 @@
 # -*- coding: UTF-8 -*-
-from typing import Mapping
 from commonroad.common.file_reader import CommonRoadFileReader
 from commonroad.scenario.obstacle import Obstacle
 from commonroad.scenario.scenario import Scenario
@@ -129,12 +128,12 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network, scenario, T):
     
 #     return state
 
-def get_map_info(planning_problem, grid, lanelet00_cv_info, lanelet_id_matrix):
+def get_map_info(planning_problem, grid, lanelet00_cv_info, lanelet_id_matrix, lanelet_network):
     map  = []
     n_lane = grid.shape[0]
     map.append(n_lane)
     goal_pos  = planning_problem.goal.state_list[0].position.center
-
+    
     lanelet_id_goal = lanelet_network.find_lanelet_by_position([goal_pos])[0]
     lane_pos_ = np.where(lanelet_id_matrix==lanelet_id_goal)[0]
     if len(lane_pos_)==0:
@@ -225,13 +224,14 @@ if __name__=='__main__':
     lanelet00_cv_info = detail_cv(lanelet_network.find_lanelet_by_id(lanelet_id_matrix[0, 0]).center_vertices)
     lane_ego_n_array, _ = np.where(grid == 1)
 
-    map = get_map_info(planning_problem, grid, lanelet00_cv_info, lanelet_id_matrix)
+    map = get_map_info(planning_problem, grid, lanelet00_cv_info, lanelet_id_matrix, lanelet_network)
     if len(lane_ego_n_array)>0:
         lane_ego_n = lane_ego_n_array[0]
     else:
         print('ego_lane not found. out of lanelet')
         lane_ego_n = -1
     state = [lane_ego_n, ego_d, v_ego]
+    
 
 
     # 决策初始时刻目前无法给出，需要串起来后继续[TODO]
