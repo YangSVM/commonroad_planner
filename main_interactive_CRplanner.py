@@ -58,7 +58,7 @@ if __name__ == '__main__':
     scenario, planning_problem_set = CommonRoadFileReader(scenario_file).open()
     planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
 
-    # generate a global lanelet route
+    # generate a global lanelet route from initial position to goal region
     route = route_planner(scenario, planning_problem)
     lanelet_route = route.list_ids_lanelets
     add_successor = scenario.lanelet_network.find_lanelet_by_id(lanelet_route[-1]).successor
@@ -87,12 +87,15 @@ if __name__ == '__main__':
     planner.check_state()
 
     # send to sub planner according to current lanelet state
-    # if planner.lanelet_state == 1:
-    #
-    #     # === insert straight-going planner here
-    #
-    #     # === end of straight-going planner
-    #
-    # elif planner.lanelet_state == 2 or planner.lanelet_state == 3:
-    ip = IntersectionPlanner(current_scenario, planning_problem, lanelet_route)
-    next_state = ip.planner()
+    if planner.lanelet_state == 1:
+
+        # === insert straight-going planner here
+        next_state = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
+        # === end of straight-going planner
+
+    elif planner.lanelet_state == 2 or planner.lanelet_state == 3:
+
+        # === insert intersection planner here
+        ip = IntersectionPlanner(current_scenario, planning_problem, lanelet_route, ego_vehicle)
+        next_state = ip.planner()
+        # === end of intersection planner
