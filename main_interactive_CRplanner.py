@@ -8,6 +8,7 @@ from simulation.simulations import load_sumo_configuration
 from sumocr.maps.sumo_scenario import ScenarioWrapper
 from sumocr.interface.sumo_simulation import SumoSimulation
 from intersection_planner import IntersectionPlanner
+import pickle
 
 
 class InteractiveCRPlanner:
@@ -50,7 +51,7 @@ class InteractiveCRPlanner:
 if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive/')
-    name_scenario = "DEU_Frankfurt-7_3_I-1"
+    name_scenario = "DEU_Frankfurt-7_11_I-1"
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
@@ -79,6 +80,16 @@ if __name__ == '__main__':
     current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
     ego_vehicles = sumo_sim.ego_vehicles
     ego_vehicle = list(ego_vehicles.values())[0]
+
+    # save variables for debugging
+    # f = open('variables.pkl', 'wb')
+    # pickle.dump([current_scenario, planning_problem, lanelet_route, ego_vehicle], f)
+    # f.close()
+
+    # get variables for bugging
+    # f = open('store.pkl', 'rb')
+    # obj = pickle.load(f)
+    # f.close()
 
     # generate a CR planner
     planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
