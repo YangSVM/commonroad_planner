@@ -1,15 +1,16 @@
 # this main function as the body of the interactive planner
 # it takes the current state of the CR scenario
 # and outputs the next state of the ego vehicle
-import os
+import os, sys
 from commonroad.common.file_reader import CommonRoadFileReader
-from route_planner import route_planner
+sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios/')
 from simulation.simulations import load_sumo_configuration
 from sumocr.maps.sumo_scenario import ScenarioWrapper
 from sumocr.interface.sumo_simulation import SumoSimulation
 from intersection_planner import IntersectionPlanner
 import pickle
-
+from route_planner import route_planner
+from MCTs_CRv3 import MCTs_CRv3
 
 class InteractiveCRPlanner:
     lanelet_ego = None
@@ -50,7 +51,7 @@ class InteractiveCRPlanner:
 
 if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive/')
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
     name_scenario = "DEU_Frankfurt-7_11_I-1"
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
@@ -75,7 +76,7 @@ if __name__ == '__main__':
     sumo_sim = SumoSimulation()
     # initialize simulation
     sumo_sim.initialize(conf, scenario_wrapper, None)
-    sumo_sim.simulate_step()
+    # sumo_sim.simulate_step()
 
     current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
     ego_vehicles = sumo_sim.ego_vehicles
@@ -101,7 +102,8 @@ if __name__ == '__main__':
     if planner.lanelet_state == 1:
 
         # === insert straight-going planner here
-        next_state = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
+        mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
+        next_state  =mcts_planner.planner()
         # === end of straight-going planner
 
     elif planner.lanelet_state == 2 or planner.lanelet_state == 3:
