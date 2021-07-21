@@ -83,7 +83,8 @@ if __name__ == '__main__':
 
     # save variables for debugging
     # f = open('variables.pkl', 'wb')
-    # pickle.dump([current_scenario, planning_problem, lanelet_route, ego_vehicle], f)
+    # pickle.dump([current_scenario, planning_problem,
+    # lanelet_route, ego_vehicle], f)
     # f.close()
 
     # get variables for bugging
