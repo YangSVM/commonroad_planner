@@ -137,13 +137,20 @@ class IntersectionInfo():
 
 
 class IntersectionPlanner():
+<<<<<<< HEAD
     def __init__(self, scenario, route, ego_vehicle) -> None:
+=======
+    def __init__(self, scenario, planning_problem, route, ego_vehicle) -> None:
+>>>>>>> origin/master
         self.scenario = scenario
         self.state_init = ego_vehicle.current_state
         # self.goal = planning_problem.goal
         self.route = route
         self.ego_vehicle = ego_vehicle
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/master
 
     def planner(self):
         '''轨迹规划器。返回轨迹

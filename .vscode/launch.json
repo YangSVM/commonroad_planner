@@ -9,7 +9,12 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env":{
+                "PYTHONPATH": "/home/thicv/codes/commonroad/commonroad-interactive-scenarios/simulation",
+                
+            },
+            "justMyCode": false,
         }
     ]
 }

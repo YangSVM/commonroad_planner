@@ -14,65 +14,131 @@ from grid_lanelet import get_map_info
 from grid_lanelet import edit_scenario4test
 from MCTs_v3 import NaughtsAndCrossesState
 from MCTs_v3 import mcts
+from grid_lanelet import get_frenet_orgin_lanelet
+from grid_lanelet import generate_len_map
 
-if __name__=='__main__':
-    # -------------- 固定写法。从common road中读取场景 -----------------
-    #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-    path_scenario_download = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/NGSIM/US101')
-    # 文件名
-    id_scenario = 'USA_US101-16_1_T-1'
-    path_scenario =os.path.join(path_scenario_download, id_scenario + '.xml')    
-    scenario, planning_problem_set = CommonRoadFileReader(path_scenario).open()
-    planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
-    # -------------- 读取结束 -----------------
-    # 原有场景车辆太多。删除部分车辆
-    ego_pos_init = planning_problem.initial_state.position
-    # 提取自车初始状态
-    # scenario = edit_scenario4test(scenario, ego_pos_init)
-    # ---------------可视化修改后的场景 ------------------------------
-    # plt.figure(figsize=(25, 10))
-    # # 画一小段展示一下
-    # for  i in range(10):
-    #     plt.clf()
-    #     draw_parameters = {
-    #         'time_begin':i, 
-    #         'scenario':
-    #         { 'dynamic_obstacle': { 'show_label': True, },
-    #             'lanelet_network':{'lanelet':{'show_label': False,  },} ,
-    #         },
-    #     }
-    #     draw_object(scenario, draw_params=draw_parameters)
-    #     draw_object(planning_problem_set)
-    #     plt.gca().set_aspect('equal')
-    #     plt.pause(0.001)
-    #     # plt.show()
-    # plt.close()
-    # ---------------可视化 end ------------------------------
-    # 提供初始状态。位于哪个lanelet，距离lanelet 末端位置
-    lanelet_network  = scenario.lanelet_network
-    lanelet_id_matrix  = lanelet_network2grid(lanelet_network)
-    print('lanelet_id_matrix: ', lanelet_id_matrix)
-    # 在每次规划过程中，可能需要反复调用这个函数得到目前车辆所在的lanelet，以及相对距离
-    T = 50           # 5*0.1=0.5.返回0.5s时周车的状态。注意下面函数返回的自车状态仍然是初始时刻的。
-    grid, ego_d, obstacles =ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, T)
-    # print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
-    v_ego = planning_problem.initial_state.velocity
-    lanelet00_cv_info = detail_cv(lanelet_network.find_lanelet_by_id(lanelet_id_matrix[0, 0]).center_vertices)
-    lane_ego_n_array, _ = np.where(grid == 1)
-    map = get_map_info(planning_problem, grid, lanelet00_cv_info, lanelet_id_matrix, lanelet_network)
-    if len(lane_ego_n_array)>0:
-        lane_ego_n = lane_ego_n_array[0]
-    else:
-        print('ego_lane not found. out of lanelet')
-        lane_ego_n = -1
-    state = [lane_ego_n, ego_d, v_ego]
-    # 决策初始时刻目前无法给出，需要串起来后继续[TODO]
-    T= 0        
-    print('自车初始状态矩阵', state)
-    print('地图信息', map)
-    print('他车矩阵', obstacles)
+class MCTs_CRv3():
+    def __init__(self, scenario, planning_problem, lanelet_route, ego_vehicle):
+        self.scenario = scenario
+        self.planning_problem = planning_problem
+        self.lanelet_route = lanelet_route
+        self.ego_vehicle = ego_vehicle
 
-    initialState = NaughtsAndCrossesState(state,map,obstacles)
-    searcher = mcts(iterationLimit=5000) #改变循环次数或者时间
-    action = searcher.search(initialState=initialState) #一整个类都是其状态
-    #print(action.act)
+    def cut_lanelet_route(self, ego_state):
+        '''cut the straghtway of the scenario
+        return:
+            start_lanelet
+            end_lanelet            
+        '''
+        ln = self.scenario.lanelet_network
+        # find current lanelet
+        lanelet_id_ego = ln.find_lanelet_by_position([ego_state.position])[0][0]
+        lanelet_ego = ln.find_lanelet_by_id(lanelet_id_ego)
+    
+        # find the closeset lanelet in self.lanelet_route
+
+        lanelets_id_adj = []           # 与lanelet_ego左右相邻的车道的ID
+        
+        tmp_lanelet = lanelet_ego
+        while tmp_lanelet.adj_left is not None:
+            if tmp_lanelet.adj_left_same_direction:
+                tmp_lanelet_id = tmp_lanelet.adj_left
+                lanelets_id_adj.append(tmp_lanelet_id)
+                tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)       
+
+        tmp_lanelet = lanelet_ego
+        while tmp_lanelet.adj_right is not None:
+            if tmp_lanelet.adj_right_same_direction:
+                tmp_lanelet_id = tmp_lanelet.adj_right
+                lanelets_id_adj.append(tmp_lanelet_id)
+                tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)       
+        
+        start_lanelet_id = None
+
+        if lanelet_id_ego in self.lanelet_route:
+            start_lanelet_id = lanelet_id_ego
+        else:
+            for lanelet_id_adj in lanelets_id_adj:
+                if lanelet_id_adj in self.lanelet_route:
+                    start_lanelet_id = lanelet_id_adj
+                            
+        # cannot cut the lanelet route
+        assert start_lanelet_id is not None
+        start_route_id = self.lanelet_route.index(start_lanelet_id)
+
+        # search for the end lanetlet_id
+        end_lanelet_id = None
+        is_meet_intersection = False
+        for i_route in range(start_route_id, len(self.lanelet_route)):
+            tmp_lanelet_id_route = self.lanelet_route[i_route]
+            # check if it is in incoming
+            for idx_inter, intersection in enumerate(ln.intersections):
+                incomings = intersection.incomings
+
+                for idx_inc, incoming in enumerate(incomings):
+                    incoming_lanelets = list(incoming.incoming_lanelets)
+                    in_intersection_lanelets = list(incoming.successors_straight)
+                    if tmp_lanelet_id_route in incoming_lanelets or tmp_lanelet_id_route in in_intersection_lanelets:
+                        end_lanelet_id = tmp_lanelet_id_route
+                        is_meet_intersection = True
+                        break
+                if is_meet_intersection:
+                    break
+            if is_meet_intersection:
+                break
+        if not is_meet_intersection:
+            end_lanelet_id = self.lanelet_route[-1]
+        end_route_id = self.lanelet_route.index(end_lanelet_id)
+        return start_route_id, end_route_id, not is_meet_intersection
+
+    def planner(self, T):
+        planning_problem  = self.planning_problem
+        scenario =self.scenario
+        ego_vehicle = self.ego_vehicle
+        start_route_id, end_route_id, is_goal = self.cut_lanelet_route(ego_vehicle.current_state)
+
+        # 原有场景车辆太多。删除部分车辆
+        # ego_pos = planning_problem.initial_state.position
+        ego_pos = self.ego_vehicle.current_state.position
+        # 提供初始状态。位于哪个lanelet，距离lanelet 末端位置
+        lanelet_network  = scenario.lanelet_network
+        lanelet_id_matrix  = lanelet_network2grid(lanelet_network, self.lanelet_route[start_route_id:end_route_id+1])
+        print('lanelet_id_matrix: ', lanelet_id_matrix)
+        
+        # 在每次规划过程中，可能需要反复调用这个函数得到目前车辆所在的lanelet，以及相对距离
+
+        lane_ego_n_array, ego_d, obstacles =ego_pos2tree(ego_pos, lanelet_id_matrix, lanelet_network, scenario, T)
+        # print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
+
+
+        lanelet00_id = get_frenet_orgin_lanelet(lanelet_id_matrix)
+
+        if is_goal:
+            goal_pos  = planning_problem.goal.state_list[0].position.shapes[0].center
+        else:
+            end_lanelet = lanelet_network.find_lanelet_by_id( self.lanelet_route[end_route_id])
+            goal_pos = end_lanelet.center_vertices[-1, :]
+
+        map = get_map_info(goal_pos, lanelet00_id, lanelet_id_matrix, lanelet_network, is_interactive=True)
+        if len(lane_ego_n_array)>0:
+            lane_ego_n = lane_ego_n_array[0]
+        else:
+            print('ego_lane not found. out of lanelet')
+            lane_ego_n = -1
+        v_ego = ego_vehicle.current_state.velocity
+        state = [lane_ego_n, ego_d, v_ego]
+
+        # 获取可行地图信息
+        map_info = generate_len_map(scenario, lanelet_id_matrix)
+        print('决策初始时刻 T： ', T) 
+        print('自车初始状态矩阵', state)
+        print('地图信息', map)
+        print('他车矩阵', obstacles)
+        print('可用道路信息列表：', map_info)
+
+        initialState = NaughtsAndCrossesState(state,map,obstacles)
+        searcher = mcts(iterationLimit=5000) #改变循环次数或者时间
+        action = searcher.search(initialState=initialState) #一整个类都是其状态
+        print(action.act)
+        
+        return action.act

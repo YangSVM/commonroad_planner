@@ -3,6 +3,7 @@ from commonroad.common.file_reader import CommonRoadFileReader
 from commonroad.scenario.obstacle import Obstacle
 from commonroad.scenario.scenario import Scenario
 from commonroad.visualization.draw_dispatch_cr import draw_object
+from commonroad.scenario.lanelet import LaneletNetwork
 import os
 
 from numpy.lib.function_base import gradient
@@ -13,71 +14,132 @@ from intersection_planner import distance_lanelet
 import numpy as np
 import matplotlib.pyplot as plt
 
+def find_adj_lanelets(ln:LaneletNetwork, lanelet_id, include_ego=True):
+    '''find the adjecent lanelets given a lanelet id
+    return:
+        返回按
+    '''
+    lanelets_id_adj_left = []           # 与lanelet_ego左右相邻的车道的ID
+    lanelets_id_adj_right = []           # 与lanelet_ego左右相邻的车道的ID
+    n_left = 0
+    n_right = 0
+    tmp_lanelet_id = lanelet_id
+    tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)
+    while tmp_lanelet.adj_left is not None:
+        if tmp_lanelet.adj_left_same_direction:
+            n_left += 1
+            tmp_lanelet_id = tmp_lanelet.adj_left
+            lanelets_id_adj_left.append(tmp_lanelet_id)
+            tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)       
 
-def lanelet_network2grid(lanelet_network):
+    tmp_lanelet_id = lanelet_id
+    tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)
+    while tmp_lanelet.adj_right is not None:
+        if tmp_lanelet.adj_right_same_direction:
+            n_right += 1
+            tmp_lanelet_id = tmp_lanelet.adj_right
+            lanelets_id_adj_right.append(tmp_lanelet_id)
+            tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)     
+    if include_ego:
+        lanelets_id_adj = lanelets_id_adj_left[::-1] + [lanelet_id] + lanelets_id_adj_right
+    else:
+        lanelets_id_adj =  lanelets_id_adj_left[::-1] + lanelets_id_adj_right
+    return lanelets_id_adj, n_left, n_right
+
+def lanelet_network2grid(ln : LaneletNetwork, route):
     '''明阳需求。将lanelet_network转成网格地图。v1仅适用于矩形直道场景。并道太复杂，暂不考虑。
-    param: lanelet_network: commonroad lanelet_network
+    param: 
+        ln: commonroad lanelet_network
+        route: lanelet_id list.
     return: grid: m(车道数)*n(纵向lanelet数目)矩阵. 值域 [0,1,-1]。-1不可通行，0可通行，1自车所在lanelet。
     return: lanelet_id： 对应的车道的lanelet_id
     '''
-    lanelet_id = []
-    # lanelet00. 左上角的lanelet
-    lanelet00 = lanelet_network.lanelets[0]
-    while len(lanelet00.predecessor) > 0:
-        lanelet00_id = lanelet00.predecessor[0]
-        lanelet00 = lanelet_network.find_lanelet_by_id(lanelet00_id)
+    # 
+    # left_n_max = 0
+    # right_n_max = 0
+    end_lanelets, _, _ = find_adj_lanelets(ln, route[-1])
 
-    while lanelet00.adj_left is not None:
-        if lanelet00.adj_left_same_direction:
-            lanelet00_id = lanelet00.adj_left
-            lanelet00 = lanelet_network.find_lanelet_by_id(lanelet00_id)
+    adj_route =[]
+    # adj_route可能存在重復元素
+    for route_lanelet in route:
+        adj_route_, _, _ = find_adj_lanelets(ln, route_lanelet)
+        adj_route += adj_route_
 
-            # 外循环，遍历所有车道数目（相邻车道）
-    current_lanelet_id = lanelet00.lanelet_id
-    while current_lanelet_id is not None:
-        current_lanelet = lanelet_network.find_lanelet_by_id(current_lanelet_id)
-        tmp_lanelet = current_lanelet
-        lanelet_id_row = []
-        lanelet_id_row.append(tmp_lanelet.lanelet_id)
-
-        # 内循环。遍历子节点
-        while len(tmp_lanelet.successor) > 0:
-            tmp_lanelet_id = tmp_lanelet.successor[0]
-            tmp_lanelet = lanelet_network.find_lanelet_by_id(tmp_lanelet_id)
-            lanelet_id_row.append(tmp_lanelet.tmp_lanelet_id)
-        lanelet_id.append(lanelet_id_row)
-
-        # 外循环。遍历右节点
-        if current_lanelet.adj_right_same_direction:
-            current_lanelet_id = current_lanelet.adj_right
-        else:
+    straight_route_id = []
+    current_lanelet_id = route[0]
+    current_lanelet  =ln.find_lanelet_by_id(route[0])
+    straight_route_id.append(current_lanelet_id)
+    _, left_n_max, right_n_max = find_adj_lanelets(ln, route[0])
+    while current_lanelet.successor is not None:
+        if current_lanelet_id in end_lanelets:
             break
+        current_lanelets_id = current_lanelet.successor
 
-    # 转为numpy矩阵
-    lanelet_id = np.array(lanelet_id, dtype=int)
+        assert isinstance(current_lanelets_id, list) 
+        # 如果有分叉口。按照route選擇
+        is_next = False
+        for tmp_lanelet_id in current_lanelets_id:
 
-    return lanelet_id
+            if tmp_lanelet_id in adj_route:
+                current_lanelet_id = tmp_lanelet_id
+                is_next = True
+                break
+        if not is_next:
+            print('error. cannot found the next lanelet')
+        assert is_next
+        current_lanelet = ln.find_lanelet_by_id(current_lanelet_id)
+        straight_route_id.append(current_lanelet_id)
 
+        _, left_n, right_n = find_adj_lanelets(ln, current_lanelet_id)
+        if left_n>left_n_max:
+            left_n_max = left_n
+        if right_n>right_n_max:
+            right_n_max = right_n
+        
+    #根据n_left_max, n_right_max 建立list
+    n_lane = left_n_max+ right_n_max +1
+    lanelet_id_matrix = -1 * np.ones([n_lane, len(straight_route_id)], dtype=int) 
+    for i_route, lanelet_id in enumerate(straight_route_id):
+        adj_lanelets, n_l, n_r = find_adj_lanelets(ln, lanelet_id)
+        lanelet_id_matrix[i_route, left_n_max- n_l : left_n_max + n_r +1] = adj_lanelets
+        
+    return lanelet_id_matrix
 
-def ego_pos2tree(ego_pos, lanelet_id_matrix, lanelet_network, scenario, T):
+def zxc_calculate_lanelet(ln, lanelet_id):
+    list = []
+    return list
+
+def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, scenario, T):
     '''通过自车位置，标记对应的1。并且返回自车位置相对于左上角lanelet的中心线的frenet坐标系的距离。
-    param: ego_pos:车辆位置.[x,y]
-    param: lanelet_ids:lanelet网格矩阵。每个位置为对应的lanelet_id.
-    param: lanlet_network. common-road lanelet_network
-    param: T: 仿真步长。乘以0.1即为时间。
-    return: grid_ego_matrix: 与lanelet_ids维度相同的矩阵。自车在的位置为1，其余为0
-    return: ego_s: 自车位置相对于左上角lanelet的中心线的frenet坐标系的沿中心线方向距离
-    return: obstacle_states: 他车状态矩阵。[m(车道数), 2]矩阵. 表示每条道路上车的状态，每条道路上最多一辆车。如果该车道上没有车，则是[-1,-1]
-        如果有车，则是[s, v]。s表示frenet坐标系(s-d)坐标值.v是他车沿车方向速度。
+    param: 
+        ego_pos:车辆位置.[x,y]
+        lanelet_id_matrix: lanelet网格矩阵。每个位置为对应的lanelet_id.
+        lanlet_network. common-road lanelet_network
+        T: 仿真步长。乘以0.1即为时间。
+
+    return: 
+        lane_ego_index: 自车在第几条车道上
+        ego_s: 自车位置相对于 lanelet00 的中心线的frenet坐标系的沿中心线方向距离
+        obstacle_states: 他车状态矩阵。[m(车道数), 2]矩阵. 表示每条道路上车的状态，每条道路上最多一辆车。如果该车道上没有车，则是[-1,-1]
+            如果有车，则是[s, v]。s表示frenet坐标系(s-d)坐标值.v是他车沿车方向速度。
 
     '''
     grid_ego_matrix = np.zeros(lanelet_id_matrix.shape)
+    lane_ego_index = -1
     lanelet_id = lanelet_network.find_lanelet_by_position([ego_pos])[0]
     for lanelet_id_i in lanelet_id:
-        index = np.where(lanelet_id_matrix == lanelet_id_i)
-        grid_ego_matrix[index] = 1
-    # 取lanelet_ids中左上角的中心线为frenet坐标系参考线，返回自车当前的s
-    lanelet00 = lanelet_network.find_lanelet_by_id(lanelet_id_matrix[0, 0])
+        i, j = np.where(lanelet_id_matrix == lanelet_id_i)
+        grid_ego_matrix[i, j] =1
+        lane_ego_index = i
+    assert lane_ego_index != -1
+
+
+
+    lanelet00id = get_frenet_orgin_lanelet(lanelet_id_matrix)
+
+
+
+    lanelet00 = lanelet_network.find_lanelet_by_id(lanelet00id)
     center_vertices = lanelet00.center_vertices
     cv, _, s_cv = detail_cv(center_vertices)
     # 找最近点
@@ -95,9 +157,9 @@ def ego_pos2tree(ego_pos, lanelet_id_matrix, lanelet_network, scenario, T):
         if state is None:
             print('obstacle dead.')
             continue
-        lanelet_id = lanelet_network.find_lanelet_by_position([state.position])[0]
-        lane_lat_n_ = np.where(lanelet_id_matrix == lanelet_id)
-        if len(lane_lat_n_) == 0:
+        lanelet_id = lanelet_network.find_lanelet_by_position([state.position])[0][0]
+        lane_lat_n_ = np.where(lanelet_id_matrix==lanelet_id)
+        if len(lane_lat_n_[0])==0:
             print('info: obstacle ', obstacle.obstacle_id, ' not in lanelet_id_matix ')
             continue
         else:
@@ -109,7 +171,7 @@ def ego_pos2tree(ego_pos, lanelet_id_matrix, lanelet_network, scenario, T):
 
     obstacle_states_in = obstacle_states[obstacle_states[:, 0] != -1, :]
 
-    return grid_ego_matrix, ego_s, obstacle_states_in
+    return lane_ego_index, ego_s, obstacle_states_in
 
 
 # def get_ego_init_state(init_state, grid_ego_matrix):
@@ -125,24 +187,44 @@ def ego_pos2tree(ego_pos, lanelet_id_matrix, lanelet_network, scenario, T):
 
 #     return state
 
-def get_map_info(planning_problem, grid, lanelet00_cv_info, lanelet_id_matrix, lanelet_network):
-    map = []
-    n_lane = grid.shape[0]
-    map.append(n_lane)
-    goal_pos = planning_problem.goal.state_list[0].position.center
+def get_map_info(goal_pos,  lanelet00_id, lanelet_id_matrix, lanelet_network, is_interactive=False):
+    '''
 
-    lanelet_id_goal = lanelet_network.find_lanelet_by_position([goal_pos])[0]
-    lane_pos_ = np.where(lanelet_id_matrix == lanelet_id_goal)[0]
-    if len(lane_pos_) == 0:
-        print('error cannot found goal lanelet position')
+    return:
+        map	地图信息，表达决策任务	1x3矩阵：[总车道数，目标车道编号，目标位置]（注：最左侧车道为0号）
+    '''
+    map  = []
+    n_lane = lanelet_id_matrix.shape[0]
+    
+    lanelet_id_goal = lanelet_network.find_lanelet_by_position([goal_pos])[0][0]
+    lane_pos_ = np.where(lanelet_id_matrix==lanelet_id_goal)[0]
+    if len(lane_pos_)==0:
+        print('error. cannot found goal lanelet position')
     else:
         lane_pos = lane_pos_[0]
-    map.append(lane_pos)
-    cv, _, s_cv = lanelet00_cv_info
-    goal_s = distance_lanelet(cv, s_cv, [cv[0][0], cv[1][0]], goal_pos)
-    map.append(goal_s)
 
+    cv, _,  s_cv = detail_cv(lanelet_network.find_lanelet_by_id(lanelet00_id).center_vertices)
+
+    goal_s = distance_lanelet(cv, s_cv, [cv[0][0], cv[1][0]],goal_pos)
+
+    map = [n_lane, lane_pos, goal_s]
     return map
+
+
+def get_frenet_orgin_lanelet(lanelet_id_matrix):
+    '''
+    Return:
+        lanelet id.
+    '''
+        # 取lanelet_id_matrix中第一列中第一个可行的 lanelet 的中心线为frenet坐标系参考线
+    lanelet00id = -1
+    for i in range(lanelet_id_matrix.shape[1]):
+        if lanelet_id_matrix[0, i] !=-1:
+            lanelet00id =  lanelet_id_matrix[0, i]
+            break
+    # laneletid第一列不应该全都不可行
+    assert lanelet00id != -1
+    return lanelet00id
 
 
 def edit_scenario4test(scenario, ego_init_pos):
@@ -272,8 +354,9 @@ if __name__ == '__main__':
     lanelet00_cv_info = detail_cv(lanelet_network.find_lanelet_by_id(lanelet_id_matrix[0, 0]).center_vertices)
     lane_ego_n_array, _ = np.where(grid == 1)
 
-    map = get_map_info(planning_problem, grid, lanelet00_cv_info, lanelet_id_matrix, lanelet_network)
-    if len(lane_ego_n_array) > 0:
+    goal_pos  =  planning_problem.goal.state_list[0].position.shapes[0].center
+    map = get_map_info(goal_pos, grid, lanelet00_cv_info, lanelet_id_matrix, lanelet_network)
+    if len(lane_ego_n_array)>0:
         lane_ego_n = lane_ego_n_array[0]
     else:
         print('ego_lane not found. out of lanelet')
