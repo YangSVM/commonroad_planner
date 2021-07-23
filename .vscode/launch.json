@@ -11,8 +11,10 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "env":{
-                "PYTHONPATH": "/home/thicv/codes/commonroad/commonroad-interactive-scenarios/simulation"
-            }
+                "PYTHONPATH": "/home/thicv/codes/commonroad/commonroad-interactive-scenarios/simulation",
+                
+            },
+            "justMyCode": false,
         }
     ]
 }

@@ -28,7 +28,7 @@ class InteractiveCRPlanner:
 
         ln = self.scenario.lanelet_network
         # find current lanelet
-        self.lanelet_ego = ln.find_lanelet_by_position([self.ego_state.position])
+        self.lanelet_ego = ln.find_lanelet_by_position([self.ego_state.position])[0][0]
 
         for idx_inter, intersection in enumerate(ln.intersections):
             incomings = intersection.incomings
@@ -89,22 +89,22 @@ if __name__ == '__main__':
     # f.close()
 
     # get variables for bugging
-    # f = open('store.pkl', 'rb')
-    # obj = pickle.load(f)
-    # f.close()
+    f = open('variables.pkl', 'rb')
+    current_scenario, planning_problem, lanelet_route, ego_vehicle = pickle.load(f)
+    f.close()
 
     # generate a CR planner
     planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
 
     # check state 1:straight-going /2:incoming /3:in-intersection
     planner.check_state()
-
+    planner.lanelet_state = 1           # use for test the mcts_crv3
     # send to sub planner according to current lanelet state
     if planner.lanelet_state == 1:
 
         # === insert straight-going planner here
         mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
-        next_state  =mcts_planner.planner()
+        next_state  =mcts_planner.planner(sumo_sim.current_time_step)
         # === end of straight-going planner
 
     elif planner.lanelet_state == 2 or planner.lanelet_state == 3:
