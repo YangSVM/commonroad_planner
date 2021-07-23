@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
     # check state 1:straight-going /2:incoming /3:in-intersection
     planner.check_state()
-    planner.lanelet_state = 1           # use for test the mcts_crv3
+    # planner.lanelet_state = 1           # use for test the mcts_crv3
     # send to sub planner according to current lanelet state
     if planner.lanelet_state == 1:
 

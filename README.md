@@ -27,5 +27,3 @@ pip install
 ```
 -  下载比赛包地址
 https://nextcloud.in.tum.de/index.php/s/9Lzy6a3a3P7gHzT
--  ``
-- bash 
