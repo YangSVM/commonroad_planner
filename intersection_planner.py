@@ -18,9 +18,7 @@ from commonroad.scenario.trajectory import Trajectory, State
 from commonroad.prediction.prediction import TrajectoryPrediction
 from vehiclemodels import parameters_vehicle3
 from commonroad.visualization.mp_renderer import MPRenderer
-# from simulation.simulations import load_sumo_configuration
-# from sumocr.maps.sumo_scenario import ScenarioWrapper
-# from sumocr.interface.sumo_simulation import SumoSimulation
+
 
 '''
 缺少要素：
@@ -137,20 +135,12 @@ class IntersectionInfo():
 
 
 class IntersectionPlanner():
-<<<<<<< HEAD
     def __init__(self, scenario, route, ego_vehicle) -> None:
-=======
-    def __init__(self, scenario, planning_problem, route, ego_vehicle) -> None:
->>>>>>> origin/master
         self.scenario = scenario
         self.state_init = ego_vehicle.current_state
         # self.goal = planning_problem.goal
         self.route = route
         self.ego_vehicle = ego_vehicle
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/master
 
     def planner(self):
         '''轨迹规划器。返回轨迹
@@ -522,8 +512,10 @@ if __name__ == '__main__':
     # ego_vehicles = sumo_sim.ego_vehicles
     # ego_vehicle = list(ego_vehicles.values())[0]
     #
-    # ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle)
-    # next_state, ego_vehicle = ip.planner()
+    # # generate a CR planner
+    # main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
+    #
+    # next_state = main_planner.planning(current_scenario, planning_problem, ego_vehicle)
     # # ======== end of setting for interactive scenarios
 
 
@@ -555,3 +547,4 @@ if __name__ == '__main__':
     #     planning_problem_set.draw(rnd)
     #     rnd.render()
     #     plt.pause(0.01)
+
