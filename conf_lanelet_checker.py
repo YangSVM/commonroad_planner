@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 
 class Conf_Lanelet:
-    '''冲突lanelet类
+    '''冲突lanelet类a
         id: 路口内的冲突lanelet的id列表
         conf_point: 对应的冲突点位置 列表
     '''
@@ -43,8 +43,8 @@ def conf_lanelet_checker(ln, incoming_lanelet_id: int, direction: int):
 
             for n, incoming in enumerate(incomings):
 
-                laneletid = list(incoming.incoming_lanelets)
-                if incoming_lanelet_id == laneletid[0]:  # 检查主车所在lanelet对应的incoming id
+                laneletidlist = setToArray(incoming.incoming_lanelets)
+                if np.isin(incoming_lanelet_id, laneletidlist):  # 检查主车所在lanelet对应的incoming id
                     idx_incoming = n  # 保存主车所在的incoming lanelet的序号
 
                     # 记录主车即将进入的路口内的lanelet
@@ -174,6 +174,16 @@ def potential_conf_lanelet_checkerv2(lanelet_network, cl_info):
 
     return dict_parent_lanelet
 
+
+def setToArray(setInput):
+    arrayOutput = np.zeros((len(setInput), 1))
+    index = 0
+    for every in setInput:
+        arrayOutput[index][0] = every
+        index += 1
+    return arrayOutput
+# ————————————————
+# 原文链接：https://blog.csdn.net/qq_41221841/article/details/109613783
 
 
 if __name__ == '__main__':

@@ -8,7 +8,7 @@ import os
 
 from numpy.lib.function_base import gradient
 
-
+from detail_central_vertices import get_lane_feature
 from detail_central_vertices import detail_cv
 from intersection_planner import distance_lanelet
 import numpy as np
@@ -141,15 +141,15 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, s
 
     lanelet00 = lanelet_network.find_lanelet_by_id(lanelet00id)
     center_vertices = lanelet00.center_vertices
-    cv, _,s_cv = detail_cv(center_vertices)
+    cv, _, s_cv = detail_cv(center_vertices)
     # 找最近点
-    ego_s = distance_lanelet(cv, s_cv, center_vertices[0,:],ego_pos)
+    ego_s = distance_lanelet(cv, s_cv, center_vertices[0, :], ego_pos)
 
     shape = lanelet_id_matrix.shape
 
     obstacles = scenario.obstacles
     n_obstacles = len(obstacles)
-    obstacle_states = -1*np.ones((n_obstacles,3))
+    obstacle_states = -1 * np.ones((n_obstacles, 3))
 
     for i_ob in range(n_obstacles):
         obstacle = obstacles[i_ob]
@@ -165,13 +165,11 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, s
         else:
             lane_lat_n = lane_lat_n_[0]
             obstacle_states[i_ob, 0] = lane_lat_n
-        s = distance_lanelet(cv, s_cv, center_vertices[0,:],state.position)
+        s = distance_lanelet(cv, s_cv, center_vertices[0, :], state.position)
         obstacle_states[i_ob, 1] = s
         obstacle_states[i_ob, 2] = state.velocity
 
-
-    obstacle_states_in = obstacle_states[obstacle_states[:,0] != -1, :]
-
+    obstacle_states_in = obstacle_states[obstacle_states[:, 0] != -1, :]
 
     return lane_ego_index, ego_s, obstacle_states_in
 
@@ -186,7 +184,7 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, s
 
 #     '''
 #     state = []
-    
+
 #     return state
 
 def get_map_info(goal_pos,  lanelet00_id, lanelet_id_matrix, lanelet_network, is_interactive=False):
@@ -234,12 +232,12 @@ def edit_scenario4test(scenario, ego_init_pos):
     # scenario.remove_obstacle(obstacle id)
     lanelet_network = scenario.lanelet_network
 
-    lanelet_ids = [14,17,20,23,26]
+    lanelet_ids = [14, 17, 20, 23, 26]
     conf_point = []
     for i in range(len(lanelet_ids)):
         conf_point.append(ego_init_pos)
 
-    obstacle_remain = [252, 254,234,126]
+    obstacle_remain = [252, 254, 234, 126]
     obstacle_remove = []
     for i in range(len(scenario.obstacles)):
         obstacle_id = scenario.obstacles[i].obstacle_id
@@ -250,7 +248,59 @@ def edit_scenario4test(scenario, ego_init_pos):
         scenario.remove_obstacle(scenario.obstacle_by_id(obstalce_id_remove))
     return scenario
 
-if __name__=='__main__':
+
+def generate_len_map(scenario, lanelet_map):
+    """
+
+    :param scenario: CR scenario
+    :param lanelet_map: n by m lanelet id matrix, where n is the number of parallel lanes
+    and m is the number of lanelets along the route, e.g.:
+    [[-1, -1, 453],
+    [-1, -1, 454],
+    [210, 212, 239],
+    [231, 232, 240]]
+    (ps: -1 means unusable lanelet)
+    :return: a list of usable length range in each lane
+    """
+
+    lm = lanelet_map  # lanelet map
+    ln = scenario.lanelet_network
+
+    # calculate length of each parallel lanelet set [m by 1]
+    len_lanelet = np.zeros(3)
+    for m in range(lm.shape[1]):
+        for n in range(lm.shape[0]):
+            if not lm[n, m] == -1:  # find id of a solid lanelet
+                id = lm[n, m]
+                lanelet = ln.find_lanelet_by_id(id)
+                direction, length_temp = get_lane_feature(lanelet.center_vertices)
+                len_lanelet[m] = np.sum(length_temp)
+                break
+    len_points = np.hstack((np.array(0), np.cumsum(len_lanelet)))
+
+    # generate a list of usable length in each lane [n by <=m]
+    len_map_temp = []
+    len_map = []
+    for n in range(lm.shape[0]):
+        for m in range(lm.shape[1]):
+            if not lm[n, m] == -1:
+                solid_len_range = [len_points[m], len_points[m + 1]]
+                len_map_temp.append(solid_len_range)
+        len_map.append(len_map_temp)
+        len_map_temp = []
+
+    #  concatenate adjacent periods [n by <m]
+    for n in range(len(len_map)):
+        for m in range(len(len_map[n]) - 1, 0, -1):
+            if len_map[n][m][0] == len_map[n][m - 1][1]:
+                print(n, m)
+                len_map[n][m - 1][1] = len_map[n][m][1]
+                del len_map[n][m]
+
+    return len_map
+
+
+if __name__ == '__main__':
     # 测试MCTS算法
 
     # -------------- 固定写法。从common road中读取场景 -----------------
@@ -258,7 +308,7 @@ if __name__=='__main__':
     path_scenario_download = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/NGSIM/US101')
     # 文件名
     id_scenario = 'USA_US101-16_1_T-1'
-    path_scenario =os.path.join(path_scenario_download, id_scenario + '.xml')    
+    path_scenario = os.path.join(path_scenario_download, id_scenario + '.xml')
     scenario, planning_problem_set = CommonRoadFileReader(path_scenario).open()
     planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
     # -------------- 读取结束 -----------------
@@ -271,14 +321,14 @@ if __name__=='__main__':
     # ---------------可视化修改后的场景 ------------------------------
     plt.figure(figsize=(25, 10))
     # 画一小段展示一下
-    for  i in range(10):
+    for i in range(10):
         plt.clf()
         draw_parameters = {
-            'time_begin':i, 
+            'time_begin': i,
             'scenario':
-            { 'dynamic_obstacle': { 'show_label': True, },
-                'lanelet_network':{'lanelet':{'show_label': False,  },} ,
-            },
+                {'dynamic_obstacle': {'show_label': True, },
+                 'lanelet_network': {'lanelet': {'show_label': False, }, },
+                 },
         }
 
         draw_object(scenario, draw_params=draw_parameters)
@@ -290,13 +340,13 @@ if __name__=='__main__':
     # ---------------可视化 end ------------------------------
 
     # 提供初始状态。位于哪个lanelet，距离lanelet 末端位置
-    lanelet_network  = scenario.lanelet_network
-    lanelet_id_matrix  = lanelet_network2grid(lanelet_network)
+    lanelet_network = scenario.lanelet_network
+    lanelet_id_matrix = lanelet_network2grid(lanelet_network)
     print('lanelet_id_matrix: ', lanelet_id_matrix)
 
     # 在每次规划过程中，可能需要反复调用这个函数得到目前车辆所在的lanelet，以及相对距离
-    T = 50           # 5*0.1=0.5.返回0.5s时周车的状态。注意下面函数返回的自车状态仍然是初始时刻的。
-    grid, ego_d, obstacles =ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, T)
+    T = 50  # 5*0.1=0.5.返回0.5s时周车的状态。注意下面函数返回的自车状态仍然是初始时刻的。
+    grid, ego_d, obstacles = ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, T)
     # print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
 
     v_ego = planning_problem.initial_state.velocity
@@ -312,15 +362,18 @@ if __name__=='__main__':
         print('ego_lane not found. out of lanelet')
         lane_ego_n = -1
     state = [lane_ego_n, ego_d, v_ego]
-    
-
 
     # 决策初始时刻目前无法给出，需要串起来后继续[TODO]
-    T= 0        
+    T = 0
 
     print('自车初始状态矩阵', state)
     print('地图信息', map)
     print('他车矩阵', obstacles)
 
+    # generate a map of usable range of each lane
+    lanelet_map = np.array([[-1, -1, 453],
+                            [-1, -1, 454],
+                            [210, 212, 239],
+                            [231, 232, 240]])
 
-
+    len_map = generate_len_map(scenario, lanelet_map)
