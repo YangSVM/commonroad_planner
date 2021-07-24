@@ -27,3 +27,6 @@ pip install
 ```
 -  下载比赛包地址
 https://nextcloud.in.tum.de/index.php/s/9Lzy6a3a3P7gHzT
+
+GIT 
+https://www.liaoxuefeng.com/wiki/896043488029600/900004111093344
