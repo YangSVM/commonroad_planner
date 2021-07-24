@@ -2,12 +2,16 @@
 # it takes the current state of the CR scenario
 # and outputs the next state of the ego vehicle
 
+from MCTs_v3 import mcts
 import os
 from commonroad.common.file_reader import CommonRoadFileReader
 from route_planner import route_planner
 
 from intersection_planner import IntersectionPlanner
-# import pickle
+import pickle
+import sys
+sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios')
+from MCTs_CRv3 import MCTs_CRv3
 
 
 class InteractiveCRPlanner:
@@ -64,24 +68,22 @@ class InteractiveCRPlanner:
 
         """body of our planner"""
 
-        # generate a CR planner
-        main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
-
         # generate a global lanelet route from initial position to goal region
-        lanelet_route = main_planner.generate_route(current_scenario, planning_problem)
+        lanelet_route = self.generate_route(current_scenario, planning_problem)
 
         # check state 1:straight-going /2:incoming /3:in-intersection
-        main_planner.check_state()
-        print("current state:", main_planner.lanelet_state)
+        self.check_state()
+        print("current state:", self.lanelet_state)
 
         # send to sub planner according to current lanelet state
-        # if main_planner.lanelet_state == 1:
-        #
-        #     # === insert straight-going planner here
-        #     next_state = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
-        #     # === end of straight-going planner
+        if self.lanelet_state == 1:
+        
+            # === insert straight-going planner here
+            mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
+            next_state = mcts_planner.planner()
+            # === end of straight-going planner
 
-        if main_planner.lanelet_state == 2 or main_planner.lanelet_state == 3:
+        if self.lanelet_state == 2 or self.lanelet_state == 3:
 
             # === insert intersection planner here
             ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle)
@@ -95,8 +97,10 @@ if __name__ == '__main__':
     from simulation.simulations import load_sumo_configuration
     from sumocr.maps.sumo_scenario import ScenarioWrapper
     from sumocr.interface.sumo_simulation import SumoSimulation
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive/')
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive/')
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     name_scenario = "DEU_Frankfurt-4_2_I-1"
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
@@ -115,11 +119,16 @@ if __name__ == '__main__':
 
     # initialize simulation
     sumo_sim.initialize(conf, scenario_wrapper, None)
-    sumo_sim.simulate_step()
+    # sumo_sim.simulate_step()
+
 #
-    current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
-    ego_vehicles = sumo_sim.ego_vehicles
-    ego_vehicle = list(ego_vehicles.values())[0]
+    # current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
+    # ego_vehicles = sumo_sim.ego_vehicles
+    # ego_vehicle = list(ego_vehicles.values())[0]
+
+    f=open('variables.pkl', 'rb')
+    current_scenario,planning_problem, lanelet_route, ego_vehicle  = pickle.load(f)
+    f.close()
 
 # ====== plug in your motion planner here
     # ====== paste in simulations
