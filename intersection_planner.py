@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 from typing import Iterable
 from commonroad.common.file_reader import CommonRoadFileReader
+from commonroad.scenario.lanelet import LaneletNetwork
 from commonroad.visualization.draw_dispatch_cr import draw_object
 
 import os
@@ -32,6 +33,22 @@ from commonroad.visualization.mp_renderer import MPRenderer
     2. 全局lanelet规划器。比如路口在行驶的过程中，如何知道此时应该前行还是右转。
 
 '''
+
+
+def get_route_frenet_line(route, lanelet_network):
+    ''' 获取route lanelt id的对应参考线
+    '''
+    # TODO: 是否存在route是多个左右相邻的并排车道的情况。此时不能将lanelet的中心线直接拼接
+    cv = []
+    for n in range(len(route)):
+        if n == 0:
+            cv = lanelet_network.find_lanelet_by_id(route[n]).center_vertices
+        else:
+            cv_temp = lanelet_network.find_lanelet_by_id(route[n]).center_vertices
+            cv = np.concatenate((cv, cv_temp), axis=0)
+    ref_cv, ref_orientation, ref_s = detail_cv(cv)
+    ref_cv = np.array(ref_cv).T
+    return ref_cv, ref_orientation, ref_s
 
 
 def distance_lanelet(center_line, s, p1, p2):
@@ -99,6 +116,18 @@ def find_reference(s, ref_cv, ref_orientation, ref_cv_len):
     return ref_cv[id,:], ref_orientation[id]
 
 
+def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet_route, T):
+    '''
+    return:
+        front_vehicle: dict. key: pos, vel, distance
+    '''
+    front_vehicle = {}
+    ref_cv, ref_orientation, ref_s = get_route_frenet_line(lanelet_route, ln)
+    lanelet_id_ego = ln.find_lanelet_by_position([ego_pos])[0][0]
+    
+
+    return front_vehicle
+
 class IntersectionInfo():
     ''' 提取交叉路口的冲突信息
     '''
@@ -108,16 +137,16 @@ class IntersectionInfo():
         params:
             cl: Conf_Lanelet类
         '''
-        self.dict_lanelet_conf_point = {}  # 地图信息。与自车轨迹存在直接相交的lanelet。(必定在路口内)
+        self.dict_lanelet_conf_point = {}  # 直接冲突lanelet(与自车轨迹存在直接相交的lanelet,必定在路口内) ->冲突点坐标
         for i in range(len(cl.id)):
             self.dict_lanelet_conf_point[cl.id[i]] = cl.conf_point[i]
 
         self.dict_lanelet_agent = {}  # 场景信息。直接冲突lanelet - > 离冲突点最近的agent
-        self.dict_parent_lanelet = {}  # 地图信息。父节点lanelet -> 子节点列表
-        self.dict_lanelet_potential_agent = {}
-        self.sorted_lanelet = []
-        self.i_ego = 0
-        self.sorted_conf_agent = []  # 最终结果：他车重要度排序
+        self.dict_parent_lanelet = {}  # 地图信息。间接冲突lanelet->直接冲突lanelet*列表*。(间接冲突是直接冲突的parent，一个间接可能对应多个直接)
+        self.dict_lanelet_potential_agent = {} # 间接冲突lanelet - > 离冲突点最近的agent。
+        self.sorted_lanelet = []        # 直接冲突lanelet按照冲突点位置进行排序。
+        self.i_ego = 0                          # 自车目前通过了哪个冲突点。0代表在第一个冲突点之前
+        self.sorted_conf_agent = []  # 最终结果：List：他车重要度排序
         self.dict_agent_lanelets = {}
 
     def extend2list(self, lanelet_network):
@@ -141,15 +170,22 @@ class IntersectionInfo():
 
 
 class IntersectionPlanner():
+    ''' 交叉路口规划器。
+    过程说明：
+
+    '''
     def __init__(self, scenario, route, ego_vehicle) -> None:
         self.scenario = scenario
-        self.state_init = ego_vehicle.current_state
+        self.ego_state = ego_vehicle.current_state  #自车状态
         # self.goal = planning_problem.goal
         self.route = route
         self.ego_vehicle = ego_vehicle
 
-    def planner(self):
-        '''轨迹规划器。返回轨迹
+    def planner(self, T):
+        '''轨迹规划器。返回轨迹。
+        重要过程说明：
+            cl_info: 两个属性。id: 直接冲突lanelet的ID list。conf_point：对应的冲突点坐标list。
+            iiinfo: IntersectionInfo类。逐步计算相关变量。详见变量定义。
         Returns:
             trajectory: 自车轨迹。
         '''
@@ -159,37 +195,27 @@ class IntersectionPlanner():
 
         # --------------- 检索地图，检查冲突lanelet和冲突点 ---------------------
         # 搜索结果： cl_info: ;conf_lanelet_potentials
-        incoming_lanelet_id_sub = scenario.lanelet_network.find_lanelet_by_position([self.state_init.position])[0][0]
+        lanelet_id_ego = scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0][0]
         direction_sub = 2  #TODO
         # cl_info: 两个属性。id: 直接冲突lanelet的ID list。conf_point：对应的冲突点坐标list。
-        cl_info = conf_lanelet_checker(lanelet_network, incoming_lanelet_id_sub, direction_sub)
+        cl_info = conf_lanelet_checker(lanelet_network, lanelet_id_ego, direction_sub)
 
         iinfo = IntersectionInfo(cl_info)
         iinfo.dict_parent_lanelet = potential_conf_lanelet_checkerv2(lanelet_network, cl_info)
 
         # ---------------- 运动规划 --------------
-        ego_state = self.state_init
+        ego_state = self.ego_state
 
-        # 计算车辆前进的参考轨迹
+        # 计算车辆前进的参考轨迹。ref_cv： [n, 2]。参考轨迹坐标. 
+        ref_cv, ref_orientation, ref_s = get_route_frenet_line(self.route, lanelet_network)
 
-        cv = []
-        for n in range(len(self.route)):
-            if n == 0:
-                cv = lanelet_network.find_lanelet_by_id(self.route[n]).center_vertices
-            else:
-                cv_temp = lanelet_network.find_lanelet_by_id(self.route[n]).center_vertices
-                cv = np.concatenate((cv, cv_temp), axis=0)
-        ref_cv, ref_orientation, ref_s = detail_cv(cv)
-        ref_cv = np.array(ref_cv).T
-
-        T = [x for x in range(400)]
-        # T = [70]
-        s = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], ego_state.position)  # 已经有参考轨迹，直接计算行驶路程
+        # 在[T, T+400]的时间进行规划
+        time = [x+ T for x in range(400)]
+        s = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], ego_state.position)  # 计算自车的frenet纵向坐标
         s_list = [s]
-        a_max = 3
         state_list = []
         state_list.append(ego_state)
-        for t in T:
+        for t in time:
 
             dict_lanelet_agent = self.conf_agent_checker(iinfo.dict_lanelet_conf_point, t)
             # print('直接冲突车辆', dict_lanelet_agent)
@@ -261,7 +287,7 @@ class IntersectionPlanner():
         # the ego vehicle can be visualized by converting it into a DynamicObstacle
         ego_vehicle_type = ObstacleType.CAR
         ego_vehicle = DynamicObstacle(obstacle_id=100, obstacle_type=ego_vehicle_type,
-                                      obstacle_shape=ego_vehicle_shape, initial_state=self.state_init,
+                                      obstacle_shape=ego_vehicle_shape, initial_state=self.ego_state,
                                       prediction=ego_vehicle_prediction)
         #
         self.analysis_intersection(s_list, scenario)
@@ -276,10 +302,12 @@ class IntersectionPlanner():
 
         return 0
 
-    def motion_planner(self, a, ego_state0, s, ref_info, t):
+    def motion_planner(self, a, ego_state0, s, ref_info, t, front_vehicle_info=[0,0]):
         ''''根据他车协作加速度，规划自己的运动轨迹；
         params:
             a: 协作加速度
+            front_vehicle_info: 2维list。表示前车车距，前车车速。
+
         returns:
             ego_state: 自车下一时刻的状态
         '''
@@ -350,6 +378,7 @@ class IntersectionPlanner():
             for lanelet_id in lanelet_ids:
                 # 不能仅用位置判断车道。车的朝向也需要考虑?暂不考虑朝向。因为这样写不美。可能在十字路口倒车等
                 lanelet = lanelet_network.find_lanelet_by_id(lanelet_id)
+                # 用自带的函数，检查他车是否在该lanelet上
                 res = lanelet.get_obstacles([scenario.obstacles[i]], T)
                 if scenario.obstacles[i] not in res:
                     continue
@@ -383,7 +412,7 @@ class IntersectionPlanner():
     def potential_conf_agent_checker(self, dict_lanelet_conf_point, dict_parent_lanelet, ego_lanelets, T):
         '''找间接冲突lanelet.
         params:
-            dict_lanelet_conf_point:
+            dict_lanelet_conf_point: intersectioninfo类成员。
             dict_parent_lanelet: 间接冲突lanelet->子节点列表。
             T:
         returns:
