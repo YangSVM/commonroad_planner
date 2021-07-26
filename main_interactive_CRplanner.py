@@ -118,7 +118,6 @@ if __name__ == '__main__':
 
     # initialize simulation
     sumo_sim.initialize(conf, scenario_wrapper, None)
-    sumo_sim.simulate_step()
 
 #
     current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
@@ -139,3 +138,7 @@ if __name__ == '__main__':
 
     # ====== paste in simulations
 # ====== end of motion planner
+    next_state.time_step = 1
+    trajectory_ego = [next_state]
+    ego_vehicle.set_planned_trajectory(trajectory_ego)
+    sumo_sim.simulate_step()
