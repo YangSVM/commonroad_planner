@@ -13,51 +13,55 @@ class Conf_Lanelet:
         id: 路口内的冲突lanelet的id列表
         conf_point: 对应的冲突点位置 列表
     '''
+
     def __init__(self, id=None, conf_point=None):
-        self.id = id                
+        self.id = id
         self.conf_point = conf_point
 
 
-def conf_lanelet_checker(ln, incoming_lanelet_id: int, direction: int):
+def conf_lanelet_checker(ln, sub_lanelet_id: int, lanelet_state: int, lanelet_route):
+    # change incoming id into current lanelet id and add
+    # if ego car is in incoming or in intersection
     """
     check conflict lanelets when driving in a incoming lanelet
 
     :param ln: lanelet network of the scenario
-    :param incoming_lanelet_id: the lanelet that subjective vehicle is located
-    :param direction: 1:left 2:straight 3:right
+    :param sub_lanelet_id: the lanelet that subjective vehicle is located
+    :param lanelet_state: 1:left 2:straight 3:right
+    :param lanelet_route: lanelet route
     :return: Conf_lanelet类【.id:路口内的冲突lanelet的id；.conf_point:对应的冲突点位置】
     """
 
     def check_sub_car_in_incoming():
         """ 返回主车所在的intersection序号和incoming序号 """
-
+        route = lanelet_route
         # 初始化
-        idx_intersect = []   # 主车所在的路口的序号
-        idx_incoming = []  # 主车所在的incoming lanelet的序号
+        idx_intersect = []  # 主车所在的路口的序号
         lanelet_id_in_intersection = []  # 主车即将经过的路口中的lanelet的id
+        sub_lanelet_id_incoming = []
 
-        # 遍历场景中的路口
+        if lanelet_state == 2:
+            id_temp = route.index(sub_lanelet_id)
+            if id_temp+1 < len(route):  # incoming lanelet is NOT the last one in route
+                lanelet_id_in_intersection = route[id_temp+1]
+
+            sub_lanelet_id_incoming = sub_lanelet_id  # 找到主车进入路口的incoming,用于确定路口序号
+
+        elif lanelet_state == 3:
+            lanelet_id_in_intersection = sub_lanelet_id  # 此时主车已经在路口内，不用找id_in_intersection了
+            sub_lanelet_id_incoming = ln.find_lanelet_by_id(sub_lanelet_id).predecessor[0]  # 找到主车进入路口的incoming,用于确定路口序号
+
+        # 遍历场景中的路口，找到主车所在的路口
         for idx, intersection in enumerate(ln.intersections):
             # 遍历路口中的每个incoming
             incomings = intersection.incomings
-
             for n, incoming in enumerate(incomings):
+                lanelet_id_list = setToArray(incoming.incoming_lanelets)
+                if np.isin(sub_lanelet_id_incoming, lanelet_id_list):  # 检查主车所在lanelet对应的incoming id
+                    # 记录主车所在的【路口序号】
+                    idx_intersect = idx
 
-                laneletidlist = setToArray(incoming.incoming_lanelets)
-                if np.isin(incoming_lanelet_id, laneletidlist):  # 检查主车所在lanelet对应的incoming id
-                    idx_incoming = n  # 保存主车所在的incoming lanelet的序号
-
-                    # 记录主车即将进入的路口内的lanelet
-                    if direction == 1:
-                        lanelet_id_in_intersection = list(incoming.successors_left)
-                    elif direction == 2:
-                        lanelet_id_in_intersection = list(incoming.successors_straight)
-                    else:
-                        lanelet_id_in_intersection = list(incoming.successors_right)
-                # 记录主车所在的【路口序号】
-                idx_intersect = idx
-
-        return idx_intersect, idx_incoming, lanelet_id_in_intersection[0]
+        return idx_intersect, lanelet_id_in_intersection
 
     def check_in_intersection_lanelets():
         """ 返回提取路口内所有的lanelet的id列表 """
@@ -113,33 +117,40 @@ def conf_lanelet_checker(ln, incoming_lanelet_id: int, direction: int):
 
     def check_conf_lanelets(lanelet_network, laneletid_list: list, sub_lanelet_id_in_intersection: int):
         """ 返回存在冲突的lanelet列表（id,冲突位置） """
-        lanelet_sub = lanelet_network.find_lanelet_by_id(sub_lanelet_id_in_intersection)  # 主车的lanelet
-
-        # 列出其他lanelet
-        other_lanelet = list()
-        for n in range(len(laneletid_list)):
-            lanelet = lanelet_network.find_lanelet_by_id(laneletid_list[n])
-            if not lanelet.lanelet_id == sub_lanelet_id_in_intersection:
-                other_lanelet.append(lanelet)
-
         # 创建一个冲突lanelet的类，记录冲突信息
         cl = Conf_Lanelet()
-        cl.id = []
-        cl.conf_point = []
-        for n in range(len(other_lanelet)):
-            [isconf, conf_point] = check_collision(lanelet_sub.center_vertices, other_lanelet[n].center_vertices)
-            if isconf:
-                cl.id.append(other_lanelet[n].lanelet_id)
-                cl.conf_point.append(conf_point)
+
+        if sub_lanelet_id_in_intersection:
+            lanelet_sub = lanelet_network.find_lanelet_by_id(sub_lanelet_id_in_intersection)  # 主车的lanelet
+
+            # 列出其他lanelet
+            other_lanelet = list()
+            for n in range(len(laneletid_list)):
+                lanelet = lanelet_network.find_lanelet_by_id(laneletid_list[n])
+                if not lanelet.lanelet_id == sub_lanelet_id_in_intersection:
+                    other_lanelet.append(lanelet)
+
+            cl.id = []
+            cl.conf_point = []
+            for n in range(len(other_lanelet)):
+                [isconf, conf_point] = check_collision(lanelet_sub.center_vertices, other_lanelet[n].center_vertices)
+                if isconf:
+                    cl.id.append(other_lanelet[n].lanelet_id)
+                    cl.conf_point.append(conf_point)
+        else:
+
+            cl.id = []
+            cl.conf_point = []
+
         return cl
 
     # 主程序
     # 检查主车所在的路口和incoming序号
-    [id_intersect, id_incoming, sub_lanelet_id_in_intersection] = check_sub_car_in_incoming()
+    [id_intersect, sub_lanelet_id_in_intersection] = check_sub_car_in_incoming()
     print("intersection no.", id_intersect)
-    print("incoming_lanelet_id", id_incoming)
+    # print("incoming_lanelet_id", id_incoming)
     print("lanelet id of subjective car:", sub_lanelet_id_in_intersection)
-   
+
     lanelet_network = ln
     # 提取路口内的lanelet的id列表
     inter_laneletid_list = check_in_intersection_lanelets()
@@ -161,9 +172,9 @@ def potential_conf_lanelet_checkerv2(lanelet_network, cl_info):
     """
 
     dict_parent_lanelet = {}
-    for conf_lanelet_id in cl_info. id:
+    for conf_lanelet_id in cl_info.id:
         conf_lanlet = lanelet_network.find_lanelet_by_id(conf_lanelet_id)
-        parents= conf_lanlet.predecessor
+        parents = conf_lanlet.predecessor
         if parents is not None:
             for parent in parents:
                 if parent not in dict_parent_lanelet.keys():
@@ -182,14 +193,18 @@ def setToArray(setInput):
         arrayOutput[index][0] = every
         index += 1
     return arrayOutput
+
+
 # ————————————————
 # 原文链接：https://blog.csdn.net/qq_41221841/article/details/109613783
 
 
 if __name__ == '__main__':
+    import matplotlib.pyplot  as plt
+    from commonroad.visualization.draw_dispatch_cr import draw_object
+
     #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-    path_scenario_download = os.path.abspath('D:\OneDrive - tongji.edu.cn\Desktop\Study/1_Codes/1_CommonRoad\commonroad'
-                                            '-scenarios\scenarios\hand-crafted')
+    path_scenario_download = os.path.abspath('/home/zxc/Downloads/commonroad-scenarios/scenarios/hand-crafted')
     # 文件名
     id_scenario = 'ZAM_Tjunction-1_282_T-1'
 
@@ -205,4 +220,19 @@ if __name__ == '__main__':
     # 主车所在lanelet
     incoming_lanelet_id_sub = 50195
     direction_sub = 1
-    cl_info = conf_lanelet_checker(lanelet_network, incoming_lanelet_id_sub, direction_sub)
+    cl_info = conf_lanelet_checker(lanelet_network, incoming_lanelet_id_sub, 2, direction_sub)
+
+    plt.clf()
+    draw_parameters = {
+        'time_begin': 1,
+        'scenario':
+            {'dynamic_obstacle': {'show_label': True, },
+             'lanelet_network': {'lanelet': {'show_label': True, }, },
+             },
+    }
+
+    draw_object(scenario, draw_params=draw_parameters)
+    draw_object(planning_problem_set)
+    plt.gca().set_aspect('equal')
+    # plt.pause(0.001)
+    plt.show()
