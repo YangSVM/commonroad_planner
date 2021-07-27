@@ -14,7 +14,7 @@ from grid_lanelet import get_map_info
 from grid_lanelet import edit_scenario4test
 from MCTs_v3 import NaughtsAndCrossesState
 from MCTs_v3 import mcts
-from grid_lanelet import get_frenet_orgin_lanelet
+from grid_lanelet import get_frenet_lanelet_axis
 from grid_lanelet import generate_len_map
 
 class MCTs_CRv3():
@@ -111,15 +111,16 @@ class MCTs_CRv3():
         # print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
 
 
-        lanelet00_id = get_frenet_orgin_lanelet(lanelet_id_matrix)
+        lanelet_ids_frenet_axis = get_frenet_lanelet_axis(lanelet_id_matrix)
 
         if is_goal:
             goal_pos  = planning_problem.goal.state_list[0].position.shapes[0].center
         else:
             end_lanelet = lanelet_network.find_lanelet_by_id( self.lanelet_route[end_route_id])
-            goal_pos = end_lanelet.center_vertices[-1, :]
+            # ！！！ lanelet中心线最后一个点，居然不是该lanelet的
+            goal_pos = end_lanelet.center_vertices[-5, :]
 
-        map = get_map_info(goal_pos, lanelet00_id, lanelet_id_matrix, lanelet_network, is_interactive=True)
+        map = get_map_info(goal_pos, lanelet_ids_frenet_axis, lanelet_id_matrix, lanelet_network, is_interactive=True)
         if len(lane_ego_n_array)>0:
             lane_ego_n = lane_ego_n_array[0]
         else:
@@ -131,10 +132,10 @@ class MCTs_CRv3():
         # 获取可行地图信息
         map_info = generate_len_map(scenario, lanelet_id_matrix)
         print('决策初始时刻 T： ', T) 
-        print('自车初始状态矩阵', state)
-        print('地图信息', map)
-        print('他车矩阵', obstacles)
-        print('可用道路信息列表：', map_info)
+        print('自车初始状态矩阵：\n', state)
+        print('地图信息：\n', map)
+        print('他车矩阵：\n', obstacles)
+        print('可用道路信息列表：\n', map_info)
 
         initialState = NaughtsAndCrossesState(state,map,obstacles)
         searcher = mcts(iterationLimit=5000) #改变循环次数或者时间
