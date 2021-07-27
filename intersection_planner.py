@@ -117,14 +117,32 @@ def find_reference(s, ref_cv, ref_orientation, ref_cv_len):
 
 
 def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet_route, T):
-    '''
+    '''lanelet_route第一个是自车车道。route直接往前找，直到找到前车。
     return:
         front_vehicle: dict. key: pos, vel, distance
     '''
     front_vehicle = {}
     ref_cv, ref_orientation, ref_s = get_route_frenet_line(lanelet_route, ln)
-    lanelet_id_ego = ln.find_lanelet_by_position([ego_pos])[0][0]
-    
+    min_dhw = 500
+    s_ego = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], ego_pos)
+    lanelet_ids_ego = ln.find_lanelet_by_position([ego_pos])[0]
+    assert  lanelet_route[0] in lanelet_ids_ego
+    obstacles = scenario.obstacles
+    for obs in obstacles:
+        pos = obs.state_at_time(T).position
+        obs_lanelet_id = ln.find_lanelet_by_position([pos])[0][0]
+        if obs_lanelet_id not in lanelet_route:
+            continue
+        s_obs = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], pos)
+        dhw = s_obs - s_ego
+        if dhw < 0:
+            continue
+        if dhw < min_dhw:
+            min_dhw = dhw
+            front_vehicle['id'] = obs.obstacle_id
+            front_vehicle['dhw'] = dhw
+            front_vehicle['v'] = obs.state_at_time(T).velocity
+            front_vehicle['state'] = obs.state_at_time(T)
 
     return front_vehicle
 

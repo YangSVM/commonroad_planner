@@ -157,7 +157,7 @@ def potential_conf_lanelet_checkerv2(lanelet_network, cl_info):
 
     :param ln: lanelet network of the scenario
     :param cl_info: 直接冲突lanelet的Conf_lanelet类【.id:路口内的冲突lanelet的id；.conf_point:对应的冲突点位置】
-    :return: dict_lanelet_parent. 直接冲突lanelet_id ->父节点ID列表。若没有父节点则为None。【注意】仅有一个父节点时，字典的value为一个值的列表。
+    :return: dict_lanelet_parent. 间接冲突lanelet->直接冲突lanelet*列表*。(间接冲突是直接冲突的parent，一个间接可能对应多个直接)
     """
 
     dict_parent_lanelet = {}
@@ -165,6 +165,7 @@ def potential_conf_lanelet_checkerv2(lanelet_network, cl_info):
         conf_lanlet = lanelet_network.find_lanelet_by_id(conf_lanelet_id)
         parents= conf_lanlet.predecessor
         if parents is not None:
+            # 对于所有直接冲突lanelet的父节点。寻找他所有可能的子节点
             for parent in parents:
                 if parent not in dict_parent_lanelet.keys():
                     parent_lanelet = lanelet_network.find_lanelet_by_id(parent)

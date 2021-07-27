@@ -8,8 +8,8 @@ from route_planner import route_planner
 
 from intersection_planner import IntersectionPlanner
 import pickle
-# import sys
-# sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios')
+import sys
+sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios')
 from MCTs_CRv3 import MCTs_CRv3
 
 
@@ -96,11 +96,11 @@ if __name__ == '__main__':
     from simulation.simulations import load_sumo_configuration
     from sumocr.maps.sumo_scenario import ScenarioWrapper
     from sumocr.interface.sumo_simulation import SumoSimulation
-    folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive/')
     # folder_scenarios = os.path.abspath(
-    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
-    name_scenario = "DEU_Frankfurt-4_2_I-1"
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive/')
+    folder_scenarios = os.path.abspath(
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    name_scenario = "DEU_Frankfurt-4_3_I-1"
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
     # initialize simulation
     sumo_sim.initialize(conf, scenario_wrapper, None)
-    sumo_sim.simulate_step()
+    # sumo_sim.simulate_step()
 
 #
     current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
