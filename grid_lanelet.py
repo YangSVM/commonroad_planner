@@ -101,7 +101,7 @@ def lanelet_network2grid(ln : LaneletNetwork, route):
     lanelet_id_matrix = -1 * np.ones([n_lane, len(straight_route_id)], dtype=int) 
     for i_route, lanelet_id in enumerate(straight_route_id):
         adj_lanelets, n_l, n_r = find_adj_lanelets(ln, lanelet_id)
-        lanelet_id_matrix[i_route, left_n_max- n_l : left_n_max + n_r +1] = adj_lanelets
+        lanelet_id_matrix[left_n_max- n_l : left_n_max + n_r +1, i_route] = adj_lanelets
         
     return lanelet_id_matrix
 
@@ -135,15 +135,17 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, s
 
 
 
-    lanelet00id = get_frenet_orgin_lanelet(lanelet_id_matrix)
+    lanelet_ids_frenet_axis = get_frenet_lanelet_axis(lanelet_id_matrix)
+    cv = []
+    for lanelet in lanelet_ids_frenet_axis:
+        cv.append(lanelet_network.find_lanelet_by_id(lanelet).center_vertices)
+    
+    cv = np.concatenate(cv, axis=0)
+    cv, _, s_cv = detail_cv(cv)
+    cv = np.array(cv).T
 
-
-
-    lanelet00 = lanelet_network.find_lanelet_by_id(lanelet00id)
-    center_vertices = lanelet00.center_vertices
-    cv, _, s_cv = detail_cv(center_vertices)
     # 找最近点
-    ego_s = distance_lanelet(cv, s_cv, center_vertices[0, :], ego_pos)
+    ego_s = distance_lanelet(cv, s_cv, cv[0, :], ego_pos)
 
     shape = lanelet_id_matrix.shape
 
@@ -160,12 +162,12 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, s
         lanelet_id = lanelet_network.find_lanelet_by_position([state.position])[0][0]
         lane_lat_n_ = np.where(lanelet_id_matrix==lanelet_id)
         if len(lane_lat_n_[0])==0:
-            print('info: obstacle ', obstacle.obstacle_id, ' not in lanelet_id_matix ')
+            print('info: obstacle ', obstacle.obstacle_id, 'lanelet', lanelet_id,' not in lanelet_id_matix ')
             continue
         else:
             lane_lat_n = lane_lat_n_[0]
             obstacle_states[i_ob, 0] = lane_lat_n
-        s = distance_lanelet(cv, s_cv, center_vertices[0, :], state.position)
+        s = distance_lanelet(cv, s_cv, cv[0, :], state.position)
         obstacle_states[i_ob, 1] = s
         obstacle_states[i_ob, 2] = state.velocity
 
@@ -187,7 +189,7 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, s
 
 #     return state
 
-def get_map_info(goal_pos,  lanelet00_id, lanelet_id_matrix, lanelet_network, is_interactive=False):
+def get_map_info(goal_pos,  lanelet_ids_frenet_axis, lanelet_id_matrix, lanelet_network, is_interactive=False):
     '''
 
     return:
@@ -198,33 +200,41 @@ def get_map_info(goal_pos,  lanelet00_id, lanelet_id_matrix, lanelet_network, is
     
     lanelet_id_goal = lanelet_network.find_lanelet_by_position([goal_pos])[0][0]
     lane_pos_ = np.where(lanelet_id_matrix==lanelet_id_goal)[0]
-    if len(lane_pos_)==0:
+    if lane_pos_.shape[0] == 0:
         print('error. cannot found goal lanelet position')
     else:
         lane_pos = lane_pos_[0]
 
-    cv, _,  s_cv = detail_cv(lanelet_network.find_lanelet_by_id(lanelet00_id).center_vertices)
-
+    cv = []
+    for lanelet in lanelet_ids_frenet_axis:
+        cv.append(lanelet_network.find_lanelet_by_id(lanelet).center_vertices)
+    
+    cv = np.concatenate(cv, axis=0)
+    cv, _, s_cv = detail_cv(cv)
+    
     goal_s = distance_lanelet(cv, s_cv, [cv[0][0], cv[1][0]],goal_pos)
 
     map = [n_lane, lane_pos, goal_s]
     return map
 
 
-def get_frenet_orgin_lanelet(lanelet_id_matrix):
+def get_frenet_lanelet_axis(lanelet_id_matrix):
     '''
     Return:
         lanelet id.
     '''
         # 取lanelet_id_matrix中第一列中第一个可行的 lanelet 的中心线为frenet坐标系参考线
     lanelet00id = -1
+    lanelet00_line = -1
     for i in range(lanelet_id_matrix.shape[1]):
-        if lanelet_id_matrix[0, i] !=-1:
-            lanelet00id =  lanelet_id_matrix[0, i]
+        if lanelet_id_matrix[i, 0] !=-1:
+            lanelet00id =  lanelet_id_matrix[i, 0]
+            lanelet00_line = i
             break
     # laneletid第一列不应该全都不可行
     assert lanelet00id != -1
-    return lanelet00id
+
+    return lanelet_id_matrix[lanelet00_line,:]
 
 
 def edit_scenario4test(scenario, ego_init_pos):
