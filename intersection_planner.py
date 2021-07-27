@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import copy
 
+from numpy.core.fromnumeric import amax
+
 from conf_lanelet_checker import conf_lanelet_checker, potential_conf_lanelet_checkerv2
 from detail_central_vertices import detail_cv
 from route_planner import route_planner
@@ -143,6 +145,11 @@ def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet
             front_vehicle['dhw'] = dhw
             front_vehicle['v'] = obs.state_at_time(T).velocity
             front_vehicle['state'] = obs.state_at_time(T)
+
+    if len(front_vehicle) ==0:
+        print('no front vehicle')
+        front_vehicle['dhw'] = -1
+        front_vehicle['v'] = -1
 
     return front_vehicle
 
@@ -288,7 +295,10 @@ class IntersectionPlanner():
                 conf_point = iinfo.dict_lanelet_conf_point[lanelet_ids[-1]]
                 a.append(self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids, o_ids[i], t))
 
-            ego_state, s = self.motion_planner(a, ego_state, s, [ref_cv, ref_orientation, ref_s], t)
+            # 前车信息提取
+            front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
+
+            ego_state, s = self.motion_planner(a, ego_state, s, [ref_cv, ref_orientation, ref_s], t, [front_vehicle['dhw', front_vehicle['v']]])
             s_list.append(s)
             # tmp_state = copy.deepcopy(ego_state)
             state_list.append(ego_state)
@@ -338,28 +348,39 @@ class IntersectionPlanner():
         else:
             a1 = 100
             a2 = 100
+
         DT = self.scenario.dt
+        v = ego_state0.velocity
         a_max = 3
         a_thre = 0  # 非交互式情况，协作加速度阈值(threshold) 设置为0
         if a1 < a_thre or a2 < a_thre:
             # print(' 避让这辆车', a1, a2)
-            v0 = ego_state0.velocity
-            v = v0 - a_max * DT
-            if v < 0:
-                v = 0
-            s += v * DT
-
+            a = -amax
         else:
-            # print(' 加速通过', a1, a2)
-            v0 = ego_state0.velocity
-            v = v0 + a_max * DT
-            s += v * DT
+            a = amax
+            # 考虑前车
+        
+        dhw = front_vehicle_info[0]
+        v_f = front_vehicle_info[1]
+        if dhw[0]>0:
+            # 有前车
+                        
+            s_t = 2+max([0, v*1.5 - v*(v - v_f)/2/(7*2)**0.5])
+            a_front = 7 * (1 - (v/120*3.6)**5 - (s_t/dhw)**2)
+        
+        # 取最小的加速度控制
+        a = min([a, a_front])
+
+        v_next = v +a * DT
+        if v_next < 0:
+            v_next = 0
+        s += v_next * DT
 
         ref_cv, ref_orientation, ref_s = ref_info
         position, orientation = find_reference(s, ref_cv, ref_orientation, ref_s)
         tmp_state = State()
         tmp_state.position = position
-        tmp_state.velocity = v
+        tmp_state.velocity = v_next
         tmp_state.orientation = orientation
         tmp_state.time_step = t
         tmp_state.acceleration = a_max
