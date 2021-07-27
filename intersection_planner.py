@@ -111,7 +111,7 @@ def find_reference(s, ref_cv, ref_orientation, ref_cv_len):
     ref_cv, ref_orientation, ref_cv_len = np.array(ref_cv), np.array(ref_orientation), np.array(ref_cv_len)
     id = np.searchsorted(ref_cv_len, s)
     if id >= ref_orientation.shape[0]:
-        print('end of reference line, please stop !')
+        # print('end of reference line, please stop !')
         id = ref_orientation.shape[0] - 1
     return ref_cv[id,:], ref_orientation[id]
 
@@ -192,12 +192,13 @@ class IntersectionPlanner():
     过程说明：
 
     '''
-    def __init__(self, scenario, route, ego_vehicle) -> None:
+    def __init__(self, scenario, route, ego_vehicle, lanelet_state) -> None:
         self.scenario = scenario
         self.ego_state = ego_vehicle.current_state  #自车状态
         # self.goal = planning_problem.goal
         self.route = route
         self.ego_vehicle = ego_vehicle
+        self.lanelet_state = lanelet_state
 
     def planner(self, T):
         '''轨迹规划器。返回轨迹。
@@ -214,9 +215,8 @@ class IntersectionPlanner():
         # --------------- 检索地图，检查冲突lanelet和冲突点 ---------------------
         # 搜索结果： cl_info: ;conf_lanelet_potentials
         lanelet_id_ego = scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0][0]
-        direction_sub = 2  #TODO
         # cl_info: 两个属性。id: 直接冲突lanelet的ID list。conf_point：对应的冲突点坐标list。
-        cl_info = conf_lanelet_checker(lanelet_network, lanelet_id_ego, direction_sub)
+        cl_info = conf_lanelet_checker(lanelet_network, lanelet_id_ego, self.lanelet_state, self.route)
 
         iinfo = IntersectionInfo(cl_info)
         iinfo.dict_parent_lanelet = potential_conf_lanelet_checkerv2(lanelet_network, cl_info)
