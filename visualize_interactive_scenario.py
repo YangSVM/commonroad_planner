@@ -12,7 +12,7 @@ from commonroad.visualization.draw_dispatch_cr import draw_object
 
 
 folder_scenarios = "/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/"
-name_scenario = "DEU_Frankfurt-7_11_I-1"
+name_scenario = "DEU_Frankfurt-95_2_I-1"
 interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
 conf = load_sumo_configuration(interactive_scenario_path)
@@ -35,3 +35,4 @@ draw_object(planning_problem_set)
 plt.gca().set_aspect('equal')
 # plt.pause(0.001)
 plt.show()
+print('help')

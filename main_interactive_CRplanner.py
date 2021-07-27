@@ -73,7 +73,7 @@ class InteractiveCRPlanner:
         # check state 1:straight-going /2:incoming /3:in-intersection
         self.check_state()
         print("current state:", self.lanelet_state)
-
+        # self.lanelet_state = 1
         # send to sub planner according to current lanelet state
         if self.lanelet_state == 1:
         
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive/')
     folder_scenarios = os.path.abspath(
         '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
-    name_scenario = "DEU_Frankfurt-4_3_I-1"
+    name_scenario = "DEU_Frankfurt-95_2_I-1"
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
