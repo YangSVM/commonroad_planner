@@ -15,7 +15,7 @@ from grid_lanelet import edit_scenario4test
 from MCTs_v3 import NaughtsAndCrossesState
 from MCTs_v3 import mcts
 from grid_lanelet import get_frenet_lanelet_axis
-from grid_lanelet import generate_len_map
+from grid_lanelet import generate_len_map,find_frenet_axis
 
 class MCTs_CRv3():
     def __init__(self, scenario, planning_problem, lanelet_route, ego_vehicle):
@@ -136,6 +136,13 @@ class MCTs_CRv3():
         print('地图信息：\n', map)
         print('他车矩阵：\n', obstacles)
         print('可用道路信息列表：\n', map_info)
+
+        # 曹磊使用
+        lanelet_id_target = lanelet_network.find_lanelet_by_position([goal_pos])[0][0]
+
+        print('目标车道lanelet_id :\n', lanelet_id_target)
+        frenet_cv = find_frenet_axis(lanelet_id_matrix, lanelet_id_target, lanelet_network)
+        print('目标车道中心线：\n', frenet_cv.shape)
 
         initialState = NaughtsAndCrossesState(state,map,obstacles)
         searcher = mcts(iterationLimit=5000) #改变循环次数或者时间

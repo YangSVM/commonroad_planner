@@ -46,6 +46,19 @@ def find_adj_lanelets(ln:LaneletNetwork, lanelet_id, include_ego=True):
         lanelets_id_adj =  lanelets_id_adj_left[::-1] + lanelets_id_adj_right
     return lanelets_id_adj, n_left, n_right
 
+def find_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetwork):
+    i= np.where(lanelet_id_matrix == lanelet_id_target)[0]
+    assert i.shape[0]>0, 'lanelet_id_target donnot in lanelet_id_matrix!'
+    lanelets_frenet_axis = lanelet_id_matrix[i[0], :]
+    cv = []
+    for lanelet_id in lanelets_frenet_axis:
+        lanelet = ln.find_lanelet_by_id(lanelet_id)
+        cv.append(lanelet.center_vertices)
+    cv = np.concatenate(cv, axis=0)
+
+    return cv
+
+
 def lanelet_network2grid(ln : LaneletNetwork, route):
     '''明阳需求。将lanelet_network转成网格地图。v1仅适用于矩形直道场景。并道太复杂，暂不考虑。
     param: 
