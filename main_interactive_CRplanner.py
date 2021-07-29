@@ -63,7 +63,12 @@ class InteractiveCRPlanner:
 
         return lanelet_route
 
-    def planning(self, current_scenario, planning_problem, ego_vehicle, current_time_step):
+    def planning(self, current_scenario,
+                 planning_problem,
+                 ego_vehicle,
+                 current_time_step,
+                 last_action,
+                 is_new_action_needed):
 
         """body of our planner"""
 
@@ -78,18 +83,23 @@ class InteractiveCRPlanner:
         if self.lanelet_state == 1:
         
             # === insert straight-going planner here
-            mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
-            next_state = mcts_planner.planner(current_time_step)
+            if is_new_action_needed:
+                mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
+                action = mcts_planner.planner(current_time_step)
+            else:
+                action = last_action
+            next_state, is_new_action_needed = Lattice(current_scenario, action)
             # === end of straight-going planner
 
         if self.lanelet_state == 2 or self.lanelet_state == 3:
-
+            action = []
+            is_new_action_needed = 1
             # === insert intersection planner here
             ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle, self.lanelet_state)
-            next_state, ev = ip.planner(current_time_step)
+            next_state = ip.planner(current_time_step)
             # === end of intersection planner
 
-        return next_state
+        return next_state, action, is_new_action_needed
 
 
 if __name__ == '__main__':
@@ -133,8 +143,14 @@ if __name__ == '__main__':
 
     # generate a CR planner
     main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
-
-    next_state = main_planner.planning(current_scenario, planning_problem, ego_vehicle, sumo_sim.current_time_step)
+    last_action = []
+    is_new_action_needed = True
+    next_state, last_action, is_new_action_needed = main_planner.planning(current_scenario,
+                                                                          planning_problem,
+                                                                          ego_vehicle,
+                                                                          sumo_sim.current_time_step,
+                                                                          last_action,
+                                                                          is_new_action_needed)
 
     # ====== paste in simulations
 # ====== end of motion planner
