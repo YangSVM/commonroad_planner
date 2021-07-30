@@ -128,7 +128,7 @@ def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet
     min_dhw = 500
     s_ego = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], ego_pos)
     lanelet_ids_ego = ln.find_lanelet_by_position([ego_pos])[0]
-    assert  lanelet_route[0] in lanelet_ids_ego
+    assert lanelet_ids_ego[0] in lanelet_route
     obstacles = scenario.obstacles
     for obs in obstacles:
         pos = obs.state_at_time(T).position
@@ -298,7 +298,7 @@ class IntersectionPlanner():
             # 前车信息提取
             front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
 
-            ego_state, s = self.motion_planner(a, ego_state, s, [ref_cv, ref_orientation, ref_s], t, [front_vehicle['dhw', front_vehicle['v']]])
+            ego_state, s = self.motion_planner(a, ego_state, s, [ref_cv, ref_orientation, ref_s], t, [front_vehicle['dhw'], front_vehicle['v']])
             s_list.append(s)
             # tmp_state = copy.deepcopy(ego_state)
             state_list.append(ego_state)
@@ -355,14 +355,14 @@ class IntersectionPlanner():
         a_thre = 0  # 非交互式情况，协作加速度阈值(threshold) 设置为0
         if a1 < a_thre or a2 < a_thre:
             # print(' 避让这辆车', a1, a2)
-            a = -amax
+            a = -a_max
         else:
-            a = amax
+            a = a_max
             # 考虑前车
         
         dhw = front_vehicle_info[0]
         v_f = front_vehicle_info[1]
-        if dhw[0]>0:
+        if dhw > 0:
             # 有前车
                         
             s_t = 2+max([0, v*1.5 - v*(v - v_f)/2/(7*2)**0.5])
@@ -522,103 +522,3 @@ class IntersectionPlanner():
         s = distance_lanelet(conf_cvs, conf_s, p, conf_point)
         a = 2 * (s - v * t) / (t ** 2)
         return a
-
-
-if __name__ == '__main__':
-
-    # ======== setting for non-interactive scenarios
-    #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-    path_scenario_download = os.path.abspath('/home/zxc/Downloads/commonroad-scenarios/scenarios/hand-crafted')
-    # path_scenario_download = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
-    # 文件名
-    id_scenario = 'ZAM_Tjunction-1_282_T-1'
-
-    path_scenario = os.path.join(path_scenario_download, id_scenario + '.xml')
-    # read in scenario and planning problem set
-    scenario, planning_problem_set = CommonRoadFileReader(path_scenario).open()
-    # retrieve the first planning problem in the problem set
-    planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
-
-    # state_init = planning_problem.initial_state
-    # goal = [0, 0]
-
-    # generate a global lanelet route
-    route = route_planner(scenario, planning_problem)
-    lanelet_route = route.list_ids_lanelets
-    add_successor = scenario.lanelet_network.find_lanelet_by_id(lanelet_route[-1]).successor
-    lanelet_route.append(add_successor[0])
-
-    # create a planner
-    ip = IntersectionPlanner(scenario, planning_problem, lanelet_route)
-    ego_vehicle = ip.planner()
-    # ======== end of setting for non-interactive scenarios
-
-    # # ======== setting for interactive scenarios
-    # #  scenario info.
-    # folder_scenarios = os.path.abspath(
-    #     '/home/zxc/Downloads/competition_scenarios_new/interactive/')
-    # name_scenario = "DEU_Frankfurt-4_2_I-1"  # DEU_Frankfurt-4_2_I-1 in this scenario, ego car originates at a incoming
-    # scenario_path = os.path.join(folder_scenarios, name_scenario)
-    # conf = load_sumo_configuration(scenario_path)
-    # scenario_file = os.path.join(scenario_path, f"{name_scenario}.cr.xml")
-    # scenario, planning_problem_set = CommonRoadFileReader(scenario_file).open()
-    # planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
-    #
-    # # generate a global lanelet route from initial position to goal region
-    # route = route_planner(scenario, planning_problem)
-    # lanelet_route = route.list_ids_lanelets
-    # add_successor = scenario.lanelet_network.find_lanelet_by_id(lanelet_route[-1]).successor
-    # if add_successor:
-    #     lanelet_route.append(add_successor[0])
-    #
-    # scenario_wrapper = ScenarioWrapper()
-    # scenario_wrapper.sumo_cfg_file = os.path.join(scenario_path, f"{conf.scenario_name}.sumo.cfg")
-    # scenario_wrapper.initial_scenario = scenario
-    #
-    # num_of_steps = conf.simulation_steps
-    #
-    # sumo_sim = SumoSimulation()
-    # # initialize simulation
-    # sumo_sim.initialize(conf, scenario_wrapper, None)
-    # sumo_sim.simulate_step()
-    #
-    # current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
-    # ego_vehicles = sumo_sim.ego_vehicles
-    # ego_vehicle = list(ego_vehicles.values())[0]
-    #
-    # # generate a CR planner
-    # main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
-    #
-    # next_state = main_planner.planning(current_scenario, planning_problem, ego_vehicle)
-    # # ======== end of setting for interactive scenarios
-
-
-    # plt.figure(1)
-
-    # plt.clf()
-    # draw_parameters = {
-    #     'time_begin': 0, 
-    #     'scenario':
-    #     { 'dynamic_obstacle': { 'show_label': True, },
-    #         'lanelet_network':{'lanelet':{'show_label': False,  },} ,
-    #     },
-    # }
-
-    # draw_object(scenario, draw_params=draw_parameters)
-    # draw_object(planning_problem_set)
-    # plt.gca().set_aspect('equal')
-    # # plt.pause(0.01)
-    # plt.show()
-
-    # # plot the scenario and the ego vehicle for each time step
-    # plt.figure(1)
-    # for i in range(0, 400):
-    #     rnd = MPRenderer()
-    #     scenario.draw(rnd, draw_params={'time_begin': i})
-    #     ego_vehicle.draw(rnd, draw_params={'time_begin': i, 'dynamic_obstacle': {
-    #         'vehicle_shape': {'occupancy': {'shape': {'rectangle': {
-    #             'facecolor': 'r'}}}}}})
-    #     planning_problem_set.draw(rnd)
-    #     rnd.render()
-    #     plt.pause(0.01)
-
