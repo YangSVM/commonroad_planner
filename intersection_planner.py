@@ -128,25 +128,27 @@ def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet
     min_dhw = 500
     s_ego = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], ego_pos)
     lanelet_ids_ego = ln.find_lanelet_by_position([ego_pos])[0]
-    assert lanelet_ids_ego[0] in lanelet_route
+    # assert lanelet_ids_ego[0] in lanelet_route
     obstacles = scenario.obstacles
     for obs in obstacles:
-        pos = obs.state_at_time(T).position
-        obs_lanelet_id = ln.find_lanelet_by_position([pos])[0][0]
-        if obs_lanelet_id not in lanelet_route:
-            continue
-        s_obs = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], pos)
-        dhw = s_obs - s_ego
-        if dhw < 0:
-            continue
-        if dhw < min_dhw:
-            min_dhw = dhw
-            front_vehicle['id'] = obs.obstacle_id
-            front_vehicle['dhw'] = dhw
-            front_vehicle['v'] = obs.state_at_time(T).velocity
-            front_vehicle['state'] = obs.state_at_time(T)
+        if obs.state_at_time(0):
+            pos = obs.state_at_time(0).position
+            # print(pos)
+            obs_lanelet_id = ln.find_lanelet_by_position([pos])[0][0]
+            if obs_lanelet_id not in lanelet_route:
+                continue
+            s_obs = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], pos)
+            dhw = s_obs - s_ego
+            if dhw < 0:
+                continue
+            if dhw < min_dhw:
+                min_dhw = dhw
+                front_vehicle['id'] = obs.obstacle_id
+                front_vehicle['dhw'] = dhw
+                front_vehicle['v'] = obs.state_at_time(0).velocity
+                front_vehicle['state'] = obs.state_at_time(0)
 
-    if len(front_vehicle) ==0:
+    if len(front_vehicle) == 0:
         print('no front vehicle')
         front_vehicle['dhw'] = -1
         front_vehicle['v'] = -1
@@ -221,7 +223,11 @@ class IntersectionPlanner():
 
         # --------------- 检索地图，检查冲突lanelet和冲突点 ---------------------
         # 搜索结果： cl_info: ;conf_lanelet_potentials
-        lanelet_id_ego = scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0][0]
+        potential_ego_lanelet_id_list = scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0]
+        for idx in potential_ego_lanelet_id_list:
+            if idx in self.route:
+                lanelet_id_ego = idx
+
         # cl_info: 两个属性。id: 直接冲突lanelet的ID list。conf_point：对应的冲突点坐标list。
         cl_info = conf_lanelet_checker(lanelet_network, lanelet_id_ego, self.lanelet_state, self.route)
 
@@ -235,7 +241,7 @@ class IntersectionPlanner():
         ref_cv, ref_orientation, ref_s = get_route_frenet_line(self.route, lanelet_network)
 
         # 在[T, T+400]的时间进行规划
-        time = [x+ T for x in range(400)]
+        time = [x+ T for x in range(1)]
         s = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], ego_state.position)  # 计算自车的frenet纵向坐标
         s_list = [s]
         state_list = []
@@ -352,24 +358,30 @@ class IntersectionPlanner():
         DT = self.scenario.dt
         v = ego_state0.velocity
         a_max = 3
-        a_thre = 0  # 非交互式情况，协作加速度阈值(threshold) 设置为0
+        a_front = 3
+        a_thre = -4  # 非交互式情况，协作加速度阈值(threshold) 设置为0
         if a1 < a_thre or a2 < a_thre:
             # print(' 避让这辆车', a1, a2)
-            a = -a_max
+            a_conf = -a_max/3
         else:
-            a = a_max
-            # 考虑前车
-        
+            a_conf = a_max
+
+        # 考虑前车
         dhw = front_vehicle_info[0]
         v_f = front_vehicle_info[1]
         if dhw > 0:
             # 有前车
                         
-            s_t = 2+max([0, v*1.5 - v*(v - v_f)/2/(7*2)**0.5])
-            a_front = 7 * (1 - (v/120*3.6)**5 - (s_t/dhw)**2)
+            s_t = 2+max([0, v*1.5 - v*(v - v_f)/2/(4*2)**0.5])
+            a_front = 4 * (1 - (v/60*3.6)**4 - (s_t/dhw)**2)
         
         # 取最小的加速度控制
-        a = min([a, a_front])
+        a = min([a_conf, a_front])
+        # print("速度", v)
+        # print("dhw", dhw)
+        # print("前车速度", v_f)
+        print("加速度", a_conf, a_front)
+
 
         v_next = v +a * DT
         if v_next < 0:
@@ -383,7 +395,7 @@ class IntersectionPlanner():
         tmp_state.velocity = v_next
         tmp_state.orientation = orientation
         tmp_state.time_step = t
-        tmp_state.acceleration = a_max
+        tmp_state.acceleration = a
 
         return tmp_state, s
 
@@ -407,18 +419,18 @@ class IntersectionPlanner():
         n_obs = len(scenario.obstacles)
         # 暴力排查场景中的所有车
         for i in range(n_obs):
-            state = scenario.obstacles[i].state_at_time(T)
+            state = scenario.obstacles[i].state_at_time(0) #zxc:scenario是实时的，所有T都改成0
             # 当前时刻这辆车可能没有
             if state is None:
                 continue
-            pos = scenario.obstacles[i].state_at_time(T).position
+            pos = scenario.obstacles[i].state_at_time(0).position
             lanelet_ids = lanelet_network.find_lanelet_by_position([pos])[0]
             # 可能在多条车道上，现在每个都做检查
             for lanelet_id in lanelet_ids:
                 # 不能仅用位置判断车道。车的朝向也需要考虑?暂不考虑朝向。因为这样写不美。可能在十字路口倒车等
                 lanelet = lanelet_network.find_lanelet_by_id(lanelet_id)
                 # 用自带的函数，检查他车是否在该lanelet上
-                res = lanelet.get_obstacles([scenario.obstacles[i]], T)
+                res = lanelet.get_obstacles([scenario.obstacles[i]], 0)
                 if scenario.obstacles[i] not in res:
                     continue
 
@@ -500,7 +512,7 @@ class IntersectionPlanner():
         t = t4ego2pass + t_thre
 
         conf_agent = scenario.obstacle_by_id(obstacle_id)
-        state = conf_agent.state_at_time(T)
+        state = conf_agent.state_at_time(0)
         p, v = state.position, state.velocity
 
         if np.linalg.norm(p - pos) < 5:

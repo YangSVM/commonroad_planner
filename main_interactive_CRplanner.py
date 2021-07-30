@@ -80,23 +80,23 @@ class InteractiveCRPlanner:
         print("current state:", self.lanelet_state)
         # self.lanelet_state = 1
         # send to sub planner according to current lanelet state
-        if self.lanelet_state == 1:
-        
-            # === insert straight-going planner here
-            if is_new_action_needed:
-                mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
-                action = mcts_planner.planner(current_time_step)
-            else:
-                action = last_action
-            next_state, is_new_action_needed = Lattice(current_scenario, action)
+        # if self.lanelet_state == 1:
+        #
+        #     # === insert straight-going planner here
+        #     if is_new_action_needed:
+        #         mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
+        #         action = mcts_planner.planner(current_time_step)
+        #     else:
+        #         action = last_action
+        #     next_state, is_new_action_needed = Lattice(current_scenario, action)
             # === end of straight-going planner
 
         if self.lanelet_state == 2 or self.lanelet_state == 3:
+            # === insert intersection planner here
             action = []
             is_new_action_needed = 1
-            # === insert intersection planner here
             ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle, self.lanelet_state)
-            next_state = ip.planner(current_time_step)
+            next_state,ev = ip.planner(current_time_step)
             # === end of intersection planner
 
         return next_state, action, is_new_action_needed
@@ -106,11 +106,11 @@ if __name__ == '__main__':
     from simulation.simulations import load_sumo_configuration
     from sumocr.maps.sumo_scenario import ScenarioWrapper
     from sumocr.interface.sumo_simulation import SumoSimulation
-    # folder_scenarios = os.path.abspath(
-    #     '/home/zxc/Downloads/competition_scenarios_new/interactive/')
     folder_scenarios = os.path.abspath(
-        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
-    name_scenario = "DEU_Frankfurt-95_2_I-1"
+        '/home/zxc/Downloads/competition_scenarios_new/interactive/')
+    # folder_scenarios = os.path.abspath(
+    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    name_scenario = "DEU_Frankfurt-4_2_I-1"
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
