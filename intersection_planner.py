@@ -35,7 +35,14 @@ from commonroad.visualization.mp_renderer import MPRenderer
     2. 全局lanelet规划器。比如路口在行驶的过程中，如何知道此时应该前行还是右转。
 
 '''
-
+class Ipaction():
+    def __init__(self):
+        self.v_end = 0
+        self.a_end = 0
+        self.delta_s = None
+        self.lanelet_cv_target = []
+        self.T_duration = None
+        self.ego_init_state = []
 
 def get_route_frenet_line(route, lanelet_network):
     ''' 获取route lanelt id的对应参考线
@@ -295,16 +302,24 @@ class IntersectionPlanner():
             n_o = min(len(iinfo.sorted_conf_agent), 2)
             o_ids = []
             a = []
+            dis_ego2cp = []
             for i in range(n_o):
                 o_ids.append(iinfo.sorted_conf_agent[i])
                 lanelet_ids = iinfo.dict_agent_lanelets[o_ids[i]]
                 conf_point = iinfo.dict_lanelet_conf_point[lanelet_ids[-1]]
-                a.append(self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids, o_ids[i], t))
+                a4c, dis_ego2cp_tmp = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids, o_ids[i], t)
+                a.append(a4c)
+                dis_ego2cp.append(dis_ego2cp_tmp)
 
             # 前车信息提取
             front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
 
-            ego_state, s = self.motion_planner(a, ego_state, s, [ref_cv, ref_orientation, ref_s], t, [front_vehicle['dhw'], front_vehicle['v']])
+            ego_state, s = self.motion_planner(a,
+                                               ego_state, s,
+                                               [ref_cv, ref_orientation, ref_s], t,
+                                               dis_ego2cp,
+                                               [front_vehicle['dhw'], front_vehicle['v']],
+                                               )
             s_list.append(s)
             # tmp_state = copy.deepcopy(ego_state)
             state_list.append(ego_state)
@@ -336,7 +351,7 @@ class IntersectionPlanner():
 
         return 0
 
-    def motion_planner(self, a, ego_state0, s, ref_info, t, front_vehicle_info=[0,0]):
+    def motion_planner(self, a, ego_state0, s, ref_info, t, dis_ego2cp, front_vehicle_info=None):
         ''''根据他车协作加速度，规划自己的运动轨迹；
         params:
             a: 协作加速度
@@ -345,6 +360,7 @@ class IntersectionPlanner():
         returns:
             ego_state: 自车下一时刻的状态
         '''
+        a_thre = -4  # 非交互式情况，协作加速度阈值(threshold) 设置为0
         if len(a) > 1:
             a1 = a[0]
             a2 = a[1]
@@ -355,47 +371,69 @@ class IntersectionPlanner():
             a1 = 100
             a2 = 100
 
-        DT = self.scenario.dt
-        v = ego_state0.velocity
-        a_max = 3
-        a_front = 3
-        a_thre = -4  # 非交互式情况，协作加速度阈值(threshold) 设置为0
-        if a1 < a_thre or a2 < a_thre:
-            # print(' 避让这辆车', a1, a2)
-            a_conf = -a_max/3
-        else:
-            a_conf = a_max
+        # # test planner
+        # if front_vehicle_info is None:  # no leading car
+        #     front_vehicle_info = [0, 0]
+        #
+        # DT = self.scenario.dt
+        # v = ego_state0.velocity
+        # a_max = 3
+        # a_front = 3
+        #
+        # if a1 < a_thre or a2 < a_thre:
+        #     # print(' 避让这辆车', a1, a2)
+        #     a_conf = -a_max / 3
+        # else:
+        #     a_conf = a_max
+        #
+        # # 考虑前车
+        # dhw = front_vehicle_info[0]
+        # v_f = front_vehicle_info[1]
+        # if dhw > 0:  # 有前车
+        #     s_t = 2 + max([0, v * 1.5 - v * (v - v_f) / 2 / (4 * 2) ** 0.5])
+        #     a_front = 4 * (1 - (v / 60 * 3.6) ** 4 - (s_t / dhw) ** 2)
+        #
+        # # 取最小的加速度控制
+        # a = min([a_conf, a_front])
+        # print("加速度", a_conf, a_front)
+        # v_next = v + a * DT
+        # if v_next < 0:
+        #     v_next = 0
+        # s += v_next * DT
+        #
+        # ref_cv, ref_orientation, ref_s = ref_info
+        # position, orientation = find_reference(s, ref_cv, ref_orientation, ref_s)
+        # tmp_state = State()
+        # tmp_state.position = position
+        # tmp_state.velocity = v_next
+        # tmp_state.orientation = orientation
+        # tmp_state.time_step = t
+        # tmp_state.acceleration = a
+        # # end of test planner
 
-        # 考虑前车
-        dhw = front_vehicle_info[0]
-        v_f = front_vehicle_info[1]
-        if dhw > 0:
-            # 有前车
-                        
-            s_t = 2+max([0, v*1.5 - v*(v - v_f)/2/(4*2)**0.5])
-            a_front = 4 * (1 - (v/60*3.6)**4 - (s_t/dhw)**2)
-        
-        # 取最小的加速度控制
-        a = min([a_conf, a_front])
-        # print("速度", v)
-        # print("dhw", dhw)
-        # print("前车速度", v_f)
-        print("加速度", a_conf, a_front)
+        # === lattice interface
 
+        action = Ipaction()
+        action.v_end = ego_state0.velocity
+        action.a_end = 0
+        action.ego_init_position = ego_state0.position
+        action.lanelet_cv_target = []
+        if a1 < a_thre or a2 < a_thre:  # 避让
+            if a1 < a2:
+                action.delta_s = dis_ego2cp[0] - 10
+                action.T_duration = dis_ego2cp[0]/ego_state0.velocity
+            elif a1 > a2:
+                action.delta_s = dis_ego2cp[1] - 10
+                action.T_duration = dis_ego2cp[1] / ego_state0.velocity
+            else:
+                action.delta_s = 100
+                action.T_duration = dis_ego2cp[1] / ego_state0.velocity
 
-        v_next = v +a * DT
-        if v_next < 0:
-            v_next = 0
-        s += v_next * DT
+        tmp_state = lattice(self.scenario, action)
 
-        ref_cv, ref_orientation, ref_s = ref_info
-        position, orientation = find_reference(s, ref_cv, ref_orientation, ref_s)
-        tmp_state = State()
-        tmp_state.position = position
-        tmp_state.velocity = v_next
-        tmp_state.orientation = orientation
         tmp_state.time_step = t
-        tmp_state.acceleration = a
+
+        # === end of lattice interface
 
         return tmp_state, s
 
@@ -500,7 +538,7 @@ class IntersectionPlanner():
         '''
         scenario = self.scenario
         pos = ego_state.position
-        v = 60 / 3.6
+        v = ego_state.velocity
 
         t4ego2pass = []
         if v == 0:
@@ -533,4 +571,4 @@ class IntersectionPlanner():
 
         s = distance_lanelet(conf_cvs, conf_s, p, conf_point)
         a = 2 * (s - v * t) / (t ** 2)
-        return a
+        return a, d_ego2cp
