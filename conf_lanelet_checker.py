@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 from commonroad.common.file_reader import CommonRoadFileReader
 from detail_central_vertices import detail_cv
+from shapely.geometry import LineString
 
 import os
 import numpy as np
@@ -88,31 +89,42 @@ def conf_lanelet_checker(ln, sub_lanelet_id: int, lanelet_state: int, lanelet_ro
 
     def check_collision(cv_sub_origin, cv_other_origin):
         """检测两条中线之间是否存在冲突，返回冲突是否存在，以及冲突点位置（若存在） """
+        # faster version
+        cv_sub_str = LineString(cv_sub_origin)
+        cv_other_str = LineString(cv_other_origin)
+        conf_point = cv_sub_str.intersection(cv_other_str)
+        if conf_point:
+            isconf = 1
+            # print(conf_point)
+        else:
+            isconf = 0
 
-        # 加密中线
-        cv_sub_detailed_info = detail_cv(cv_sub_origin)
-        cv_other_detailed_info = detail_cv(cv_other_origin)
-
-        # 转置，方便后续处理
-        cv_sub_detailed = np.array(cv_sub_detailed_info[0])
-        cv_sub_detailed = cv_sub_detailed.T
-        cv_other_detailed = np.array(cv_other_detailed_info[0])
-        cv_other_detailed = cv_other_detailed.T
-
-        # 初始化冲突信息
-        isconf = 0
-        conf_point = []
-
-        # 检测两条中线间的最近点
-        for n in range(len(cv_sub_detailed)):
-            for m in range(len(cv_other_detailed)):
-                relative_position = cv_sub_detailed[n][:] - cv_other_detailed[m][:]
-                dis = math.sqrt(relative_position[0] ** 2 + relative_position[1] ** 2)
-                if dis < 0.1:
-                    isconf = 1
-                    conf_point = cv_other_detailed[m][:]
-            if isconf == 1:
-                break
+        # # slow version
+        # # 加密中线
+        # cv_sub_detailed_info = detail_cv(cv_sub_origin)
+        # cv_other_detailed_info = detail_cv(cv_other_origin)
+        #
+        # # 转置，方便后续处理
+        # cv_sub_detailed = np.array(cv_sub_detailed_info[0])
+        # cv_sub_detailed = cv_sub_detailed.T
+        # cv_other_detailed = np.array(cv_other_detailed_info[0])
+        # cv_other_detailed = cv_other_detailed.T
+        #
+        # # 初始化冲突信息
+        # isconf = 0
+        # conf_point = []
+        #
+        # # 检测两条中线间的最近点
+        # for n in range(len(cv_sub_detailed)):
+        #     for m in range(len(cv_other_detailed)):
+        #         relative_position = cv_sub_detailed[n][:] - cv_other_detailed[m][:]
+        #         dis = math.sqrt(relative_position[0] ** 2 + relative_position[1] ** 2)
+        #         if dis < 0.1:
+        #             isconf = 1
+        #             conf_point = cv_other_detailed[m][:]
+        #             print(conf_point)
+        #     if isconf == 1:
+        #         break
         return isconf, conf_point
 
     def check_conf_lanelets(lanelet_network, laneletid_list: list, sub_lanelet_id_in_intersection: int):
