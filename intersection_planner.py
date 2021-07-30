@@ -414,20 +414,20 @@ class IntersectionPlanner():
         # === lattice interface
 
         action = Ipaction()
-        action.v_end = ego_state0.velocity
+        action.v_end = max(ego_state0.velocity, 60/3.6)
         action.a_end = 0
         action.ego_init_position = ego_state0.position
         action.lanelet_cv_target = []
         if a1 < a_thre or a2 < a_thre:  # 避让
-            if a1 < a2:
+            if a1 <= a2:
                 action.delta_s = dis_ego2cp[0] - 10
                 action.T_duration = dis_ego2cp[0]/ego_state0.velocity
             elif a1 > a2:
                 action.delta_s = dis_ego2cp[1] - 10
                 action.T_duration = dis_ego2cp[1] / ego_state0.velocity
-            else:
-                action.delta_s = 100
-                action.T_duration = dis_ego2cp[1] / ego_state0.velocity
+        else:
+            action.delta_s = 100
+            action.T_duration = 100 / ego_state0.velocity
 
         tmp_state = lattice(self.scenario, action)
 
