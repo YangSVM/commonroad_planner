@@ -12,10 +12,12 @@ from grid_lanelet import lanelet_network2grid
 from grid_lanelet import ego_pos2tree
 from grid_lanelet import get_map_info
 from grid_lanelet import edit_scenario4test
-from MCTs_v3 import NaughtsAndCrossesState
-from MCTs_v3 import mcts
+from MCTs_v3a import NaughtsAndCrossesState
+from MCTs_v3a import mcts
 from grid_lanelet import get_frenet_lanelet_axis
 from grid_lanelet import generate_len_map,find_frenet_axis
+from MCTs_v3a import output
+
 
 class MCTs_CRv3():
     def __init__(self, scenario, planning_problem, lanelet_route, ego_vehicle):
@@ -144,9 +146,13 @@ class MCTs_CRv3():
         frenet_cv = find_frenet_axis(lanelet_id_matrix, lanelet_id_target, lanelet_network)
         print('目标车道中心线：\n', frenet_cv.shape)
 
-        initialState = NaughtsAndCrossesState(state,map,obstacles)
-        searcher = mcts(iterationLimit=5000) #改变循环次数或者时间
-        action = searcher.search(initialState=initialState) #一整个类都是其状态
-        print(action.act)
+        initialState = NaughtsAndCrossesState(state, map, obstacles)
+        searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
+        action = searcher.search(initialState=initialState)  # 一整个类都是其状态
+        out = output(state, action.act)
+        print('out: ',out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
+        # print(action.act)
         
+        # Motion planner 其他所需信息
+        # ego_state_init = 
         return action.act

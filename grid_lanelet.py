@@ -346,15 +346,16 @@ if __name__ == '__main__':
     # 画一小段展示一下
     for i in range(10):
         plt.clf()
-        draw_parameters = {
-            'time_begin': i,
-            'scenario':
-                {'dynamic_obstacle': {'show_label': True, },
-                 'lanelet_network': {'lanelet': {'show_label': False, }, },
-                 },
-        }
-
-        draw_object(scenario, draw_params=draw_parameters)
+        # draw_params = {
+        #     'time_begin': i,
+        #     'scenario':
+        #         {'dynamic_obstacle': {'show_label': True, },
+        #          'lanelet_network': {'lanelet': {'show_label': False, }, },
+        #          },
+        # }
+        draw_params = {'lanelet': {'draw_start_and_direction': False, 'draw_center_bound': False},
+                'dynamic_obstacle': {'show_label': True}}
+        draw_object(scenario, draw_params=draw_params)
         draw_object(planning_problem_set)
         plt.gca().set_aspect('equal')
         plt.pause(0.001)

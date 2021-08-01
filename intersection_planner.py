@@ -120,6 +120,7 @@ def find_reference(s, ref_cv, ref_orientation, ref_cv_len):
 
 def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet_route, T):
     '''lanelet_route第一个是自车车道。route直接往前找，直到找到前车。
+    新思路：利用函数`find_lanelet_successors_in_range`寻找后继的lanelet节点。寻找在这些节点
     return:
         front_vehicle: dict. key: pos, vel, distance
     '''
@@ -220,6 +221,8 @@ class IntersectionPlanner():
         scenario = self.scenario
         lanelet_network = scenario.lanelet_network
         DT = scenario.dt
+        if self.ego_state.position[0]>472200:
+            print('conflict check!')
 
         # --------------- 检索地图，检查冲突lanelet和冲突点 ---------------------
         # 搜索结果： cl_info: ;conf_lanelet_potentials

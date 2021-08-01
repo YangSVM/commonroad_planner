@@ -445,7 +445,7 @@ if __name__ == "__main__":
     searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
     action = searcher.search(initialState=initialState)  # 一整个类都是其状态
     out = output(state, action.act)
-    print(out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
+    print('out: ',out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
 
     # print(action.act)
     # end = time.time()
