@@ -1,8 +1,11 @@
 from commonroad.common.file_reader import CommonRoadFileReader
+from commonroad.scenario.lanelet import LaneletNetwork
 from commonroad.scenario.obstacle import Obstacle
 from commonroad.scenario.scenario import Scenario
 from commonroad.visualization.draw_dispatch_cr import draw_object
 import os
+from networkx.algorithms.summarization import snap_aggregation
+from networkx.classes.function import selfloop_edges
 from numpy.lib.function_base import gradient
 from detail_central_vertices import detail_cv
 from intersection_planner import distance_lanelet
@@ -17,6 +20,31 @@ from MCTs_v3a import mcts
 from grid_lanelet import get_frenet_lanelet_axis
 from grid_lanelet import generate_len_map,find_frenet_axis
 from MCTs_v3a import output
+
+
+class ActionAddition:
+    def __init__(self) :
+        self.v_end = -1
+        self.a_end = -1
+        self.delta_s = -1
+        self.lanelet_id_target = -1
+        self.T = 3
+        self.ego_state_init = []
+        self.frenet_cv = None
+    def find_lanelet_id_target(self, s_goal, lanelet_id_matrix, n_target, ln: LaneletNetwork):
+
+        len_map = generate_len_map(ln, lanelet_id_matrix, isContinous=False)
+        n_s_lanelet = len(lanelet_id_matrix[n_target,:])
+        index_target = -1
+        for i in range(n_s_lanelet):
+            len_lanelet = len_map[n_target][i]
+            if  len_lanelet[0] < s_goal and s_goal<len_lanelet[1]:
+                index_target = i
+                break
+        assert index_target!=-1
+        lanelet_id_target = lanelet_id_matrix[n_target, index_target]
+        assert lanelet_id_target!=-1
+        return lanelet_id_target
 
 
 class MCTs_CRv3():
@@ -109,7 +137,7 @@ class MCTs_CRv3():
         
         # 在每次规划过程中，可能需要反复调用这个函数得到目前车辆所在的lanelet，以及相对距离
 
-        lane_ego_n_array, ego_d, obstacles =ego_pos2tree(ego_pos, lanelet_id_matrix, lanelet_network, scenario, T)
+        lane_ego_n_array, s_ego, obstacles =ego_pos2tree(ego_pos, lanelet_id_matrix, lanelet_network, scenario, T)
         # print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
 
 
@@ -129,23 +157,17 @@ class MCTs_CRv3():
             print('ego_lane not found. out of lanelet')
             lane_ego_n = -1
         v_ego = ego_vehicle.current_state.velocity
-        state = [lane_ego_n, ego_d, v_ego]
+        state = [lane_ego_n, s_ego, v_ego]
 
         # 获取可行地图信息
-        map_info = generate_len_map(scenario, lanelet_id_matrix)
+        map_info = generate_len_map(lanelet_network, lanelet_id_matrix)
         print('决策初始时刻 T： ', T) 
         print('自车初始状态矩阵：\n', state)
         print('地图信息：\n', map)
         print('他车矩阵：\n', obstacles)
         print('可用道路信息列表：\n', map_info)
 
-        # 曹磊使用
-        lanelet_id_target = lanelet_network.find_lanelet_by_position([goal_pos])[0][0]
-
-        print('目标车道lanelet_id :\n', lanelet_id_target)
-        frenet_cv = find_frenet_axis(lanelet_id_matrix, lanelet_id_target, lanelet_network)
-        print('目标车道中心线：\n', frenet_cv.shape)
-
+ 
         initialState = NaughtsAndCrossesState(state, map, obstacles)
         searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
         action = searcher.search(initialState=initialState)  # 一整个类都是其状态
@@ -154,5 +176,28 @@ class MCTs_CRv3():
         # print(action.act)
         
         # Motion planner 其他所需信息
-        # ego_state_init = 
-        return action.act
+        ego_state_init = [0 for i in range(6)]
+        ego_state_init[0] = self.ego_vehicle.current_state.position[0]      # x
+        ego_state_init[1] = self.ego_vehicle.current_state.position[1]      # y
+        ego_state_init[2] = self.ego_vehicle.current_state.velocity             # velocity
+        ego_state_init[3] = self.ego_vehicle.current_state.acceleration      # accleration
+        ego_state_init[4] = self.ego_vehicle.current_state.orientation      # orientation. 
+
+        # 曹磊使用
+        # 
+        action_addition = ActionAddition()
+        action_addition.delta_s = out[1]
+        action_addition.v_end = out[2]
+        action_addition.ego_state_init = ego_state_init
+        # action_output.lanelet_id_target = 
+        s_goal = action_addition.delta_s + s_ego
+        lanelet_id_target = action_addition.find_lanelet_id_target(s_goal, lanelet_id_matrix, out[0], lanelet_network)
+        action_addition.lanelet_id_target = lanelet_id_target
+        frenet_cv = find_frenet_axis(lanelet_id_matrix, lanelet_id_target, lanelet_network)
+        action_addition.frenet_cv = frenet_cv
+
+        print('目标车道lanelet_id :\n', lanelet_id_target)
+        print('目标车道中心线数组维度大小：\n', frenet_cv.shape)
+
+
+        return action.act, action_addition

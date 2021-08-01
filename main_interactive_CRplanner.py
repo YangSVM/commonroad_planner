@@ -85,10 +85,10 @@ class InteractiveCRPlanner:
             # === insert straight-going planner here
             if is_new_action_needed:
                 mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
-                action = mcts_planner.planner(current_time_step)
+                action, action_add = mcts_planner.planner(current_time_step)
             else:
                 action = last_action
-            next_state, is_new_action_needed = Lattice(current_scenario, action)
+            next_state, is_new_action_needed = Lattice(current_scenario, action, action_add)
             # === end of straight-going planner
 
         if self.lanelet_state == 2 or self.lanelet_state == 3:

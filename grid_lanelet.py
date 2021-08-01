@@ -158,7 +158,7 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, s
     cv = np.array(cv).T
 
     # 找最近点
-    ego_s = distance_lanelet(cv, s_cv, cv[0, :], ego_pos)
+    s_ego = distance_lanelet(cv, s_cv, cv[0, :], ego_pos)
 
     shape = lanelet_id_matrix.shape
 
@@ -186,7 +186,7 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, s
 
     obstacle_states_in = obstacle_states[obstacle_states[:, 0] != -1, :]
 
-    return lane_ego_index, ego_s, obstacle_states_in
+    return lane_ego_index, s_ego, obstacle_states_in
 
 
 # def get_ego_init_state(init_state, grid_ego_matrix):
@@ -272,7 +272,7 @@ def edit_scenario4test(scenario, ego_init_pos):
     return scenario
 
 
-def generate_len_map(scenario, lanelet_map):
+def generate_len_map(lanelet_network, lanelet_map, isContinous=True):
     """
 
     :param scenario: CR scenario
@@ -287,7 +287,7 @@ def generate_len_map(scenario, lanelet_map):
     """
 
     lm = lanelet_map  # lanelet map
-    ln = scenario.lanelet_network
+    ln = lanelet_network
 
     # calculate length of each parallel lanelet set [m by 1]
     len_lanelet = np.zeros(3)
@@ -311,6 +311,9 @@ def generate_len_map(scenario, lanelet_map):
                 len_map_temp.append(solid_len_range)
         len_map.append(len_map_temp)
         len_map_temp = []
+
+    if not isContinous:
+        return len_map
 
     #  concatenate adjacent periods [n by <m]
     for n in range(len(len_map)):
