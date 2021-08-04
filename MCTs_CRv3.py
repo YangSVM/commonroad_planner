@@ -4,7 +4,7 @@ from commonroad.scenario.obstacle import Obstacle
 from commonroad.scenario.scenario import Scenario
 from commonroad.visualization.draw_dispatch_cr import draw_object
 import os
-from networkx.algorithms.summarization import snap_aggregation
+# from networkx.algorithms.summarization import snap_aggregation
 from networkx.classes.function import selfloop_edges
 from numpy.lib.function_base import gradient
 from detail_central_vertices import detail_cv

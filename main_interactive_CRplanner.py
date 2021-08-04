@@ -9,7 +9,7 @@ from route_planner import route_planner
 from intersection_planner import IntersectionPlanner
 import pickle
 import sys
-sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios')
+# sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios')
 from MCTs_CRv3 import MCTs_CRv3
 
 
@@ -71,6 +71,8 @@ class InteractiveCRPlanner:
                  is_new_action_needed):
 
         """body of our planner"""
+        #  get last action
+        action = last_action
 
         # generate a global lanelet route from initial position to goal region
         lanelet_route = self.generate_route(current_scenario, planning_problem)
@@ -85,18 +87,18 @@ class InteractiveCRPlanner:
             # === insert straight-going planner here
             if is_new_action_needed:
                 mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
-                action, action_add = mcts_planner.planner(current_time_step)
-            else:
-                action = last_action
-            next_state, is_new_action_needed = Lattice(current_scenario, action, action_add)
+                action = mcts_planner.planner(current_time_step)
+                # action is a tuple[semantic action, action_add]
+            
+            next_state, is_new_action_needed = Lattice(current_scenario, action)
             # === end of straight-going planner
 
         if self.lanelet_state == 2 or self.lanelet_state == 3:
+
             # === insert intersection planner here
-            action = []
             is_new_action_needed = 1
             ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle, self.lanelet_state)
-            next_state,ev = ip.planner(current_time_step)
+            next_state, ev = ip.planner(current_time_step)
             # === end of intersection planner
 
         return next_state, action, is_new_action_needed
@@ -110,8 +112,8 @@ if __name__ == '__main__':
         '/home/zxc/Downloads/competition_scenarios_new/interactive/')
     # folder_scenarios = os.path.abspath(
     #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
-    # name_scenario = "DEU_Frankfurt-4_2_I-1" # 交叉口测试场景
-    name_scenario =  "DEU_Frankfurt-95_2_I-1" # 直道测试场景
+    # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
+    name_scenario =  "DEU_Frankfurt-95_2_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
