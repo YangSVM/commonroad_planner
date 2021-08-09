@@ -41,7 +41,7 @@ class Ipaction():
         self.a_end = 0
         self.delta_s = None
         self.lanelet_cv_target = []
-        self.T_duration = None
+        self.T = None
         self.ego_init_state = []
 
 def get_route_frenet_line(route, lanelet_network):
@@ -374,69 +374,69 @@ class IntersectionPlanner():
             a1 = 100
             a2 = 100
 
-        # # test planner
-        # if front_vehicle_info is None:  # no leading car
-        #     front_vehicle_info = [0, 0]
-        #
-        # DT = self.scenario.dt
-        # v = ego_state0.velocity
-        # a_max = 3
-        # a_front = 3
-        #
-        # if a1 < a_thre or a2 < a_thre:
-        #     # print(' 避让这辆车', a1, a2)
-        #     a_conf = -a_max / 3
-        # else:
-        #     a_conf = a_max
-        #
-        # # 考虑前车
-        # dhw = front_vehicle_info[0]
-        # v_f = front_vehicle_info[1]
-        # if dhw > 0:  # 有前车
-        #     s_t = 2 + max([0, v * 1.5 - v * (v - v_f) / 2 / (4 * 2) ** 0.5])
-        #     a_front = 4 * (1 - (v / 60 * 3.6) ** 4 - (s_t / dhw) ** 2)
-        #
-        # # 取最小的加速度控制
-        # a = min([a_conf, a_front])
-        # print("加速度", a_conf, a_front)
-        # v_next = v + a * DT
-        # if v_next < 0:
-        #     v_next = 0
-        # s += v_next * DT
-        #
-        # ref_cv, ref_orientation, ref_s = ref_info
-        # position, orientation = find_reference(s, ref_cv, ref_orientation, ref_s)
-        # tmp_state = State()
-        # tmp_state.position = position
-        # tmp_state.velocity = v_next
-        # tmp_state.orientation = orientation
-        # tmp_state.time_step = t
-        # tmp_state.acceleration = a
-        # # end of test planner
+        # test planner
+        if front_vehicle_info is None:  # no leading car
+            front_vehicle_info = [0, 0]
 
-        # === lattice interface
+        DT = self.scenario.dt
+        v = ego_state0.velocity
+        a_max = 3
+        a_front = 3
 
-        action = Ipaction()
-        action.v_end = max(ego_state0.velocity, 60/3.6)
-        action.a_end = 0
-        action.ego_init_position = ego_state0.position
-        action.lanelet_cv_target = []
-        if a1 < a_thre or a2 < a_thre:  # 避让
-            if a1 <= a2:
-                action.delta_s = dis_ego2cp[0] - 10
-                action.T_duration = dis_ego2cp[0]/ego_state0.velocity
-            elif a1 > a2:
-                action.delta_s = dis_ego2cp[1] - 10
-                action.T_duration = dis_ego2cp[1] / ego_state0.velocity
+        if a1 < a_thre or a2 < a_thre:
+            # print(' 避让这辆车', a1, a2)
+            a_conf = -a_max / 3
         else:
-            action.delta_s = 100
-            action.T_duration = 100 / ego_state0.velocity
+            a_conf = a_max
 
-        tmp_state = lattice(self.scenario, action)
+        # 考虑前车
+        dhw = front_vehicle_info[0]
+        v_f = front_vehicle_info[1]
+        if dhw > 0:  # 有前车
+            s_t = 2 + max([0, v * 1.5 - v * (v - v_f) / 2 / (4 * 2) ** 0.5])
+            a_front = 4 * (1 - (v / 60 * 3.6) ** 4 - (s_t / dhw) ** 2)
 
+        # 取最小的加速度控制
+        a = min([a_conf, a_front])
+        print("加速度", a_conf, a_front)
+        v_next = v + a * DT
+        if v_next < 0:
+            v_next = 0
+        s += v_next * DT
+
+        ref_cv, ref_orientation, ref_s = ref_info
+        position, orientation = find_reference(s, ref_cv, ref_orientation, ref_s)
+        tmp_state = State()
+        tmp_state.position = position
+        tmp_state.velocity = v_next
+        tmp_state.orientation = orientation
         tmp_state.time_step = t
+        tmp_state.acceleration = a
+        # end of test planner
 
-        # === end of lattice interface
+        # # === lattice interface
+        #
+        # action = Ipaction()
+        # action.v_end = max(ego_state0.velocity, 60/3.6)
+        # action.a_end = 0
+        # action.ego_state_init = ego_state0
+        # action.lanelet_cv_target = []
+        # if a1 < a_thre or a2 < a_thre:  # 避让
+        #     if a1 <= a2:
+        #         action.delta_s = dis_ego2cp[0] - 10
+        #         action.T_duration = dis_ego2cp[0]/ego_state0.velocity
+        #     elif a1 > a2:
+        #         action.delta_s = dis_ego2cp[1] - 10
+        #         action.T_duration = dis_ego2cp[1] / ego_state0.velocity
+        # else:
+        #     action.delta_s = 100
+        #     action.T = 100 / ego_state0.velocity
+        #
+        # tmp_state = lattice(self.scenario, action)
+        #
+        # tmp_state.time_step = t
+        #
+        # # === end of lattice interface
 
         return tmp_state, s
 
