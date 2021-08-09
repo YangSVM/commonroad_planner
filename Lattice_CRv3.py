@@ -68,6 +68,7 @@ class Lattice_CRv3():
         d_end = 0     
         d_cond_end = np.array([d_end, 0, 0])
         poly_traj.GenLatTraj(d_cond_end)
+        delta_t = 0.1
         target_pos = [poly_traj.GenCombinedTraj(path_points, delta_t)[-1].x, 
                             poly_traj.GenCombinedTraj(path_points, delta_t)[-1].y]
         if (Dist(ego_pos[0],ego_pos[1],target_pos[0],target_pos[1])< (0.2*0.2+0.1*0.1)**0.5):
@@ -85,8 +86,9 @@ class Lattice_CRv3():
         path_point = CalcRefLine(cvs)
         return path_point
 
-    def planner(self, action):
+    def planner(self, action, t):
         path_points = self.get_reference_line(action.frenet_cv)
+        action.frenet_cv = path_points
         is_new_action_needed = self.is_require_decision(action)
         
         # get ego planning init traj point

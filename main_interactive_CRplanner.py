@@ -7,7 +7,7 @@ from commonroad.common.file_reader import CommonRoadFileReader
 from route_planner import route_planner
 from intersection_planner import IntersectionPlanner
 from Lattice_CRv3 import Lattice_CRv3
-from bezier import biz_planner
+# from bezier import biz_planner
 # sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios')
 from MCTs_CRv3 import MCTs_CRv3
 
@@ -89,7 +89,7 @@ class InteractiveCRPlanner:
                 semantic_action, action = mcts_planner.planner(current_time_step)
             # next_state, is_new_action_needed = biz_planner(current_scenario, action)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            next_state, is_new_action_needed = lattice_planner.planner(action)
+            next_state, is_new_action_needed = lattice_planner.planner(action, current_time_step)
             # === end of straight-going planner
 
         if self.lanelet_state == 2 or self.lanelet_state == 3:
