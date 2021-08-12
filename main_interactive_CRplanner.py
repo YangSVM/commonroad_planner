@@ -96,7 +96,7 @@ class InteractiveCRPlanner:
             # === insert intersection planner here
             is_new_action_needed = 1
             ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle, self.lanelet_state)
-            next_state, ev = ip.planner(current_time_step)
+            next_state = ip.planning(current_time_step)
             # === end of intersection planner
 
         return next_state, action, is_new_action_needed

@@ -7,13 +7,12 @@ from commonroad.visualization.draw_dispatch_cr import draw_object
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import copy
 
-from numpy.core.fromnumeric import amax
-
+from CR_tools.utility import distance_lanelet
 from conf_lanelet_checker import conf_lanelet_checker, potential_conf_lanelet_checkerv2
 from detail_central_vertices import detail_cv
 from route_planner import route_planner
+from Lattice_CRv3 import Lattice_CRv3
 
 from commonroad.geometry.shape import Rectangle
 from commonroad.scenario.obstacle import DynamicObstacle, ObstacleType
@@ -21,7 +20,6 @@ from commonroad.scenario.trajectory import Trajectory, State
 from commonroad.prediction.prediction import TrajectoryPrediction
 from vehiclemodels import parameters_vehicle3
 from commonroad.visualization.mp_renderer import MPRenderer
-
 
 '''
 方法概述：
@@ -35,14 +33,17 @@ from commonroad.visualization.mp_renderer import MPRenderer
     2. 全局lanelet规划器。比如路口在行驶的过程中，如何知道此时应该前行还是右转。
 
 '''
+
+
 class Ipaction():
     def __init__(self):
         self.v_end = 0
         self.a_end = 0
         self.delta_s = None
-        self.lanelet_cv_target = []
+        self.frenet_cv = []
         self.T = None
         self.ego_init_state = []
+
 
 def get_route_frenet_line(route, lanelet_network):
     ''' 获取route lanelt id的对应参考线
@@ -58,33 +59,6 @@ def get_route_frenet_line(route, lanelet_network):
     ref_cv, ref_orientation, ref_s = detail_cv(cv)
     ref_cv = np.array(ref_cv).T
     return ref_cv, ref_orientation, ref_s
-
-
-def distance_lanelet(center_line, s, p1, p2):
-    """ 计算沿着道路中心线的路程. p2 - p1（正数说明p2在道路后方）
-         直线的时候，保证是直线距离；曲线的时候，近似正确
-    Args:
-        center_line: 道路中心线；
-        s : 道路中心线累积距离;
-        p1, p2: 点1， 点2
-    Return:
-
-    """
-    # 规范化格式。必须是numpy数组。并且m*2维，m是点的数量
-    if type(center_line) is not np.ndarray:
-        center_line = np.array(center_line)
-    if center_line.shape[1] != 2:
-        center_line = center_line.T
-    if center_line.shape[0] == 2:
-        print('distance_lanelet warning! may wrong size of center line input. check the input style ')
-
-    d1 = np.linalg.norm(center_line - p1, axis=1)
-    i1 = np.argmin(d1)
-    d2 = np.linalg.norm(center_line - p2, axis=1)
-    i2 = np.argmin(d2)
-
-    return s[i2] - s[i1]
-
 
 def sort_conf_point(ego_pos, dict_lanelet_conf_point, cv, cv_s):
     """ 给冲突点按照离自车的距离 由近到远 排序。
@@ -122,7 +96,7 @@ def find_reference(s, ref_cv, ref_orientation, ref_cv_len):
     if id >= ref_orientation.shape[0]:
         # print('end of reference line, please stop !')
         id = ref_orientation.shape[0] - 1
-    return ref_cv[id,:], ref_orientation[id]
+    return ref_cv[id, :], ref_orientation[id]
 
 
 def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet_route, T):
@@ -163,6 +137,7 @@ def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet
 
     return front_vehicle
 
+
 class IntersectionInfo():
     ''' 提取交叉路口的冲突信息
     '''
@@ -178,9 +153,9 @@ class IntersectionInfo():
 
         self.dict_lanelet_agent = {}  # 场景信息。直接冲突lanelet - > 离冲突点最近的agent
         self.dict_parent_lanelet = {}  # 地图信息。间接冲突lanelet->直接冲突lanelet*列表*。(间接冲突是直接冲突的parent，一个间接可能对应多个直接)
-        self.dict_lanelet_potential_agent = {} # 间接冲突lanelet - > 离冲突点最近的agent。
-        self.sorted_lanelet = []        # 直接冲突lanelet按照冲突点位置进行排序。
-        self.i_ego = 0                          # 自车目前通过了哪个冲突点。0代表在第一个冲突点之前
+        self.dict_lanelet_potential_agent = {}  # 间接冲突lanelet - > 离冲突点最近的agent。
+        self.sorted_lanelet = []  # 直接冲突lanelet按照冲突点位置进行排序。
+        self.i_ego = 0  # 自车目前通过了哪个冲突点。0代表在第一个冲突点之前
         self.sorted_conf_agent = []  # 最终结果：List：他车重要度排序
         self.dict_agent_lanelets = {}
 
@@ -209,15 +184,16 @@ class IntersectionPlanner():
     过程说明：
 
     '''
+
     def __init__(self, scenario, route, ego_vehicle, lanelet_state) -> None:
         self.scenario = scenario
-        self.ego_state = ego_vehicle.current_state  #自车状态
+        self.ego_state = ego_vehicle.current_state  # 自车状态
         # self.goal = planning_problem.goal
         self.route = route
         self.ego_vehicle = ego_vehicle
         self.lanelet_state = lanelet_state
 
-    def planner(self, T):
+    def planning(self, T):
         '''轨迹规划器。返回轨迹。
         重要过程说明：
             cl_info: 两个属性。id: 直接冲突lanelet的ID list。conf_point：对应的冲突点坐标list。
@@ -228,7 +204,7 @@ class IntersectionPlanner():
         scenario = self.scenario
         lanelet_network = scenario.lanelet_network
         DT = scenario.dt
-        if self.ego_state.position[0]>472200:
+        if self.ego_state.position[0] > 472200:
             print('conflict check!')
 
         # --------------- 检索地图，检查冲突lanelet和冲突点 ---------------------
@@ -251,7 +227,7 @@ class IntersectionPlanner():
         ref_cv, ref_orientation, ref_s = get_route_frenet_line(self.route, lanelet_network)
 
         # 在[T, T+400]的时间进行规划
-        time = [x+ T for x in range(1)]
+        time = [x + T for x in range(1)]
         s = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], ego_state.position)  # 计算自车的frenet纵向坐标
         s_list = [s]
         state_list = []
@@ -310,23 +286,36 @@ class IntersectionPlanner():
                 o_ids.append(iinfo.sorted_conf_agent[i])
                 lanelet_ids = iinfo.dict_agent_lanelets[o_ids[i]]
                 conf_point = iinfo.dict_lanelet_conf_point[lanelet_ids[-1]]
-                a4c, dis_ego2cp_tmp = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids, o_ids[i], t)
+                a4c, dis_ego2cp_tmp = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids,
+                                                                 o_ids[i], t)
                 a.append(a4c)
                 dis_ego2cp.append(dis_ego2cp_tmp)
 
-            # 前车信息提取
-            front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
+        # # ① ==== test planner
+        #     # 前车信息提取
+        #     front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
+        #     next_state, s = self.motion_planner_test(a,
+        #                                              ego_state, s,
+        #                                              [ref_cv, ref_orientation, ref_s], t,
+        #                                              [front_vehicle['dhw'], front_vehicle['v']],
+        #                                              )
+        #
+        #     s_list.append(s)
+        #     state_list.append(next_state)
+        # # generate a ego vehicle for visualization
+        # ego_vehicle = self.generate_ego_vehicle(state_list)
+        #
+        # # self.analysis_intersection(s_list, scenario)
+        # return state_list[1]
+        # # ① ===== test planner
 
-            ego_state, s = self.motion_planner(a,
-                                               ego_state, s,
-                                               [ref_cv, ref_orientation, ref_s], t,
-                                               dis_ego2cp,
-                                               [front_vehicle['dhw'], front_vehicle['v']],
-                                               )
-            s_list.append(s)
-            # tmp_state = copy.deepcopy(ego_state)
-            state_list.append(ego_state)
+        # ② ==== lattice planner
+            next_state, is_new_action_needed = self.motion_planner_lattice(a, ego_state, dis_ego2cp, T)
+            state_list.append(next_state)
+        return state_list[1]
+        # ② ==== lattice planner
 
+    def generate_ego_vehicle(self, state_list):
         # create the planned trajectory starting at time step 1
         ego_vehicle_trajectory = Trajectory(initial_time_step=1, state_list=state_list[1:])
         # create the prediction using the planned trajectory and the shape of the ego vehicle
@@ -341,9 +330,7 @@ class IntersectionPlanner():
         ego_vehicle = DynamicObstacle(obstacle_id=100, obstacle_type=ego_vehicle_type,
                                       obstacle_shape=ego_vehicle_shape, initial_state=self.ego_state,
                                       prediction=ego_vehicle_prediction)
-        #
-        self.analysis_intersection(s_list, scenario)
-        return state_list[1], ego_vehicle
+        return ego_vehicle
 
     def analysis_intersection(self, s_list, scenario):
         '''分析自车运动轨迹，画出相应的s-t图
@@ -354,7 +341,7 @@ class IntersectionPlanner():
 
         return 0
 
-    def motion_planner(self, a, ego_state0, s, ref_info, t, dis_ego2cp, front_vehicle_info=None):
+    def motion_planner_test(self, a, ego_state0, s, ref_info, t, front_vehicle_info=None):
         ''''根据他车协作加速度，规划自己的运动轨迹；
         params:
             a: 协作加速度
@@ -413,32 +400,40 @@ class IntersectionPlanner():
         tmp_state.time_step = t
         tmp_state.acceleration = a
         # end of test planner
-
-        # # === lattice interface
-        #
-        # action = Ipaction()
-        # action.v_end = max(ego_state0.velocity, 60/3.6)
-        # action.a_end = 0
-        # action.ego_state_init = ego_state0
-        # action.lanelet_cv_target = []
-        # if a1 < a_thre or a2 < a_thre:  # 避让
-        #     if a1 <= a2:
-        #         action.delta_s = dis_ego2cp[0] - 10
-        #         action.T_duration = dis_ego2cp[0]/ego_state0.velocity
-        #     elif a1 > a2:
-        #         action.delta_s = dis_ego2cp[1] - 10
-        #         action.T_duration = dis_ego2cp[1] / ego_state0.velocity
-        # else:
-        #     action.delta_s = 100
-        #     action.T = 100 / ego_state0.velocity
-        #
-        # tmp_state = lattice(self.scenario, action)
-        #
-        # tmp_state.time_step = t
-        #
-        # # === end of lattice interface
-
         return tmp_state, s
+
+    def motion_planner_lattice(self, a, ego_state0, dis_ego2cp, T):
+
+        a_thre = -4  # 非交互式情况，协作加速度阈值(threshold) 设置为0
+        if len(a) > 1:
+            a1 = a[0]
+            a2 = a[1]
+        elif len(a) == 1:
+            a1 = a[0]
+            a2 = a[0]
+        else:
+            a1 = 100
+            a2 = 100
+
+        action = Ipaction()
+        action.v_end = max(ego_state0.velocity, 60 / 3.6)
+        action.a_end = 0
+        action.ego_state_init = ego_state0
+        action.frenet_cv = []
+        if a1 < a_thre or a2 < a_thre:  # 避让
+            if a1 <= a2:
+                action.delta_s = dis_ego2cp[0] - 10
+                action.T_duration = dis_ego2cp[0] / ego_state0.velocity
+            elif a1 > a2:
+                action.delta_s = dis_ego2cp[1] - 10
+                action.T_duration = dis_ego2cp[1] / ego_state0.velocity
+        else:
+            action.delta_s = 100
+            action.T = 100 / ego_state0.velocity
+
+        lattice_planner = Lattice_CRv3(self.scenario, self.ego_vehicle)
+        next_state, is_new_action_needed = lattice_planner.planner(action, T)
+        return next_state, is_new_action_needed
 
     def conf_agent_checker(self, dict_lanelet_conf_points, T):
         """  找直接冲突点 conf_lanelets中最靠近冲突点的车，为冲突车辆
@@ -460,7 +455,7 @@ class IntersectionPlanner():
         n_obs = len(scenario.obstacles)
         # 暴力排查场景中的所有车
         for i in range(n_obs):
-            state = scenario.obstacles[i].state_at_time(0) #zxc:scenario是实时的，所有T都改成0
+            state = scenario.obstacles[i].state_at_time(0)  # zxc:scenario是实时的，所有T都改成0
             # 当前时刻这辆车可能没有
             if state is None:
                 continue
