@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from detail_central_vertices import detail_cv
 from route_planner import route_planner
-from CR_tools.utility import distance_lanelet
+from intersection_planner import distance_lanelet
 
 from grid_lanelet import edit_scenario4test
 from grid_lanelet import lanelet_network2grid
@@ -41,9 +41,9 @@ class Lattice_CRv3():
         self.ego_vehicle = ego_vehicle
         self.ego_state = ego_vehicle.current_state
     
-    def is_require_decision(self,action):
+    def is_require_decision(self,action,path_points):
 
-        path_points = action.frenet_cv
+        # path_points = action.frenet_cv
         ## real-time position
         # get ego planning init traj point
         ego_pos = self.ego_state.position
@@ -88,8 +88,8 @@ class Lattice_CRv3():
 
     def planner(self, action, t):
         path_points = self.get_reference_line(action.frenet_cv)
-        action.frenet_cv = path_points
-        is_new_action_needed = self.is_require_decision(action)
+        # action.frenet_cv = path_points
+        is_new_action_needed = self.is_require_decision(action,path_points)
         
         # get ego planning init traj point
         ego_pos = self.ego_state.position

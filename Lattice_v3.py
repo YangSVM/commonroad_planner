@@ -313,7 +313,7 @@ def LinearInterpolate(path_point_0, path_point_1, rs_inter):
     weight = (rs_inter - rs_0) / (rs_1 - rs_0)
     if weight < 0 or weight > 1:
         print("weight error, not in [0, 1]")
-        quit()
+        # quit()
     rx_inter = lerp(path_point_0.rx, path_point_1.rx, weight)
     ry_inter = lerp(path_point_0.ry, path_point_1.ry, weight)
     rtheta_inter = slerp(path_point_0.rtheta, path_point_1.rtheta, weight)
@@ -613,9 +613,10 @@ class SampleBasis:
         self.v_end = action.v_end     # for cruising
         self.acc_end = action.a_end
         self.total_t = action.T
+        self.dist_prvw = 1
 
 class LocalPlanner:
-    def __init__(self, traj_point, path_points, obstacles, samp_basis, from_decision):
+    def __init__(self, traj_point, path_points, obstacles, samp_basis):
         self.traj_point_theta = traj_point.theta    # record the current heading
         self.traj_point = traj_point
         self.path_points = path_points
@@ -627,9 +628,9 @@ class LocalPlanner:
         self.acc_end = samp_basis.acc_end
         self.total_t = samp_basis.total_t
         self.polytrajs = []
-        self.__JudgeStatus(traj_point, path_points, obstacles, samp_basis, from_decision)
+        self.__JudgeStatus(traj_point, path_points, obstacles, samp_basis)
     
-    def __JudgeStatus(self,traj_point, path_points, obstacles, samp_basis, from_decision):
+    def __JudgeStatus(self,traj_point, path_points, obstacles, samp_basis):
         colli = 0
         global delta_t, sight_range
         for obstacle in self.obstacles:
@@ -649,13 +650,15 @@ class LocalPlanner:
         #         self.status = "planning_back"
         # else:
         #     self.status = "planning_out"
-        if from_decision[4] in [1,2]:
+        self.status = "planning_back"
+        
+        """ if from_decision[4] in [1,2]:
             self.status = "planning_back"
         if from_decision[4] in [3,4,5]:
             # self.status = "following_path"
             self.status = "planning_back"
         if from_decision[4] == 6:
-            self.status = "planning_out"
+            self.status = "planning_out" """
         # print("status: " , self.status)
 
         path_point_end = self.path_points[-1]
@@ -839,7 +842,7 @@ class LocalPlanner:
         # self.theta_samp = [self.traj_point_theta]   # just use the current heading, is it necessary?
         self.theta_samp = samp_basis.theta_samp
         # self.dist_samp = [self.dist_prvw]           # come back asap, is it necessary?
-        self.dist_samp = samp_basis.dist_samp
+        # self.dist_samp = samp_basis.dist_samp
         # self.d_end_samp = [0]
         self.d_end_samp = samp_basis.d_end_samp
         if self.to_stop:    # stopping
