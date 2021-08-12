@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 from detail_central_vertices import detail_cv
 from route_planner import route_planner
-from intersection_planner import distance_lanelet
+from simulation.utility import distance_lanelet
 
 from grid_lanelet import edit_scenario4test
 from grid_lanelet import lanelet_network2grid
