@@ -7,10 +7,11 @@ from commonroad.common.file_reader import CommonRoadFileReader
 from route_planner import route_planner
 from intersection_planner import IntersectionPlanner
 from Lattice_CRv3 import Lattice_CRv3
+# from simulation.simulations import create_video_for_simulation
 # from bezier import biz_planner
 # sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios')
 from MCTs_CRv3 import MCTs_CRv3
-
+from sumocr.visualization.video import create_video
 
 class InteractiveCRPlanner:
     lanelet_ego = None
@@ -118,45 +119,61 @@ if __name__ == '__main__':
     conf = load_sumo_configuration(interactive_scenario_path)
     scenario_file = os.path.join(interactive_scenario_path, f"{name_scenario}.cr.xml")
     scenario, planning_problem_set = CommonRoadFileReader(scenario_file).open()
-    planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
+
     #
     scenario_wrapper = ScenarioWrapper()
     scenario_wrapper.sumo_cfg_file = os.path.join(interactive_scenario_path, f"{conf.scenario_name}.sumo.cfg")
     scenario_wrapper.initial_scenario = scenario
 
-    num_of_steps = conf.simulation_steps
-
+    # num_of_steps = conf.simulation_steps
+    num_of_steps = 50
     sumo_sim = SumoSimulation()
 
     # initialize simulation
     sumo_sim.initialize(conf, scenario_wrapper, None)
 
     #
-    current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
     ego_vehicles = sumo_sim.ego_vehicles
-    ego_vehicle = list(ego_vehicles.values())[0]
+    for step in range(num_of_steps):
+        print("process:", step, "/", num_of_steps)
+        current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
+        planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
+        ego_vehicle = list(ego_vehicles.values())[0]
 
-    # f=open('variables.pkl', 'rb')
-    # current_scenario,planning_problem, lanelet_route, ego_vehicle  = pickle.load(f)
-    # f.close()
+        # ====== plug in your motion planner here
+        # ====== paste in simulations
 
-    # ====== plug in your motion planner here
-    # ====== paste in simulations
+        # generate a CR planner
+        main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
+        last_action = []
+        is_new_action_needed = True
+        next_state, last_action, is_new_action_needed = main_planner.planning(current_scenario,
+                                                                              planning_problem,
+                                                                              ego_vehicle,
+                                                                              sumo_sim.current_time_step,
+                                                                              last_action,
+                                                                              is_new_action_needed)
 
-    # generate a CR planner
-    main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
-    last_action = []
-    is_new_action_needed = True
-    next_state, last_action, is_new_action_needed = main_planner.planning(current_scenario,
-                                                                          planning_problem,
-                                                                          ego_vehicle,
-                                                                          sumo_sim.current_time_step,
-                                                                          last_action,
-                                                                          is_new_action_needed)
+        # ====== paste in simulations
+        # ====== end of motion planner
+        next_state.time_step = 1
+        trajectory_ego = [next_state]
+        ego_vehicle.set_planned_trajectory(trajectory_ego)
+        sumo_sim.simulate_step()
 
-    # ====== paste in simulations
-    # ====== end of motion planner
-    next_state.time_step = 1
-    trajectory_ego = [next_state]
-    ego_vehicle.set_planned_trajectory(trajectory_ego)
-    sumo_sim.simulate_step()
+    # retrieve the simulated scenario in CR format
+    simulated_scenario = sumo_sim.commonroad_scenarios_all_time_steps()
+
+    # stop the simulation
+    sumo_sim.stop()
+
+    # output results
+    output_folder_path = '/home/zxc/Videos/CR_outputs/'
+
+    # create mp4 animation
+    create_video(simulated_scenario,
+                 output_folder_path,
+                 planning_problem_set,
+                 ego_vehicles,
+                 True,
+                 "_planner")
