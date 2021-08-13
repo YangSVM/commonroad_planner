@@ -42,8 +42,8 @@ class Ipaction():
         self.delta_s = None
         self.frenet_cv = []
         self.T = None
-        self.ego_init_state = []
-
+        self.ego_state_init = []
+        self.lanelet_id_target = None
 
 def get_route_frenet_line(route, lanelet_network):
     ''' 获取route lanelt id的对应参考线
@@ -310,7 +310,7 @@ class IntersectionPlanner():
         # ① ===== test planner
 
         # # ② ==== lattice planner
-        #     next_state, is_new_action_needed = self.motion_planner_lattice(a, ego_state, dis_ego2cp, T)
+        #     next_state, is_new_action_needed = self.motion_planner_lattice(a, dis_ego2cp)
         #     state_list.append(next_state)
         # return state_list[1]
         # # ② ==== lattice planner
@@ -402,8 +402,10 @@ class IntersectionPlanner():
         # end of test planner
         return tmp_state, s
 
-    def motion_planner_lattice(self, a, ego_state0, dis_ego2cp, T):
-
+    def motion_planner_lattice(self, a, dis_ego2cp):
+        ln = self.scenario.lanelet_network
+        ego_lanelet = ln.find_lanelet_by_id(self.route[0])
+        ego_successor_lanelet = ln.find_lanelet_by_id(ego_lanelet.successor[0])
         a_thre = -4  # 非交互式情况，协作加速度阈值(threshold) 设置为0
         if len(a) > 1:
             a1 = a[0]
@@ -416,20 +418,33 @@ class IntersectionPlanner():
             a2 = 100
 
         action = Ipaction()
-        action.v_end = max(ego_state0.velocity, 60 / 3.6)
+
+        ego_state_init = [0 for i in range(6)]
+        ego_state_init[0] = self.ego_state.position[0]      # x
+        ego_state_init[1] = self.ego_state.position[1]      # y
+        ego_state_init[2] = self.ego_state.velocity             # velocity
+        ego_state_init[3] = self.ego_state.acceleration      # accleration
+        ego_state_init[4] = self.ego_state.orientation      # orientation.
+        action.ego_state_init = ego_state_init
+
+        action.v_end = max(self.ego_state.velocity, 60 / 3.6)
         action.a_end = 0
-        action.ego_state_init = ego_state0
-        action.frenet_cv = []
+        action.lanelet_id_target = self.route[1]
+
+        action.frenet_cv = ego_lanelet.center_vertices
+        if ego_successor_lanelet:
+            action.frenet_cv = np.concatenate((action.frenet_cv, ego_successor_lanelet.center_vertices), axis=0)
+
         if a1 < a_thre or a2 < a_thre:  # 避让
             if a1 <= a2:
                 action.delta_s = dis_ego2cp[0] - 10
-                action.T_duration = dis_ego2cp[0] / ego_state0.velocity
+                action.T_duration = dis_ego2cp[0] / self.ego_state.velocity
             elif a1 > a2:
                 action.delta_s = dis_ego2cp[1] - 10
-                action.T_duration = dis_ego2cp[1] / ego_state0.velocity
+                action.T_duration = dis_ego2cp[1] / self.ego_state.velocity
         else:
             action.delta_s = 100
-            action.T = 100 / ego_state0.velocity
+            action.T = 100 / self.ego_state.velocity
 
         lattice_planner = Lattice_CRv3(self.scenario, self.ego_vehicle)
         next_state, is_new_action_needed = lattice_planner.planner(action)
