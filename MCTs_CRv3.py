@@ -122,6 +122,7 @@ class MCTs_CRv3():
         return start_route_id, end_route_id, not is_meet_intersection
 
     def planner(self, T):
+        T = 0
         planning_problem  = self.planning_problem
         scenario =self.scenario
         ego_vehicle = self.ego_vehicle
