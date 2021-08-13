@@ -291,29 +291,29 @@ class IntersectionPlanner():
                 a.append(a4c)
                 dis_ego2cp.append(dis_ego2cp_tmp)
 
-        # # ① ==== test planner
-        #     # 前车信息提取
-        #     front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
-        #     next_state, s = self.motion_planner_test(a,
-        #                                              ego_state, s,
-        #                                              [ref_cv, ref_orientation, ref_s], t,
-        #                                              [front_vehicle['dhw'], front_vehicle['v']],
-        #                                              )
-        #
-        #     s_list.append(s)
-        #     state_list.append(next_state)
-        # # generate a ego vehicle for visualization
-        # ego_vehicle = self.generate_ego_vehicle(state_list)
-        #
-        # # self.analysis_intersection(s_list, scenario)
-        # return state_list[1]
-        # # ① ===== test planner
+        # ① ==== test planner
+            # 前车信息提取
+            front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
+            next_state, s = self.motion_planner_test(a,
+                                                     ego_state, s,
+                                                     [ref_cv, ref_orientation, ref_s], t,
+                                                     [front_vehicle['dhw'], front_vehicle['v']],
+                                                     )
 
-        # ② ==== lattice planner
-            next_state, is_new_action_needed = self.motion_planner_lattice(a, ego_state, dis_ego2cp, T)
+            s_list.append(s)
             state_list.append(next_state)
+        # generate a ego vehicle for visualization
+        ego_vehicle = self.generate_ego_vehicle(state_list)
+
+        # self.analysis_intersection(s_list, scenario)
         return state_list[1]
-        # ② ==== lattice planner
+        # ① ===== test planner
+
+        # # ② ==== lattice planner
+        #     next_state, is_new_action_needed = self.motion_planner_lattice(a, ego_state, dis_ego2cp, T)
+        #     state_list.append(next_state)
+        # return state_list[1]
+        # # ② ==== lattice planner
 
     def generate_ego_vehicle(self, state_list):
         # create the planned trajectory starting at time step 1
@@ -432,7 +432,7 @@ class IntersectionPlanner():
             action.T = 100 / ego_state0.velocity
 
         lattice_planner = Lattice_CRv3(self.scenario, self.ego_vehicle)
-        next_state, is_new_action_needed = lattice_planner.planner(action, T)
+        next_state, is_new_action_needed = lattice_planner.planner(action)
         return next_state, is_new_action_needed
 
     def conf_agent_checker(self, dict_lanelet_conf_points, T):
