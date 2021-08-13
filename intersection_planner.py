@@ -201,6 +201,7 @@ class IntersectionPlanner():
         Returns:
             trajectory: 自车轨迹。
         '''
+        T = 0
         scenario = self.scenario
         lanelet_network = scenario.lanelet_network
         DT = scenario.dt
@@ -432,7 +433,7 @@ class IntersectionPlanner():
             action.T = 100 / ego_state0.velocity
 
         lattice_planner = Lattice_CRv3(self.scenario, self.ego_vehicle)
-        next_state, is_new_action_needed = lattice_planner.planner(action, T)
+        next_state, is_new_action_needed = lattice_planner.planner(action)
         return next_state, is_new_action_needed
 
     def conf_agent_checker(self, dict_lanelet_conf_points, T):
