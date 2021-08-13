@@ -86,7 +86,8 @@ class Lattice_CRv3():
         path_point = CalcRefLine(cvs)
         return path_point
 
-    def planner(self, action, t):
+    def planner(self, action):
+        t=0
         path_points = self.get_reference_line(action.frenet_cv)
         # action.frenet_cv = path_points
         is_new_action_needed = self.is_require_decision(action,path_points)
@@ -102,6 +103,10 @@ class Lattice_CRv3():
         # get obstacle state
         obstacle_list = []
         for j in range(0, len(self.scenario.obstacles)):
+            state = self.scenario.obstacles[j].state_at_time(0)  # zxc:scenario是实时的，所有T都改成0
+            # 当前时刻这辆车可能没有
+            if state is None:
+                continue            
             obs_x = self.scenario.obstacles[j].state_at_time(t).position[0]
             obs_y = self.scenario.obstacles[j].state_at_time(t).position[1]
             obs_veh = self.scenario.obstacles[j].state_at_time(t).velocity

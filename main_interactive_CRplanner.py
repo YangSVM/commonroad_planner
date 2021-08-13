@@ -89,7 +89,7 @@ class InteractiveCRPlanner:
                 semantic_action, action = mcts_planner.planner(current_time_step)
             # next_state, is_new_action_needed = biz_planner(current_scenario, action)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            next_state, is_new_action_needed = lattice_planner.planner(action, current_time_step)
+            next_state, is_new_action_needed = lattice_planner.planner(action)
             # === end of straight-going planner
 
         if self.lanelet_state == 2 or self.lanelet_state == 3:

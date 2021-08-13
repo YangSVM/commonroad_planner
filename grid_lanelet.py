@@ -50,6 +50,13 @@ def find_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetwork):
     i= np.where(lanelet_id_matrix == lanelet_id_target)[0]
     assert i.shape[0]>0, 'lanelet_id_target donnot in lanelet_id_matrix!'
     lanelets_frenet_axis = lanelet_id_matrix[i[0], :]
+    lanelets_frenet_axis_ = []
+    for i in lanelets_frenet_axis:
+        if i == -1:
+            break
+        lanelets_frenet_axis_.append(i)
+    lanelets_frenet_axis = np.array(lanelets_frenet_axis_)
+            
     print('frenet lanelet id axis :', lanelets_frenet_axis)
     cv = []
     for lanelet_id in lanelets_frenet_axis:

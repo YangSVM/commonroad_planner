@@ -16,8 +16,8 @@ import matplotlib as mpl
 
 mpl.use('TkAgg')
 
-from simulation.simulations import simulate_without_ego, simulate_with_solution, simulate_with_planner
-from simulation.utility import save_solution
+from CR_tools.simulations import simulate_without_ego, simulate_with_solution, simulate_with_planner
+from CR_tools.utility import save_solution
 from commonroad.common.file_writer import CommonRoadFileWriter, OverwriteExistingFile
 from commonroad.common.solution import CommonRoadSolutionReader, VehicleType, VehicleModel, CostFunction
 
