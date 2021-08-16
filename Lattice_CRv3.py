@@ -72,9 +72,9 @@ class Lattice_CRv3():
         target_pos = [poly_traj.GenCombinedTraj(path_points, delta_t)[-1].x, 
                             poly_traj.GenCombinedTraj(path_points, delta_t)[-1].y]
         if (Dist(ego_pos[0],ego_pos[1],target_pos[0],target_pos[1])< (0.2*0.2+0.1*0.1)**0.5):
-            is_new_action_needed = 1
+            is_new_action_needed = True
         else:
-            is_new_action_needed = 0
+            is_new_action_needed = False
 
         return is_new_action_needed
     
@@ -85,11 +85,32 @@ class Lattice_CRv3():
         cvs,_,_ = detail_cv(cts_points)
         path_point = CalcRefLine(cvs)
         return path_point
+    
+    def plot_reference_line(self,path_points):
+        path_x = []
+        path_y = []
+        for i in range(len(path_points)):
+            path_x.append(path_points[i].rx)
+            path_y.append(path_points[i].ry)
+        plt.figure()
+        plt.plot(path_x,path_y)
+        # plt.show()
+
+    def plot_traj_point(self,traj_points_opt):
+        traj_points=[]
+        for tp_opt in traj_points_opt:
+            traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
+        tx=[x[0] for x in traj_points ]
+        ty=[y[1] for y in traj_points ]
+        plt.plot(tx,ty,'r')
+        plt.show()
 
     def planner(self, action):
         t=0
         path_points = self.get_reference_line(action.frenet_cv)
         # action.frenet_cv = path_points
+        # plot reference line
+        # self.plot_reference_line(path_points)
         is_new_action_needed = self.is_require_decision(action,path_points)
         
         # get ego planning init traj point
@@ -144,10 +165,14 @@ class Lattice_CRv3():
         traj_points=[]
         for tp_opt in traj_points_opt:
             traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
+        # plot trajectory points
+        # self.plot_traj_point(traj_points_opt)
+
         next_state = State()
         next_state.position = np.array([traj_points[1][0], traj_points[1][1]])
         next_state.velocity = traj_points[1][2]
-        next_state.acceleration = traj_points[1][3]
+        # next_state.acceleration = traj_points[1][3]
+        next_state.acceleration = 0
         next_state.orientation = traj_points[1][4]
         return next_state, is_new_action_needed
 

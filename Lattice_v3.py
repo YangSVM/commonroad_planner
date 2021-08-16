@@ -13,7 +13,7 @@ M_PI = 3.141593
 #车辆属性, global const. and local var. check!
 VEH_L = 1
 VEH_W = 0.5
-MAX_V = 120/3.6
+MAX_V = 200/3.6
 MIN_V = 0
 '''
 MAX_A = 10
@@ -488,7 +488,7 @@ class PolyTraj:
             v = self.Evaluate(self.long_coef, 1, i * delta_t)
             #print(v)
             if v > MAX_V or v < MIN_V:
-                #print(v, "纵向速度超出约束")
+                print(v, "纵向速度超出约束")
                 return False
             '''
             加速度约束暂时删去
@@ -607,9 +607,9 @@ class SampleBasis:
         self.theta_samp = [NormalizeAngle(traj_point.theta - theta_thr), NormalizeAngle(traj_point.theta - theta_thr/2), 
                            traj_point.theta, NormalizeAngle(traj_point.theta + theta_thr/2), NormalizeAngle(traj_point.theta + theta_thr)]
         # self.dist_samp = [v_tgt * ttc for ttc in ttcs]
-        self.s_decision_end = list(np.linspace(s_decision_end - 0.2, s_decision_end + 0.2, 20)) #calibration
+        self.s_decision_end = list(np.linspace(s_decision_end - 0.5, s_decision_end + 0.5, 10)) #calibration
         # self.dist_prvw = self.dist_samp[0]
-        self.d_end_samp = list(np.linspace(d_end - 0.1 , d_end + 0.1, 20))
+        self.d_end_samp = list(np.linspace(d_end - 0.1 , d_end + 0.1, 10))
         self.v_end = action.v_end     # for cruising
         self.acc_end = action.a_end
         self.total_t = action.T
@@ -722,18 +722,18 @@ class LocalPlanner:
                         self.polytrajs.append(poly_traj)
                         colli = 0
                         dis_to_obs = 0
-                        for obstacle in self.obstacles:
-                            if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
-                                continue
-                            if Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y) > sight_range:
-                                #只看眼前一段距离
-                                continue
-                            plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length, obstacle.width, color='y', angle = obstacle.heading*180/M_PI))
-                            temp = TrajObsFree(tp_all, obstacle, delta_t)
-                            if not temp[1]:   #有碰撞
-                                colli = 1
-                                break
-                            dis_to_obs += temp[0]
+                        # for obstacle in self.obstacles:
+                        #     if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
+                        #         continue
+                        #     if Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y) > sight_range:
+                        #         #只看眼前一段距离
+                        #         continue
+                        #     plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length, obstacle.width, color='y', angle = obstacle.heading*180/M_PI))
+                        #     temp = TrajObsFree(tp_all, obstacle, delta_t)
+                        #     if not temp[1]:   #有碰撞
+                        #         colli = 1
+                        #         break
+                        #     dis_to_obs += temp[0]
                         if colli == 0:
                             if poly_traj.LatConsFree(delta_t):#满足横向约束
                                 #print("available trajectory found")

@@ -109,7 +109,7 @@ if __name__ == '__main__':
     from sumocr.interface.sumo_simulation import SumoSimulation
 
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive/')
+        '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # folder_scenarios = os.path.abspath(
     #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
@@ -134,6 +134,8 @@ if __name__ == '__main__':
 
     #
     ego_vehicles = sumo_sim.ego_vehicles
+    is_new_action_needed = True
+    last_action = []
     for step in range(num_of_steps):
         print("process:", step, "/", num_of_steps)
         current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
@@ -145,8 +147,6 @@ if __name__ == '__main__':
 
         # generate a CR planner
         main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
-        last_action = []
-        is_new_action_needed = True
         next_state, last_action, is_new_action_needed = main_planner.planning(current_scenario,
                                                                               planning_problem,
                                                                               ego_vehicle,
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     sumo_sim.stop()
 
     # output results
-    output_folder_path = '/home/zxc/Videos/CR_outputs/'
+    output_folder_path = '/home/thor/Videos/CR_outputs/'
 
     # create mp4 animation
     create_video(simulated_scenario,

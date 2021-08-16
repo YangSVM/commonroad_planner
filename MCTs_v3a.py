@@ -1,4 +1,4 @@
-# 该版本写于0730，v3a版本主要考虑和lattice函数的接口。
+# 该版本写于0711，2,1版本进一步考虑了地图信息输入（总车道数？目标车道和位置？），和多辆障碍车的输入。
 # 外部输入信息：详细接口定义，见接口说明文档
 
 from __future__ import division
@@ -11,22 +11,23 @@ import time
 
 def output(state,action):
     state_out = state
+    t = 6
     if action == 1:
         state_out[0] = state[0] - 1
-        state_out[1] = 3 * state[2]
+        state_out[1] = t * state[2]
         state_out[2] = state[2]
     if action == 2:
         state_out[0] = state[0] + 1
-        state_out[1] = 3 * state[2]
+        state_out[1] = t * state[2]
         state_out[2] = state[2]
     if action == 3:
-        state_out[1] = 3 * state[2] + 4.5
-        state_out[2] = state[2] + 3
+        state_out[1] = t * state[2] + 18
+        state_out[2] = state[2] + t
     if action == 4:
         state_out = state
     if action == 5:
-        state_out[1] = 3 * state[2] - 4.5
-        state_out[2] = state[2] - 3
+        state_out[1] = t * state[2] - 18
+        state_out[2] = state[2] - t
     if action == 6:
         state_out = [0,0,0]
     return state_out
@@ -174,14 +175,14 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
         self.currentPlayer = 1
         self.laststep = [2, 0]
         self.map = tar[0]
-        self.target = [tar[1], tar[2]]
+        self.target = [tar[1], tar[2]-50]
 
         self.reward = 100
         self.edge = [75, 120, 300]
         self.lastlane = [b[0], 0]
         self.laststate = [b[1], b[2]]
         self.T = 0
-        self.Tstep = 3
+        self.Tstep = 6
 
         self.num = len(obstacles)
         self.lane0 = numpy.zeros(shape=(10, 2))  # 建立5条车道的存储空间
@@ -284,7 +285,7 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
 
         # 下面考虑直行--加速（+1 m/s2）
         flag3 = 0
-        if self.laststate[1] > 17:
+        if self.laststate[1] > 30:
             flag3 = 1
         else:
             if self.lastlane[0] != self.target[0]:  # 不能超过纵向距离约束（非目标lanelet）
@@ -399,7 +400,7 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
 
         newState.T = self.T + self.Tstep
         newState.reward = self.reward - 10 - 100 * (newState.lastlane[0] - self.target[0]) * (
-                    newState.lastlane[0] - self.target[0]) - 0.5 * (400 - newState.laststate[0])
+                    newState.lastlane[0] - self.target[0]) - 0.5 * (self.target[1]- newState.laststate[0])
         if action.act == 1:
             newState.reward = newState.reward - 100
         if action.act == 2:
@@ -438,14 +439,21 @@ class Action():
 
 if __name__ == "__main__":
     # start = time.time()
-    state = [0, 50, 15]
-    map = [5, 1, 300]
-    obstacles = [[0, 100, 5], [0, 150, 10], [1, 180, 10], [1, 80, 10], [2, 80, 15], [3, 80, 10], [4, 80, 15]]
+    state = [1, 101.89999999999849, 31.068532257370617]
+    map = [3, 0, 1194.600000000009]
+    #obstacles = [[0, 100, 25], [0, 150, 20], [1, 180, 10], [1, 120, 20], [2, 80, 15], [3, 80, 10], [4, 80, 15]]
+    obstacles =  [[  2.,          4.9,        29.88358094],
+ [  0.,         99.8,        31.28789092],
+ [  1.,        166.3,        28.0214067 ],
+ [  0.,         37.6,        34.11789059],
+ [  0.,        153.7,        29.02353197],
+ [  2.,         98.5,        29.58975459],
+ [  2.,         61.9,        29.365209  ]]
     initialState = NaughtsAndCrossesState(state, map, obstacles)
     searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
     action = searcher.search(initialState=initialState)  # 一整个类都是其状态
     out = output(state, action.act)
-    print('out: ',out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
+    print(out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
 
     # print(action.act)
     # end = time.time()
