@@ -88,6 +88,9 @@ class InteractiveCRPlanner:
             if is_new_action_needed:
                 mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action = mcts_planner.planner(current_time_step)
+            else:
+                action.T -= 0.1
+
             # next_state, is_new_action_needed = biz_planner(current_scenario, action)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
             next_state, is_new_action_needed = lattice_planner.planner(action)
@@ -108,10 +111,16 @@ if __name__ == '__main__':
     from sumocr.maps.sumo_scenario import ScenarioWrapper
     from sumocr.interface.sumo_simulation import SumoSimulation
 
+    # 曹雷
     folder_scenarios = os.path.abspath(
         '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
+    # 奕彬
     # folder_scenarios = os.path.abspath(
     #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    # 晓聪
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
     name_scenario = "DEU_Frankfurt-95_2_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
