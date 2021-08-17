@@ -821,7 +821,10 @@ class LocalPlanner:
                                     continue
                                 if Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y) > sight_range:
                                     #只看眼前一段距离
-                                    print(Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y))
+                                    tmp_dis = Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y)
+                                    if tmp_dis>10000:
+                                        print('error')
+                                    print(tmp_dis)
                                     continue
                                 # plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length, obstacle.width, color='y', angle = obstacle.heading*180/M_PI))
                                 temp = TrajObsFree(tp_all, obstacle, delta_t)
@@ -1003,8 +1006,8 @@ if __name__ == '__main__':
     obstacles.append(Obstacle([rx[150], ry[150], 0, 0.5, 0.5, M_PI/6]))
     obstacles.append(Obstacle([rx[300]+1, ry[300], 0, 1, 1, M_PI/2]))
     obstacles.append(Obstacle([rx[500]+1, ry[500], 0, 1, 1, M_PI/3]))
-    cts_points = np.array([rx, ry])
-    path_points = CalcRefLine(cts_points)
+    cts_points = np.array([rx, ry])             # [2, n_points]
+    path_points = CalcRefLine(cts_points)       # path points list. n_points
     # theta_init = math.atan2((ry[1]-ry[0]), (rx[1]-rx[0]))
     tp_list = [rx[0], ry[0], 0, 0, 3., 0]   # from sensor actually, an example here
     traj_point = TrajPoint(tp_list)

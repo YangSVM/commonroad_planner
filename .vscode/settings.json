@@ -1,7 +1,5 @@
 {
     "python.autoComplete.extraPaths": [
-        "/home/tiecun/catkin_ws/devel/lib/python2.7/dist-packages",
-        "/opt/ros/melodic/lib/python2.7/dist-packages",
         "/home/thicv/codes/commonroad/commonroad-interactive-scenarios",
         // "/home/thicv/codes/commonroad/commonroad-sumo-interface"
     ],
@@ -11,5 +9,5 @@
         "/home/thicv/codes/commonroad/commonroad-interactive-scenarios",
         // "/home/thicv/codes/commonroad/commonroad-sumo-interface"
     ],
-    "python.pythonPath": "/home/thicv/miniconda3/envs/cr37/bin/python"
+    "python.pythonPath": "/home/thicv/miniconda3/envs/cr37/bin/python:/home/thicv/codes/commonroad/commonroad-interactive-scenarios"
 }

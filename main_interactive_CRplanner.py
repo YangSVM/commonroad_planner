@@ -115,11 +115,11 @@ if __name__ == '__main__':
     from sumocr.interface.sumo_simulation import SumoSimulation
 
     # 曹雷
-    folder_scenarios = os.path.abspath(
-        '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
-    # 奕彬
     # folder_scenarios = os.path.abspath(
-    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
+    # 奕彬
+    folder_scenarios = os.path.abspath(
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     # 晓聪
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
@@ -150,6 +150,8 @@ if __name__ == '__main__':
     last_action = []
     for step in range(num_of_steps):
         print("process:", step, "/", num_of_steps)
+        if step == 13:
+            print('there is an error!')
         current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
         planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
         ego_vehicle = list(ego_vehicles.values())[0]
