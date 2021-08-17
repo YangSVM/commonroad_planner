@@ -82,18 +82,24 @@ class InteractiveCRPlanner:
         print("current state:", self.lanelet_state)
         # self.lanelet_state = 1
         # send to sub planner according to current lanelet state
-        if self.lanelet_state == 1:
+        # if self.lanelet_state == 1:
+        if self.lanelet_state == 1 or self.lanelet_state == 2:
 
             # === insert straight-going planner here
             if is_new_action_needed:
                 mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action = mcts_planner.planner(current_time_step)
+            else:
+                action.T -= 0.1
+
             # next_state, is_new_action_needed = biz_planner(current_scenario, action)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
             next_state, is_new_action_needed = lattice_planner.planner(action)
             # === end of straight-going planner
 
-        if self.lanelet_state == 2 or self.lanelet_state == 3:
+        # if self.lanelet_state == 2 or self.lanelet_state == 3:
+        if self.lanelet_state == 3:
+
             # === insert intersection planner here
             is_new_action_needed = 1
             ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle, self.lanelet_state)
@@ -108,10 +114,16 @@ if __name__ == '__main__':
     from sumocr.maps.sumo_scenario import ScenarioWrapper
     from sumocr.interface.sumo_simulation import SumoSimulation
 
+    # 曹雷
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive/')
+        '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
+    # 奕彬
     # folder_scenarios = os.path.abspath(
     #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    # 晓聪
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
     name_scenario = "DEU_Frankfurt-95_2_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
@@ -134,6 +146,8 @@ if __name__ == '__main__':
 
     #
     ego_vehicles = sumo_sim.ego_vehicles
+    is_new_action_needed = True
+    last_action = []
     for step in range(num_of_steps):
         print("process:", step, "/", num_of_steps)
         current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
@@ -145,8 +159,6 @@ if __name__ == '__main__':
 
         # generate a CR planner
         main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
-        last_action = []
-        is_new_action_needed = True
         next_state, last_action, is_new_action_needed = main_planner.planning(current_scenario,
                                                                               planning_problem,
                                                                               ego_vehicle,
@@ -168,7 +180,7 @@ if __name__ == '__main__':
     sumo_sim.stop()
 
     # output results
-    output_folder_path = '/home/zxc/Videos/CR_outputs/'
+    output_folder_path = '/home/thor/commonroad-interactive-scenarios/outputs/videos'
 
     # create mp4 animation
     create_video(simulated_scenario,

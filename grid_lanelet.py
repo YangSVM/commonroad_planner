@@ -61,7 +61,7 @@ def find_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetwork):
     cv = []
     for lanelet_id in lanelets_frenet_axis:
         lanelet = ln.find_lanelet_by_id(lanelet_id)
-        cv.append(lanelet.center_vertices)
+        cv.append(lanelet.center_vertices[1:])
     cv = np.concatenate(cv, axis=0)
 
     return cv

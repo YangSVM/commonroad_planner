@@ -28,7 +28,7 @@ class ActionAddition:
         self.a_end = -1
         self.delta_s = -1
         self.lanelet_id_target = -1
-        self.T = 3
+        self.T = 6
         self.ego_state_init = []
         self.frenet_cv = None
     def find_lanelet_id_target(self, s_goal, lanelet_id_matrix, n_target, ln: LaneletNetwork):
