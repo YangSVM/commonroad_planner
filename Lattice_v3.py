@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import time
 from scipy.ndimage.measurements import label
 import scipy.signal
+import copy
 
 M_PI = 3.141593
 
@@ -322,40 +323,41 @@ def LinearInterpolate(path_point_0, path_point_1, rs_inter):
     return PathPoint([rx_inter, ry_inter, rs_inter, rtheta_inter, rkappa_inter, rdkappa_inter])
 
 def TrajObsFree(xoy_traj, obstacle, delta_t):
-    if obstacle.v == 0:
+    obstacle_copy = copy.deepcopy(obstacle)
+    if obstacle_copy.v == 0:
         dis_sum = 0
         for point in xoy_traj:
             if isinstance(point, PathPoint): #如果是原来路径点，就只按圆形计算。因为每点的车辆方向难以获得
-                if ColliTestRough(point,obstacle) > 0:
+                if ColliTestRough(point,obstacle_copy) > 0:
                     continue
                 return 0, False
             else:
-                dis = ColliTestRough(point,obstacle)
+                dis = ColliTestRough(point,obstacle_copy)
                 dis_sum += dis
                 if dis > 0:
                     continue
-                if ColliTest(point, obstacle):
+                if ColliTest(point, obstacle_copy):
                     #print("不满足实际碰撞检测")
                     return 0, False
         dis_mean = dis_sum/len(xoy_traj)
         #print("满足实际碰撞检测")
         return dis_mean, True
 
-    if obstacle.v != 0:
+    if obstacle_copy.v != 0:
         dis_sum = 0
         for point in xoy_traj:
-            obstacle.x += obstacle.v * delta_t * math.cos(obstacle.heading)
-            obstacle.y += obstacle.v * delta_t * math.sin(obstacle.heading)
+            obstacle_copy.x += obstacle_copy.v * delta_t * math.cos(obstacle_copy.heading)
+            obstacle_copy.y += obstacle_copy.v * delta_t * math.sin(obstacle_copy.heading)
             if isinstance(point, PathPoint): #如果是原来路径点，就只按圆形计算。因为每点的车辆方向难以获得
-                if ColliTestRough(point,obstacle) > 0:
+                if ColliTestRough(point,obstacle_copy) > 0:
                     continue
                 return 0, False
             else:
-                dis = ColliTestRough(point,obstacle)
+                dis = ColliTestRough(point,obstacle_copy)
                 dis_sum += dis
                 if dis > 0:
                     continue
-                if ColliTest(point, obstacle):
+                if ColliTest(point, obstacle_copy):
                     #print("不满足实际碰撞检测")
                     return 0, False
         dis_mean = dis_sum/len(xoy_traj)
@@ -698,9 +700,9 @@ class SampleBasis:
         self.theta_samp = [NormalizeAngle(traj_point.theta - theta_thr), NormalizeAngle(traj_point.theta - theta_thr/2), 
                            traj_point.theta, NormalizeAngle(traj_point.theta + theta_thr/2), NormalizeAngle(traj_point.theta + theta_thr)]
         # self.dist_samp = [v_tgt * ttc for ttc in ttcs]
-        self.s_decision_end = list(np.linspace(s_decision_end - 0.5, s_decision_end + 0.5, 5)) #calibration
+        self.s_decision_end = list(np.linspace(s_decision_end - 0.5, s_decision_end + 0.5, 2)) #calibration
         # self.dist_prvw = self.dist_samp[0]
-        self.d_end_samp = list(np.linspace(d_end - 0.1 , d_end + 0.1, 5))
+        self.d_end_samp = list(np.linspace(d_end - 0.1 , d_end + 0.1, 2))
         self.v_end = action.v_end     # for cruising
         self.acc_end = action.a_end
         self.total_t = action.T
@@ -724,6 +726,8 @@ class LocalPlanner:
     def __JudgeStatus(self,traj_point, path_points, obstacles, samp_basis):
         colli = 0
         global delta_t, sight_range
+        delta_t = 0.1
+        sight_range = 40
         for obstacle in self.obstacles:
             if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
                 continue
@@ -787,7 +791,7 @@ class LocalPlanner:
             #print(self.dist_samp)
             for delta_s in dist_samp:              # s_cond_end[0] sampling
                 # total_t = delta_s / self.v_end  #constant speed during lane change
-                for delta_v in [-2,-1,0,1,2]:
+                for delta_v in [0]:
                     total_t = self.total_t
                     poly_traj = PolyTraj(s_cond_init, d_cond_init, total_t)
                     s_cond_end = np.array([s_cond_init[0] + delta_s, self.v_end + delta_v, self.acc_end])
@@ -984,9 +988,9 @@ tp_rst = FrenetToCartesian(pp_in, s_cond, d_cond)
 print(tp_rst.x, tp_rst.y, tp_rst.v, tp_rst.a, tp_rst.theta, tp_rst.kappa)
 '''
 
-delta_t = 0.1 * 1                           # fixed time between two consecutive trajectory points, sec
+# delta_t = 0.1 * 1                           # fixed time between two consecutive trajectory points, sec
 # v_tgt = 2.0                                 # fixed target speed, m/s
-sight_range = 10                            # 判断有无障碍物的视野距离
+# sight_range = 10                            # 判断有无障碍物的视野距离
 
 if __name__ == '__main__':
     time1  = time.time()
