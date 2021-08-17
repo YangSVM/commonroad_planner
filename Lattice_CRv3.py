@@ -157,7 +157,7 @@ class Lattice_CRv3():
         samp_basis = SampleBasis(traj_point, theta_thr, action, s_decision_end)
         # global variable
         delta_t = 0.1 * 1
-        sight_range = 10
+        sight_range = 20
         # planner
         local_planner = LocalPlanner(traj_point, path_points, obstacle_list, samp_basis)
         # print("Status: ", local_planner.status, "If stop: ", local_planner.to_stop)

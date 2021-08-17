@@ -82,7 +82,8 @@ class InteractiveCRPlanner:
         print("current state:", self.lanelet_state)
         # self.lanelet_state = 1
         # send to sub planner according to current lanelet state
-        if self.lanelet_state == 1:
+        # if self.lanelet_state == 1:
+        if self.lanelet_state == 1 or self.lanelet_state == 2:
 
             # === insert straight-going planner here
             if is_new_action_needed:
@@ -96,7 +97,9 @@ class InteractiveCRPlanner:
             next_state, is_new_action_needed = lattice_planner.planner(action)
             # === end of straight-going planner
 
-        if self.lanelet_state == 2 or self.lanelet_state == 3:
+        # if self.lanelet_state == 2 or self.lanelet_state == 3:
+        if self.lanelet_state == 3:
+
             # === insert intersection planner here
             is_new_action_needed = 1
             ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle, self.lanelet_state)
@@ -177,7 +180,7 @@ if __name__ == '__main__':
     sumo_sim.stop()
 
     # output results
-    output_folder_path = '/home/thor/Videos/CR_outputs/'
+    output_folder_path = '/home/thor/commonroad-interactive-scenarios/outputs/videos'
 
     # create mp4 animation
     create_video(simulated_scenario,
