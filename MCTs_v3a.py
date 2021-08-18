@@ -24,7 +24,7 @@ def output(state,action):
         state_out[1] = t * state[2] + 18
         state_out[2] = state[2] + t
     if action == 4:
-        state_out = state
+        state_out[1] = t * state[2] 
     if action == 5:
         state_out[1] = t * state[2] - 18
         state_out[2] = state[2] - t
