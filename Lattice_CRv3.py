@@ -32,6 +32,7 @@ from Lattice_v3 import CartesianToFrenet
 from Lattice_v3 import PolyTraj
 
 from generate_srd_map import Srd_map
+from CR_tools.utility import smooth_cv
 
 class Lattice_CRv3():
     def __init__(self, scenario, ego_vehicle):
@@ -79,8 +80,9 @@ class Lattice_CRv3():
         return is_new_action_needed
     
     def get_reference_line(self,frenet_cv):
+        new_cv = smooth_cv(frenet_cv)
         cts_points = []
-        for i,j in zip(frenet_cv[:, 0],frenet_cv[:, 1]):
+        for i,j in zip(new_cv[:, 0],new_cv[:, 1]):
             cts_points.append([i,j])
         cvs,_,_ = detail_cv(cts_points)
         path_point = CalcRefLine(cvs)
@@ -161,7 +163,7 @@ class Lattice_CRv3():
         samp_basis = SampleBasis(traj_point, theta_thr, action, s_decision_end)
         # global variable
         delta_t = 0.1 * 1
-        sight_range = 40
+        sight_range = 20
         # planner
         local_planner = LocalPlanner(traj_point, path_points, obstacle_list, samp_basis)
         # print("Status: ", local_planner.status, "If stop: ", local_planner.to_stop)
@@ -170,7 +172,7 @@ class Lattice_CRv3():
         for tp_opt in traj_points_opt:
             traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
         # plot trajectory points
-        self.plot_traj_point(traj_points_opt)
+        # self.plot_traj_point(traj_points_opt)
 
         next_state = State()
         next_state.position = np.array([traj_points[1][0], traj_points[1][1]])

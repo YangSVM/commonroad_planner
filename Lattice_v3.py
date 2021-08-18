@@ -696,8 +696,8 @@ class PolyTraj:
             traj_point = FrenetToCartesian(path_point_inter, s_cond, d_cond)
             #traj_point.v = v_tgt
             tp_all.append(traj_point)
-        plt.plot(t_a,v)
-        plt.show()
+        # plt.plot(t_a,v)
+        # plt.show()
         self.tp_all = tp_all
         return tp_all
 
@@ -809,10 +809,10 @@ class LocalPlanner:
                 s_cond_end = np.array([s_cond_init[0] + delta_s, self.v_end + delta_v, self.acc_end])
                 poly_traj.GenLongTraj(s_cond_end)
                 # poly_traj.plot_Curve(delta_t)
-                if not poly_traj.LongConsFree(delta_t):#先看纵向轨迹s是否满足纵向运动约束
-                    pass
-                else:
-                # if 1:
+                # if not poly_traj.LongConsFree(delta_t):#先看纵向轨迹s是否满足纵向运动约束
+                #     pass
+                # else:
+                if 1:
                     for d_end in self.d_end_samp:       # d_end[0] sampling
                         d_cond_end = np.array([d_end, 0, 0])
                         poly_traj.GenLatTraj(d_cond_end)
