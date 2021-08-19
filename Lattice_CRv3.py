@@ -32,6 +32,7 @@ from Lattice_v3 import CartesianToFrenet
 from Lattice_v3 import PolyTraj
 
 from generate_srd_map import Srd_map
+from CR_tools.utility import smooth_cv
 
 class Lattice_CRv3():
     def __init__(self, scenario, ego_vehicle):
@@ -71,7 +72,7 @@ class Lattice_CRv3():
         delta_t = 0.1
         target_pos = [poly_traj.GenCombinedTraj(path_points, delta_t)[-1].x, 
                             poly_traj.GenCombinedTraj(path_points, delta_t)[-1].y]
-        if (Dist(ego_pos[0],ego_pos[1],target_pos[0],target_pos[1])< (0.2*0.2+0.1*0.1)**0.5):
+        if (Dist(ego_pos[0],ego_pos[1],target_pos[0],target_pos[1])< (8)):
             is_new_action_needed = True
         else:
             is_new_action_needed = False
@@ -79,8 +80,9 @@ class Lattice_CRv3():
         return is_new_action_needed
     
     def get_reference_line(self,frenet_cv):
+        new_cv = smooth_cv(frenet_cv)
         cts_points = []
-        for i,j in zip(frenet_cv[:, 0],frenet_cv[:, 1]):
+        for i,j in zip(new_cv[:, 0],new_cv[:, 1]):
             cts_points.append([i,j])
         cvs,_,_ = detail_cv(cts_points)
         path_point = CalcRefLine(cvs)
@@ -102,11 +104,15 @@ class Lattice_CRv3():
             traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
         tx=[x[0] for x in traj_points ]
         ty=[y[1] for y in traj_points ]
-        plt.plot(tx,ty,'r')
+        tv=[v[2] for v in traj_points ]
+        t=[i for i in range(len(traj_points))] 
+        plt.plot(t,tv,'b')
+        # plt.plot(tx,ty,'r')
         plt.show()
 
     def planner(self, action):
         t=0
+        M_PI = 3.141593
         path_points = self.get_reference_line(action.frenet_cv)
         # action.frenet_cv = path_points
         # plot reference line
@@ -117,8 +123,9 @@ class Lattice_CRv3():
         ego_pos = self.ego_state.position
         ego_v = self.ego_state.velocity
         ego_heading = self.ego_state.orientation
+        # ego_heading = 0
         ego_acc = self.ego_state.acceleration
-        tp_list = [ego_pos[0], ego_pos[1], ego_v, ego_acc, ego_heading, 0]
+        tp_list = [ego_pos[0], ego_pos[1], ego_v, ego_acc, ego_heading, ego_acc]
         traj_point = TrajPoint(tp_list)
         traj_point.MatchPath(path_points)
         # get obstacle state
@@ -151,7 +158,6 @@ class Lattice_CRv3():
         s_cond_decision_init, _ = CartesianToFrenet(traj_point_decision.matched_point, traj_point_decision)
         s_decision_end = s_cond_decision_init[0] + action.delta_s
         # calibration init theta
-        M_PI = 3.141593
         theta_thr = M_PI/6   
         # sample basis
         samp_basis = SampleBasis(traj_point, theta_thr, action, s_decision_end)
