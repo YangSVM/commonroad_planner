@@ -184,11 +184,11 @@ class Lattice_CRv3():
                 traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
             
             next_state = State()
-            next_state.position = np.array([traj_points[1][0], traj_points[1][1]])
-            next_state.velocity = traj_points[1][2]
+            next_state.position = np.array([traj_points[0][0], traj_points[0][1]])
+            next_state.velocity = traj_points[0][2]
             # next_state.acceleration = traj_points[1][3]
             next_state.acceleration = action.a_end
-            next_state.orientation = traj_points[1][4]
+            next_state.orientation = traj_points[0][4]
             return next_state, is_new_action_needed
         else:
             tp_list_init = [0,0,0,0,0,0]
