@@ -4,6 +4,7 @@ from commonroad.visualization.draw_dispatch_cr import draw_object
 
 import os
 import time
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -84,19 +85,26 @@ class Lattice_CRv3():
         cts_points = []
         for i,j in zip(new_cv[:, 0],new_cv[:, 1]):
             cts_points.append([i,j])
-        cvs,_,_ = detail_cv(cts_points)
-        path_point = CalcRefLine(cvs)
+        ref_line = np.array(cts_points)
+        path_point = CalcRefLine(ref_line)
         return path_point
     
     def plot_reference_line(self,path_points):
         path_x = []
         path_y = []
+        path_theta = []
+        path_kappa = []
         for i in range(len(path_points)):
             path_x.append(path_points[i].rx)
             path_y.append(path_points[i].ry)
+            path_theta.append(path_points[i].rtheta)
+            path_kappa.append(path_points[i].rkappa)
         plt.figure()
-        plt.plot(path_x,path_y)
-        # plt.show()
+        num = [i for i in range(len(path_points))]
+        plt.plot(num,path_theta)
+        # plt.plot(num,path_kappa)
+        # plt.plot(path_x,path_y)
+        plt.show()
 
     def plot_traj_point(self,traj_points_opt):
         traj_points=[]
@@ -168,19 +176,42 @@ class Lattice_CRv3():
         local_planner = LocalPlanner(traj_point, path_points, obstacle_list, samp_basis)
         # print("Status: ", local_planner.status, "If stop: ", local_planner.to_stop)
         traj_points_opt = local_planner.LocalPlanning(traj_point, path_points, obstacle_list, samp_basis)
+
+        # 
         traj_points=[]
-        for tp_opt in traj_points_opt:
+        if traj_points_opt != False:
+            for tp_opt in traj_points_opt:
+                traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
+            
+            next_state = State()
+            next_state.position = np.array([traj_points[1][0], traj_points[1][1]])
+            next_state.velocity = traj_points[1][2]
+            # next_state.acceleration = traj_points[1][3]
+            next_state.acceleration = action.a_end
+            next_state.orientation = traj_points[1][4]
+            return next_state, is_new_action_needed
+        else:
+            tp_list_init = [0,0,0,0,0,0]
+            tp_opt = TrajPoint(tp_list_init)
+            tp_opt.a = -3
+            tp_opt.v = ego_v + tp_opt.a * delta_t
+            tp_opt.x = ego_pos[0] + (ego_v * delta_t + 0.5 * tp_opt.a * delta_t * delta_t) * math.cos(ego_heading)
+            tp_opt.y = ego_pos[1] + (ego_v * delta_t + 0.5 * tp_opt.a * delta_t * delta_t) * math.sin(ego_heading)
+            tp_opt.theta = ego_heading
             traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
+            is_new_action_needed = 1
+
+            next_state = State()
+            next_state.position = np.array([traj_points[0][0], traj_points[0][1]])
+            next_state.velocity = traj_points[0][2]
+            # next_state.acceleration = traj_points[1][3]
+            next_state.acceleration = action.a_end
+            next_state.orientation = traj_points[0][4]
+            return next_state, is_new_action_needed
         # plot trajectory points
         # self.plot_traj_point(traj_points_opt)
 
-        next_state = State()
-        next_state.position = np.array([traj_points[1][0], traj_points[1][1]])
-        next_state.velocity = traj_points[1][2]
-        # next_state.acceleration = traj_points[1][3]
-        next_state.acceleration = 0
-        next_state.orientation = traj_points[1][4]
-        return next_state, is_new_action_needed
+
 
 if __name__ == '__main__':
     M_PI = 3.141593
