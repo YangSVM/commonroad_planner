@@ -323,6 +323,8 @@ def LinearInterpolate(path_point_0, path_point_1, rs_inter):
     return PathPoint([rx_inter, ry_inter, rs_inter, rtheta_inter, rkappa_inter, rdkappa_inter])
 
 def TrajObsFree(xoy_traj, obstacle, delta_t):
+    '''
+    '''
     obstacle_copy = copy.deepcopy(obstacle)
     if obstacle_copy.v == 0:
         dis_sum = 0
@@ -728,12 +730,14 @@ class LocalPlanner:
         global delta_t, sight_range
         delta_t = 0.1
         sight_range = 40
+        # 判断是否有太近的障碍物
         for obstacle in self.obstacles:
             if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
                 continue
             if Dist(obstacle.x, obstacle.y, self.traj_point.x, self.traj_point.y) > sight_range:
                 #只看眼前一段距离
                 continue
+            # 
             temp = TrajObsFree(self.path_points, obstacle, delta_t)
             if not temp[1]:#有碰撞
                 colli = 1
@@ -826,8 +830,6 @@ class LocalPlanner:
                                 if Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y) > sight_range:
                                     #只看眼前一段距离
                                     tmp_dis = Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y)
-                                    if tmp_dis>10000:
-                                        print('error')
                                     print(tmp_dis)
                                     continue
                                 # plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length, obstacle.width, color='y', angle = obstacle.heading*180/M_PI))
