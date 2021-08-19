@@ -1,6 +1,7 @@
 import os
 from typing import Dict
 import numpy as np
+import matplotlib as plt
 from IPython import display
 from commonroad.common.solution import PlanningProblemSolution, Solution, CommonRoadSolutionWriter, VehicleType, \
     VehicleModel, CostFunction
@@ -101,14 +102,14 @@ def smooth_cv(cv):
     # get y values from interpolated curve
     bspl_y = splev(x_smooth, bspl)
     new_cv = np.array([x_smooth, bspl_y]).T
-    plt.figure()
-    # original data points
-    plt.plot(list_x, list_y, 'rx-')
-    # and interpolated curve
-    plt.plot(x_smooth, bspl_y, 'b')
-    plt.xticks(fontsize=10)
-    plt.yticks(fontsize=10)
-    plt.show()
+    # plt.figure()
+    # # original data points
+    # plt.plot(list_x, list_y, 'rx-')
+    # # and interpolated curve
+    # plt.plot(x_smooth, bspl_y, 'b')
+    # plt.xticks(fontsize=10)
+    # plt.yticks(fontsize=10)
+    # plt.show()
     return new_cv
 
 
