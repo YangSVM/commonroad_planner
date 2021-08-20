@@ -150,8 +150,6 @@ if __name__ == '__main__':
     last_action = []
     for step in range(num_of_steps):
         print("process:", step, "/", num_of_steps)
-        if step == 13:
-            print('there is an error!')
         current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
         planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
         ego_vehicle = list(ego_vehicles.values())[0]
