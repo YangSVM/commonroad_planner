@@ -9,7 +9,6 @@ from intersection_planner import IntersectionPlanner
 from Lattice_CRv3 import Lattice_CRv3
 # from simulation.simulations import create_video_for_simulation
 # from bezier import biz_planner
-# sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios')
 from MCTs_CRv3 import MCTs_CRv3
 from sumocr.visualization.video import create_video
 
@@ -124,8 +123,8 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     # 晓聪
-    folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    # folder_scenarios = os.path.abspath(   
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
     name_scenario = "DEU_Frankfurt-95_2_I-1"  # 直道测试场景
@@ -141,7 +140,7 @@ if __name__ == '__main__':
     scenario_wrapper.initial_scenario = scenario
 
     # num_of_steps = conf.simulation_steps
-    num_of_steps = 80
+    num_of_steps = 5
     sumo_sim = SumoSimulation()
 
     # initialize simulation
@@ -192,7 +191,8 @@ if __name__ == '__main__':
     sumo_sim.stop()
 
     # output results
-    output_folder_path = '/home/zxc/Videos/CR_outputs/'
+    # output_folder_path = '/home/zxc/Videos/CR_outputs/'
+    output_folder_path = '/home/thicv/CR_outputs/'
 
     # create mp4 animation
     create_video(simulated_scenario,

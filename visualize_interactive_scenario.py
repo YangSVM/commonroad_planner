@@ -2,7 +2,6 @@ import os
 from commonroad.common.file_reader import CommonRoadFileReader
 import os, sys
 from commonroad.common.file_reader import CommonRoadFileReader
-sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios/')
 from simulation.simulations import load_sumo_configuration
 from sumocr.maps.sumo_scenario import ScenarioWrapper
 from sumocr.interface.sumo_simulation import SumoSimulation

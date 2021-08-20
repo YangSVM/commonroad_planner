@@ -291,8 +291,9 @@ def extract_speed_limit_from_traffic_sign(ln :Scenario.lanelet_network):
                 continue
 
             position_list.append(position)
-            speed_list.append(traffic_sign_element.additional_values[0])
+            speed_list.append(float(traffic_sign_element.additional_values[0]))
     max_speed = max(speed_list)
+    print('speed limit: ', max_speed)
     return max_speed
 
 def generate_len_map(lanelet_network, lanelet_map, isContinous=True):
