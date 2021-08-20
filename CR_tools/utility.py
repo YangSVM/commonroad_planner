@@ -96,7 +96,7 @@ def smooth_cv(cv):
 
     list_x = cv[:, 0]
     list_y = cv[:, 1]
-    bspl = splrep(list_x, list_y, s=0)
+    bspl = splrep(list_x, list_y, s=0.1)
     # values for the x axis
     x_smooth = np.linspace(min(list_x), max(list_x), 1000)
     # get y values from interpolated curve
