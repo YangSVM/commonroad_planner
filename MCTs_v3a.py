@@ -24,7 +24,7 @@ def output(state,action):
         state_out[1] = t * state[2] + 18
         state_out[2] = state[2] + t
     if action == 4:
-        state_out[1] = t * state[2] 
+        state_out[1] = t * state[2]
     if action == 5:
         state_out[1] = t * state[2] - 18
         state_out[2] = state[2] - t
@@ -246,13 +246,15 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
             for i in range(self.point[lane]):
                 if (self.laststate[0] + self.Tstep * self.laststate[1]) >= \
                         self.positions(self.T + self.Tstep, self.lastlane[0] - 1, i)[0]:  # 并道后在车前
-                    if self.laststate[0] <= self.positions(self.T, self.lastlane[0] - 1, i)[0]:  # 不能并道之前在车后
+                    if (self.laststate[0] + self.Tstep * self.laststate[1]) < \
+                            8 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
+                        flag1 = 1
+                    if self.laststate[0] <= 5 + self.positions(self.T, self.lastlane[0] - 1, i)[0]:  # 不能并道之前在车后
                         flag1 = 1
                 else:  # 并道后在车后
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0] - 1, i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0] - 1, i)[0] - (
-                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.1 * (
-                            self.laststate[1] * self.laststate[1] - aa * aa):
+                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 10:
                         flag1 = 1  # 不能小于安全车距
         if self.lastlane[0] != self.target[0] + 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
@@ -269,13 +271,15 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
             for i in range(self.point[lane]):
                 if (self.laststate[0] + self.Tstep * self.laststate[1]) >= \
                         self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
-                    if self.laststate[0] <= self.positions(self.T, self.lastlane[0] + 1, i)[0]:  # 不能并道前在车后
+                    if (self.laststate[0] + self.Tstep * self.laststate[1]) < \
+                            8 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
+                        flag2 = 1
+                    if self.laststate[0] <= 5 + self.positions(self.T, self.lastlane[0] + 1, i)[0]:  # 不能并道前在车后
                         flag2 = 1
                 else:  # 并道后在车后
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0] - (
-                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.1 * (
-                            self.laststate[1] * self.laststate[1] - aa * aa):
+                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 10:
                         flag2 = 1  # 不能小于安全车距
         if self.lastlane[0] != self.target[0] - 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
@@ -285,7 +289,7 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
 
         # 下面考虑直行--加速（+1 m/s2）
         flag3 = 0
-        if self.laststate[1] > 30:
+        if self.laststate[1] > 32:
             flag3 = 1
         else:
             if self.lastlane[0] != self.target[0]:  # 不能超过纵向距离约束（非目标lanelet）
@@ -399,7 +403,7 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
             newState.lastlane[0] = self.lastlane[0]
 
         newState.T = self.T + self.Tstep
-        newState.reward = self.reward - 10 - 100 * (newState.lastlane[0] - self.target[0]) * (
+        newState.reward = self.reward - 10 - 1000 * (newState.lastlane[0] - self.target[0]) * (
                     newState.lastlane[0] - self.target[0]) - 0.5 * (self.target[1]- newState.laststate[0])
         if action.act == 1:
             newState.reward = newState.reward - 100
@@ -440,7 +444,7 @@ class Action():
 if __name__ == "__main__":
     # start = time.time()
     state = [1, 101.89999999999849, 31.068532257370617]
-    map = [3, 0, 1194.600000000009]
+    map = [2, 0, 1194.600000000009]
     #obstacles = [[0, 100, 25], [0, 150, 20], [1, 180, 10], [1, 120, 20], [2, 80, 15], [3, 80, 10], [4, 80, 15]]
     obstacles =  [[  2.,          4.9,        29.88358094],
  [  0.,         99.8,        31.28789092],
