@@ -182,7 +182,7 @@ def ego_pos2tree(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, s
         lanelet_id = lanelet_network.find_lanelet_by_position([state.position])[0][0]
         lane_lat_n_ = np.where(lanelet_id_matrix==lanelet_id)
         if len(lane_lat_n_[0])==0:
-            print('info: obstacle ', obstacle.obstacle_id, 'lanelet', lanelet_id,' not in lanelet_id_matix ')
+            # print('info: obstacle ', obstacle.obstacle_id, 'lanelet', lanelet_id,' not in lanelet_id_matix ')
             continue
         else:
             lane_lat_n = lane_lat_n_[0]
