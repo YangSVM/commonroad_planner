@@ -149,7 +149,7 @@ class MCTs_CRv3():
         else:
             end_lanelet = lanelet_network.find_lanelet_by_id( self.lanelet_route[end_route_id])
             # ！！！ lanelet中心线最后一个点，居然不是该lanelet的
-            goal_pos = end_lanelet.center_vertices[5, :]
+            goal_pos = end_lanelet.center_vertices[-1, :]
 
         map = get_map_info(goal_pos, lanelet_ids_frenet_axis, lanelet_id_matrix, lanelet_network, is_interactive=True)
         speed_limit = extract_speed_limit_from_traffic_sign(lanelet_network)
