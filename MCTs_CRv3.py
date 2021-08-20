@@ -201,6 +201,9 @@ class MCTs_CRv3():
 
         # print('目标车道lanelet_id :\n', lanelet_id_target)
         # print('目标车道中心线数组维度大小：\n', frenet_cv.shape)
+        # print('T', action_addition.T)
+        # print('delta_s', action_addition.delta_s)
+        # print('v_end', action_addition.v_end)
 
 
         return action.act, action_addition

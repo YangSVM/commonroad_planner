@@ -529,7 +529,7 @@ class PolyTraj:
             v = self.Evaluate(self.long_coef, 1, i * delta_t)
             #print(v)
             if v > MAX_V or v < MIN_V:
-                print(v, "纵向速度超出约束")
+                # print(v, "纵向速度超出约束")
                 return False
             '''
             加速度约束暂时删去
