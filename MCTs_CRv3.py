@@ -18,7 +18,7 @@ from grid_lanelet import edit_scenario4test
 from MCTs_v3a import NaughtsAndCrossesState
 from MCTs_v3a import mcts
 from grid_lanelet import get_frenet_lanelet_axis
-from grid_lanelet import generate_len_map,find_frenet_axis
+from grid_lanelet import generate_len_map,find_frenet_axis,extract_speed_limit_from_traffic_sign
 from MCTs_v3a import output
 
 
@@ -152,6 +152,8 @@ class MCTs_CRv3():
             goal_pos = end_lanelet.center_vertices[5, :]
 
         map = get_map_info(goal_pos, lanelet_ids_frenet_axis, lanelet_id_matrix, lanelet_network, is_interactive=True)
+        speed_limit = extract_speed_limit_from_traffic_sign(lanelet_network)
+        map.append(speed_limit)
         if len(lane_ego_n_array)>0:
             lane_ego_n = lane_ego_n_array[0]
         else:

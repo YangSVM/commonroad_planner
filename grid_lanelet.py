@@ -2,11 +2,10 @@
 from commonroad.common.file_reader import CommonRoadFileReader
 from commonroad.scenario.obstacle import Obstacle
 from commonroad.scenario.scenario import Scenario
+from commonroad.scenario.trajectory import Trajectory
 from commonroad.visualization.draw_dispatch_cr import draw_object
 from commonroad.scenario.lanelet import LaneletNetwork
 import os
-
-from numpy.lib.function_base import gradient
 
 from detail_central_vertices import get_lane_feature
 from detail_central_vertices import detail_cv
@@ -233,7 +232,7 @@ def get_map_info(goal_pos,  lanelet_ids_frenet_axis, lanelet_id_matrix, lanelet_
     cv = np.concatenate(cv, axis=0)
     cv, _, s_cv = detail_cv(cv)
     
-    goal_s = distance_lanelet(cv, s_cv, [cv[0][0], cv[1][0]],goal_pos)
+    goal_s = distance_lanelet(cv, s_cv, [cv[0][0], cv[1][0]], goal_pos)
 
     map = [n_lane, lane_pos, goal_s]
     return map
@@ -279,6 +278,22 @@ def edit_scenario4test(scenario, ego_init_pos):
         scenario.remove_obstacle(scenario.obstacle_by_id(obstalce_id_remove))
     return scenario
 
+def extract_speed_limit_from_traffic_sign(ln :Scenario.lanelet_network):
+    if len(ln.traffic_signs) == 0:
+        print('None traffic sign. Cannot extract')
+        return None
+    position_list = []
+    speed_list = []
+    for traffic_sign in ln.traffic_signs:
+        position = traffic_sign.position
+        for traffic_sign_element in traffic_sign.traffic_sign_elements:
+            if not traffic_sign_element.traffic_sign_element_id.name == 'MAX_SPEED':
+                continue
+
+            position_list.append(position)
+            speed_list.append(traffic_sign_element.additional_values[0])
+    max_speed = max(speed_list)
+    return max_speed
 
 def generate_len_map(lanelet_network, lanelet_map, isContinous=True):
     """
