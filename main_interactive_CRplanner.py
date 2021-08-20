@@ -121,8 +121,8 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    # folder_scenarios = os.path.abspath(
-    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    folder_scenarios = os.path.abspath(
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     # 晓聪
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive')

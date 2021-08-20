@@ -201,6 +201,7 @@ class IntersectionPlanner():
         Returns:
             trajectory: 自车轨迹。
         '''
+        T = 0
         scenario = self.scenario
         lanelet_network = scenario.lanelet_network
         DT = scenario.dt

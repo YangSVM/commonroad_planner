@@ -326,6 +326,8 @@ def LinearInterpolate(path_point_0, path_point_1, rs_inter):
     return PathPoint([rx_inter, ry_inter, rs_inter, rtheta_inter, rkappa_inter, rdkappa_inter])
 
 def TrajObsFree(xoy_traj, obstacle, delta_t):
+    '''
+    '''
     obstacle_copy = copy.deepcopy(obstacle)
     if obstacle_copy.v == 0:
         dis_sum = 0
@@ -744,12 +746,14 @@ class LocalPlanner:
         global delta_t, sight_range
         delta_t = 0.1
         sight_range = 40
+        # 判断是否有太近的障碍物
         for obstacle in self.obstacles:
             if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
                 continue
             if Dist(obstacle.x, obstacle.y, self.traj_point.x, self.traj_point.y) > sight_range:
                 #只看眼前一段距离
                 continue
+            # 
             temp = TrajObsFree(self.path_points, obstacle, delta_t)
             if not temp[1]:#有碰撞
                 colli = 1
@@ -1111,8 +1115,8 @@ if __name__ == '__main__':
     obstacles.append(Obstacle([rx[150], ry[150], 0, 0.5, 0.5, M_PI/6]))
     obstacles.append(Obstacle([rx[300]+1, ry[300], 0, 1, 1, M_PI/2]))
     obstacles.append(Obstacle([rx[500]+1, ry[500], 0, 1, 1, M_PI/3]))
-    cts_points = np.array([rx, ry])
-    path_points = CalcRefLine(cts_points)
+    cts_points = np.array([rx, ry])             # [2, n_points]
+    path_points = CalcRefLine(cts_points)       # path points list. n_points
     # theta_init = math.atan2((ry[1]-ry[0]), (rx[1]-rx[0]))
     tp_list = [rx[0], ry[0], 0, 0, 3., 0]   # from sensor actually, an example here
     traj_point = TrajPoint(tp_list)
