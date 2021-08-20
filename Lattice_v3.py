@@ -31,7 +31,7 @@ LAT_OFFSET_COST_WEIGHT = 1 #横向偏移量
 #前四个是中间计算时用到的权重，后三个是最终合并时用到的
 LON_OBJECTIVE_COST_WEIGHT = 1  #纵向目标cost，暂时不用
 LAT_COST_WEIGHT = 1  #横向约束，包括舒适度和偏移量
-LON_COLLISION_COST_WEIGHT = 0 #碰撞cost
+LON_COLLISION_COST_WEIGHT = 1 #碰撞cost
 
 def NormalizeAngle(angle_rad):
         # to normalize an angle to [-pi, pi]
@@ -42,6 +42,9 @@ def NormalizeAngle(angle_rad):
     
 def Dist(x1, y1, x2, y2):
     return math.sqrt((x1-x2)**2+(y1-y2)**2)
+
+def Dist_point(p1, p2):
+    return math.sqrt( (p1[0]-p2[0])**2 + (p1[1]-p2[1])**2 )
 
 class PathPoint:
     def __init__(self, pp_list):
@@ -255,8 +258,8 @@ def FrenetToCartesian(path_point, s_condition, d_condition):
 def CalcRefLine(cts_points):
     ''' deal with reference path points 2d-array
     to calculate rs/rtheta/rkappa/rdkappa according to cartesian points'''
-    rx = cts_points[0]      # the x value
-    ry = cts_points[1]      # the y value
+    rx = cts_points[:,0]      # the x value
+    ry = cts_points[:,1]      # the y value
     rs = np.zeros_like(rx)
     rtheta = np.zeros_like(rx)
     rkappa = np.zeros_like(rx)
@@ -715,9 +718,9 @@ class SampleBasis:
         # self.theta_samp = [NormalizeAngle(traj_point.theta - theta_thr), NormalizeAngle(traj_point.theta - theta_thr/2), 
         #                    traj_point.theta, NormalizeAngle(traj_point.theta + theta_thr/2), NormalizeAngle(traj_point.theta + theta_thr)]
         # self.dist_samp = [v_tgt * ttc for ttc in ttcs]
-        self.s_decision_end = list(np.linspace(s_decision_end - 0.5, s_decision_end + 0.5, 5)) #calibration
+        self.s_decision_end = list(np.linspace(s_decision_end - 0.5, s_decision_end + 0.5, 10)) #calibration
         # self.dist_prvw = self.dist_samp[0]
-        self.d_end_samp = list(np.linspace(d_end - 0.1 , d_end + 0.1, 5))
+        self.d_end_samp = list(np.linspace(d_end - 0.1 , d_end + 0.1, 10))
         self.v_end = action.v_end     # for cruising
         self.acc_end = action.a_end
         self.total_t = action.T
@@ -781,15 +784,99 @@ class LocalPlanner:
             self.to_stop = False    # cruising
             self.dist_prvw = samp_basis.dist_prvw
 
+    def __LatticePlanner(self,traj_point, path_points, obstacles, samp_basis):
+        # core algorithm of the lattice planner
+
+        # plt.figure()
+        # plt.plot(rx, ry, 'b')
+        # for obstacle in self.obstacles:
+        #     plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length,
+        #                  obstacle.width, color='r', angle = obstacle.heading*180/M_PI))
+
+        global delta_t, sight_range
+        # delta_t = samp_basis.delta_t
+        # sight_range = samp_basis.sight_range
+        colli_free_traj_pairs = []                      # PolyTraj object with corresponding trajectory's cost
+        traj_point_samp = []
+        self.traj_point_samp = []
+
+        # for theta in self.theta_samp:                   # theta (heading) samping
+            # self.traj_point.theta = theta
+        s_cond_init, d_cond_init = CartesianToFrenet(self.traj_point.matched_point, self.traj_point)
+        s_cond_init[2], d_cond_init[2] = 0, 0
+        dist_samp = self.s_decision_end - s_cond_init[0] # delta_s sampling
+        for delta_s in dist_samp:              # s_cond_end[0] sampling
+            # total_t = delta_s / self.v_end  #constant speed during lane change
+            for delta_v in [-2,-1,0,1,2]:
+                total_t = self.total_t
+                poly_traj = PolyTraj(s_cond_init, d_cond_init, total_t)
+                s_cond_end = np.array([s_cond_init[0] + delta_s, self.v_end + delta_v, self.acc_end])
+                poly_traj.GenLongTraj(s_cond_end)
+                # poly_traj.plot_Curve(delta_t)
+                if not poly_traj.LongConsFree(delta_t):#先看纵向轨迹s是否满足纵向运动约束
+                    pass
+                else:
+                # if 1:
+                    for d_end in self.d_end_samp:       # d_end[0] sampling
+                        d_cond_end = np.array([d_end, 0, 0])
+                        poly_traj.GenLatTraj(d_cond_end)
+                        tp_all = poly_traj.GenCombinedTraj(self.path_points, delta_t)
+                        
+                        # get traj point [x,y]
+                        traj_x = []
+                        traj_y = []
+                        for i in range(len(tp_all)):
+                            traj_x.append(tp_all[i].x)
+                            traj_y.append(tp_all[i].y)
+                        # plt.plot(traj_x,traj_y,'g')
+                        # plt.show()
+
+                        traj_point_samp.append([traj_x,traj_y])
+
+                        self.polytrajs.append(poly_traj)
+                        colli = 0
+                        dis_to_obs = 0
+                        for obstacle in self.obstacles:
+                            if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
+                                continue
+                            if Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y) > sight_range:
+                                #只看眼前一段距离
+                                # print(Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y))
+                                continue
+                            # plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length, obstacle.width, color='y', angle = obstacle.heading*180/M_PI))
+                            temp = TrajObsFree(tp_all, obstacle, delta_t)
+                            if not temp[1]:   #有碰撞
+                                colli = 1
+                                break
+                            dis_to_obs += temp[0]
+                        if colli == 0:
+                            if poly_traj.LatConsFree(delta_t):#满足横向约束
+                                #print("available trajectory found")
+                                colli_free_traj_pairs.append([poly_traj, dis_to_obs])
+                            tp_x, tp_y, tp_v, tp_a = [], [], [], []
+                            for tp in tp_all:
+                                tp_x.append(tp.x)
+                                tp_y.append(tp.y)
+                                tp_v.append(tp.v)
+                                tp_a.append(tp.a)        
+
+        self.traj_point_samp = traj_point_samp
+        if colli_free_traj_pairs:      # selecting the best one
+            cost_list = CostSorting(colli_free_traj_pairs)
+            cost_min_traj = colli_free_traj_pairs[cost_list[0][0]][0]
+            traj_points_opt = cost_min_traj.tp_all
+            tpo_x = []
+            tpo_y = []
+            for tpo in traj_points_opt:
+                tpo_x.append(tpo.x)
+                tpo_y.append(tpo.y)
+            return traj_points_opt
+        else:                       # emergency stop
+            # print("没找到可行解, emergency stop needed")
+            return False
+
     # def __LatticePlanner(self,traj_point, path_points, obstacles, samp_basis):
     #     # core algorithm of the lattice planner
-
-    #     # plt.figure()
-    #     # plt.plot(rx, ry, 'b')
-    #     # for obstacle in self.obstacles:
-    #     #     plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length,
-    #     #                  obstacle.width, color='r', angle = obstacle.heading*180/M_PI))
-
     #     global delta_t, sight_range
     #     # delta_t = samp_basis.delta_t
     #     # sight_range = samp_basis.sight_range
@@ -797,8 +884,6 @@ class LocalPlanner:
     #     traj_point_samp = []
     #     self.traj_point_samp = []
 
-    #     # for theta in self.theta_samp:                   # theta (heading) samping
-    #         # self.traj_point.theta = theta
     #     s_cond_init, d_cond_init = CartesianToFrenet(self.traj_point.matched_point, self.traj_point)
     #     s_cond_init[2], d_cond_init[2] = 0, 0
     #     dist_samp = self.s_decision_end - s_cond_init[0] # delta_s sampling
@@ -808,66 +893,72 @@ class LocalPlanner:
     #     #print(self.dist_samp)
     #     for delta_s in dist_samp:              # s_cond_end[0] sampling
     #         # total_t = delta_s / self.v_end  #constant speed during lane change
-    #         for delta_v in [0]:
-    #             total_t = self.total_t
-    #             poly_traj = PolyTraj(s_cond_init, d_cond_init, total_t)
-    #             s_cond_end = np.array([s_cond_init[0] + delta_s, self.v_end + delta_v, self.acc_end])
-    #             poly_traj.GenLongTraj(s_cond_end)
-    #             # poly_traj.plot_Curve(delta_t)
-    #             # if not poly_traj.LongConsFree(delta_t):#先看纵向轨迹s是否满足纵向运动约束
-    #             #     pass
-    #             # else:
-    #             if 1:
-    #                 for d_end in self.d_end_samp:       # d_end[0] sampling
-    #                     d_cond_end = np.array([d_end, 0, 0])
-    #                     poly_traj.GenLatTraj(d_cond_end)
-    #                     tp_all = poly_traj.GenCombinedTraj(self.path_points, delta_t)
-                        
-    #                     # get traj point [x,y]
-    #                     traj_x = []
-    #                     traj_y = []
-    #                     for i in range(len(tp_all)):
-    #                         traj_x.append(tp_all[i].x)
-    #                         traj_y.append(tp_all[i].y)
-    #                     # plt.plot(traj_x,traj_y,'g')
-    #                     # plt.show()
+    #         total_t = self.total_t
+    #         poly_traj = PolyTraj(s_cond_init, d_cond_init, total_t)
+    #         s_cond_end = np.array([s_cond_init[0] + delta_s, self.v_end, self.acc_end])
+    #         poly_traj.GenLongTraj(s_cond_end)
+    #         # poly_traj.plot_Curve(delta_t)
+    #         # if not poly_traj.LongConsFree(delta_t):#先看纵向轨迹s是否满足纵向运动约束
+    #         #     pass
+    #         # else:
+    #         if 1:
+    #             for d_end in self.d_end_samp:       # d_end[0] sampling
+    #                 d_cond_end = np.array([d_end, 0, 0])
+    #                 poly_traj.GenLatTraj(d_cond_end)
+    #                 tp_all = poly_traj.GenCombinedTraj(self.path_points, delta_t)
+                    
+    #                 # speed profile in Cartesian
+    #                 # v_decisin = list(np.linspace(traj_point.v, self.v_end, num_point))
+    #                 traj_pos = []
+    #                 for i in range(len(tp_all)):
+    #                     traj_pos.append([tp_all[i].x, tp_all[i].y])
+    #                 Dist_traj = []
+    #                 for j in range(len(tp_all)-1):
+    #                     dist = Dist_point(traj_pos[j],traj_pos[j+1])
+    #                     Dist_traj.append(dist)
+    #                 speed_traj = list(np.insert(np.divide(Dist_traj,delta_t),0,traj_point.v))
 
-    #                     traj_point_samp.append([traj_x,traj_y])
+    #                 for i,new_traj in enumerate(tp_all):
+    #                     new_traj.v = speed_traj[i]
+    #                 poly_traj.tp_all = tp_all
 
-    #                     self.polytrajs.append(poly_traj)
-    #                     colli = 0
-    #                     dis_to_obs = 0
-    #                     for obstacle in self.obstacles:
-    #                         if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
-    #                             continue
-    #                         if Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y) > sight_range:
-    #                             #只看眼前一段距离
-    #                             # print(Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y))
-    #                             continue
-    #                         # plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length, obstacle.width, color='y', angle = obstacle.heading*180/M_PI))
-    #                         temp = TrajObsFree(tp_all, obstacle, delta_t)
-    #                         if not temp[1]:   #有碰撞
-    #                             colli = 1
-    #                             break
-    #                         dis_to_obs += temp[0]
-    #                     if colli == 0:
-    #                         if poly_traj.LatConsFree(delta_t):#满足横向约束
-    #                             #print("available trajectory found")
-    #                             colli_free_traj_pairs.append([poly_traj, dis_to_obs])
-    #                         tp_x, tp_y, tp_v, tp_a = [], [], [], []
-    #                         for tp in tp_all:
-    #                             tp_x.append(tp.x)
-    #                             tp_y.append(tp.y)
-    #                             tp_v.append(tp.v)
-    #                             tp_a.append(tp.a)
+    #                 # get traj point [x,y]
+    #                 # traj_x = []
+    #                 # traj_y = []
+    #                 # for i in range(len(tp_all)):
+    #                 #     traj_x.append(tp_all[i].x)
+    #                 #     traj_y.append(tp_all[i].y)
+    #                 # plt.plot(traj_x,traj_y,'g')
+    #                 # plt.show()
+    #                 # traj_point_samp.append([traj_x,traj_y])
 
-    #                         # plt.figure()
-    #                         # plt.plot(tp_v)
-    #                         # plt.plot(tp_x, tp_y, 'k')
-    #                         # plt.plot(self.traj_point.x, self.traj_point.y, 'or')
-    #                         # plt.axis('scaled')
-    #                         # plt.xlim(-270,-250)
-    #                         # plt.ylim(-504,-484)
+
+    #                 self.polytrajs.append(poly_traj)
+    #                 colli = 0
+    #                 dis_to_obs = 0
+    #                 for obstacle in self.obstacles:
+    #                     if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
+    #                         continue
+    #                     if Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y) > sight_range:
+    #                         #只看眼前一段距离
+    #                         print(Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y))
+    #                         continue
+    #                     # plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length, obstacle.width, color='y', angle = obstacle.heading*180/M_PI))
+    #                     temp = TrajObsFree(tp_all, obstacle, delta_t)
+    #                     if not temp[1]:   #有碰撞
+    #                         colli = 1
+    #                         break
+    #                     dis_to_obs += temp[0]
+    #                 if colli == 0:
+    #                     if poly_traj.LatConsFree(delta_t):#满足横向约束
+    #                         #print("available trajectory found")
+    #                         colli_free_traj_pairs.append([poly_traj, dis_to_obs])
+    #                     tp_x, tp_y, tp_v, tp_a = [], [], [], []
+    #                     for tp in tp_all:
+    #                         tp_x.append(tp.x)
+    #                         tp_y.append(tp.y)
+    #                         tp_v.append(tp.v)
+    #                         tp_a.append(tp.a)
         
 
     #     self.traj_point_samp = traj_point_samp
@@ -887,102 +978,6 @@ class LocalPlanner:
     #     else:                       # emergency stop
     #         # print("没找到可行解, emergency stop needed")
     #         return False
-
-    def __LatticePlanner(self,traj_point, path_points, obstacles, samp_basis):
-        # core algorithm of the lattice planner
-        global delta_t, sight_range
-        # delta_t = samp_basis.delta_t
-        # sight_range = samp_basis.sight_range
-        colli_free_traj_pairs = []                      # PolyTraj object with corresponding trajectory's cost
-        traj_point_samp = []
-        self.traj_point_samp = []
-
-        s_cond_init, d_cond_init = CartesianToFrenet(self.traj_point.matched_point, self.traj_point)
-        s_cond_init[2], d_cond_init[2] = 0, 0
-        dist_samp = self.s_decision_end - s_cond_init[0] # delta_s sampling
-        #if  s_cond_init[1] > 1 * v_tgt:
-        #s_cond_init[1] = self.traj_point.v
-        #print("aa", s_cond_init, d_cond_init)
-        #print(self.dist_samp)
-        for delta_s in dist_samp:              # s_cond_end[0] sampling
-            # total_t = delta_s / self.v_end  #constant speed during lane change
-            total_t = self.total_t
-            poly_traj = PolyTraj(s_cond_init, d_cond_init, total_t)
-            s_cond_end = np.array([s_cond_init[0] + delta_s, self.v_end, self.acc_end])
-            poly_traj.GenLongTraj(s_cond_end)
-            # poly_traj.plot_Curve(delta_t)
-            # if not poly_traj.LongConsFree(delta_t):#先看纵向轨迹s是否满足纵向运动约束
-            #     pass
-            # else:
-            if 1:
-                for d_end in self.d_end_samp:       # d_end[0] sampling
-                    d_cond_end = np.array([d_end, 0, 0])
-                    poly_traj.GenLatTraj(d_cond_end)
-                    tp_all = poly_traj.GenCombinedTraj(self.path_points, delta_t)
-                    
-                    # speed profile in Cartesian
-                    num_point = int(self.total_t/delta_t)
-                    v_decisin = list(np.linspace(traj_point.v, self.v_end, num_point))
-                    for i,new_traj in enumerate(tp_all):
-                        new_traj.v = v_decisin[i]
-                    poly_traj.tp_all = tp_all
-
-                    # get traj point [x,y]
-                    # traj_x = []
-                    # traj_y = []
-                    # for i in range(len(tp_all)):
-                    #     traj_x.append(tp_all[i].x)
-                    #     traj_y.append(tp_all[i].y)
-                    # plt.plot(traj_x,traj_y,'g')
-                    # plt.show()
-                    # traj_point_samp.append([traj_x,traj_y])
-
-
-                    self.polytrajs.append(poly_traj)
-                    colli = 0
-                    dis_to_obs = 0
-                    for obstacle in self.obstacles:
-                        if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
-                            continue
-                        if Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y) > sight_range:
-                            #只看眼前一段距离
-                            print(Dist(obstacle.x, obstacle.y, traj_point.x, traj_point.y))
-                            continue
-                        # plt.gca().add_patch(plt.Rectangle((obstacle.corner[0], obstacle.corner[1]), obstacle.length, obstacle.width, color='y', angle = obstacle.heading*180/M_PI))
-                        temp = TrajObsFree(tp_all, obstacle, delta_t)
-                        if not temp[1]:   #有碰撞
-                            colli = 1
-                            break
-                        dis_to_obs += temp[0]
-                    if colli == 0:
-                        if poly_traj.LatConsFree(delta_t):#满足横向约束
-                            #print("available trajectory found")
-                            colli_free_traj_pairs.append([poly_traj, dis_to_obs])
-                        tp_x, tp_y, tp_v, tp_a = [], [], [], []
-                        for tp in tp_all:
-                            tp_x.append(tp.x)
-                            tp_y.append(tp.y)
-                            tp_v.append(tp.v)
-                            tp_a.append(tp.a)
-        
-
-        self.traj_point_samp = traj_point_samp
-        if colli_free_traj_pairs:      # selecting the best one
-            cost_list = CostSorting(colli_free_traj_pairs)
-            cost_min_traj = colli_free_traj_pairs[cost_list[0][0]][0]
-            traj_points_opt = cost_min_traj.tp_all
-            tpo_x = []
-            tpo_y = []
-            for tpo in traj_points_opt:
-                tpo_x.append(tpo.x)
-                tpo_y.append(tpo.y)
-
-            # plt.plot(tpo_x, tpo_y, '.g')
-            # plt.show()
-            return traj_points_opt
-        else:                       # emergency stop
-            # print("没找到可行解, emergency stop needed")
-            return False
 
     def __PathFollower(self,traj_point, path_points, obstacles, samp_basis):  #无障碍物且在原轨迹上时的循迹,认为从matched_point开始
         #匀变速运动，使速度满足在到达预瞄距离时等于v_end，即v_tgt(未到终点)或0(到终点)

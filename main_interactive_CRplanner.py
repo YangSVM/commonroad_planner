@@ -90,6 +90,9 @@ class InteractiveCRPlanner:
                 mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action = mcts_planner.planner(current_time_step)
             else:
+                # update action
+                # action.ego_state_init[0] = ego_vehicle.current_state.position[0]
+                # action.ego_state_init[1] = ego_vehicle.current_state.position[1]
                 action.T -= 0.1
 
             # next_state, is_new_action_needed = biz_planner(current_scenario, action)
@@ -121,8 +124,8 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     # 晓聪
-    # folder_scenarios = os.path.abspath(
-    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    folder_scenarios = os.path.abspath(
+        '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
     name_scenario = "DEU_Frankfurt-95_2_I-1"  # 直道测试场景
@@ -138,7 +141,7 @@ if __name__ == '__main__':
     scenario_wrapper.initial_scenario = scenario
 
     # num_of_steps = conf.simulation_steps
-    num_of_steps = 50
+    num_of_steps = 80
     sumo_sim = SumoSimulation()
 
     # initialize simulation
@@ -148,6 +151,7 @@ if __name__ == '__main__':
     ego_vehicles = sumo_sim.ego_vehicles
     is_new_action_needed = True
     last_action = []
+    t_record = 0
     for step in range(num_of_steps):
         print("process:", step, "/", num_of_steps)
         current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
@@ -157,6 +161,12 @@ if __name__ == '__main__':
         # ====== plug in your motion planner here
         # ====== paste in simulations
 
+        # force to get a new action every 3 sceonds
+        t_record += 0.1
+        if t_record > 3:
+            is_new_action_needed = True
+            t_record = 0
+
         # generate a CR planner
         main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
         next_state, last_action, is_new_action_needed = main_planner.planning(current_scenario,
@@ -165,12 +175,14 @@ if __name__ == '__main__':
                                                                               sumo_sim.current_time_step,
                                                                               last_action,
                                                                               is_new_action_needed)
-
+        print('velocity:', next_state.velocity)
+        print('position:', next_state.position)
         # ====== paste in simulations
         # ====== end of motion planner
         next_state.time_step = 1
         trajectory_ego = [next_state]
         ego_vehicle.set_planned_trajectory(trajectory_ego)
+
         sumo_sim.simulate_step()
 
     # retrieve the simulated scenario in CR format
@@ -180,7 +192,7 @@ if __name__ == '__main__':
     sumo_sim.stop()
 
     # output results
-    output_folder_path = '/home/thor/commonroad-interactive-scenarios/outputs/videos'
+    output_folder_path = '/home/zxc/Videos/CR_outputs/'
 
     # create mp4 animation
     create_video(simulated_scenario,
