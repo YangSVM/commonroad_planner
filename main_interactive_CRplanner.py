@@ -11,7 +11,6 @@ from intersection_planner import IntersectionPlanner
 from Lattice_CRv3 import Lattice_CRv3
 # from simulation.simulations import create_video_for_simulation
 # from bezier import biz_planner
-# sys.path.append('/home/thicv/codes/commonroad/commonroad-interactive-scenarios')
 from MCTs_CRv3 import MCTs_CRv3
 from sumocr.visualization.video import create_video
 from commonroad.scenario.scenario import Tag
@@ -143,8 +142,8 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     # 晓聪
-    folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    # folder_scenarios = os.path.abspath(   
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     vehicle_type = VehicleType.FORD_ESCORT
     vehicle_model = VehicleModel.KS
