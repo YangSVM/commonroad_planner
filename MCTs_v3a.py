@@ -175,7 +175,7 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
         self.currentPlayer = 1
         self.laststep = [2, 0]
         self.map = tar[0]
-        self.target = [tar[1], tar[2]-50]
+        self.target = [tar[1], tar[2]]
 
         self.reward = 100
         self.edge = [75, 120, 300]
@@ -457,7 +457,7 @@ if __name__ == "__main__":
     searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
     action = searcher.search(initialState=initialState)  # 一整个类都是其状态
     out = output(state, action.act)
-    print(out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
+    print('out:',out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
 
     # print(action.act)
     # end = time.time()
