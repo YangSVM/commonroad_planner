@@ -443,12 +443,12 @@ class IntersectionPlanner():
 
         if a1 < a_thre or a2 < a_thre:  # 避让
             if a1 <= a2:
-                action.delta_s = dis_ego2cp[0] * 0.5
+                action.delta_s = dis_ego2cp[0] - 15
                 action.v_end = 0
                 action.T = action.delta_s / (self.ego_state.velocity + action.v_end) * 2
 
             elif a1 > a2:
-                action.delta_s = dis_ego2cp[1] * 0.5
+                action.delta_s = dis_ego2cp[1] - 15
                 action.v_end = 0
                 action.T = action.delta_s / (self.ego_state.velocity + action.v_end) * 2
 
