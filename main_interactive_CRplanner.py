@@ -99,18 +99,18 @@ class InteractiveCRPlanner:
         # self.lanelet_state = 1
         # send to sub planner according to current lanelet state
         # if self.lanelet_state == 1:
-        if self.lanelet_state == 2 or self.lanelet_state == 1:
+        if self.lanelet_state == 1:
 
             # === insert straight-going planner here
             if is_new_action_needed:
                 mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action = mcts_planner.planner(current_time_step)
-            else:
+            # else:
                 # update action
 
                 # for straight-going
-                action.ego_state_init[0] = ego_vehicle.current_state.position[0]
-                action.ego_state_init[1] = ego_vehicle.current_state.position[1]
+                # action.ego_state_init[0] = ego_vehicle.current_state.position[0]
+                # action.ego_state_init[1] = ego_vehicle.current_state.position[1]
 
                 # for lane=changing
                 # action.T -= 0.1
@@ -121,7 +121,7 @@ class InteractiveCRPlanner:
             # === end of straight-going planner
 
         # if self.lanelet_state == 2 or self.lanelet_state == 3:
-        if self.lanelet_state == 3:
+        if self.lanelet_state == 2 or self.lanelet_state == 3:
             # === insert intersection planner here
             is_new_action_needed = 1
             ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle, self.lanelet_state)
@@ -143,8 +143,8 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     # 晓聪
-    # folder_scenarios = os.path.abspath(   
-    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    folder_scenarios = os.path.abspath(
+        '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     vehicle_type = VehicleType.FORD_ESCORT
     vehicle_model = VehicleModel.KS
@@ -165,7 +165,7 @@ if __name__ == '__main__':
     scenario_wrapper.initial_scenario = scenario
 
     # num_of_steps = conf.simulation_steps
-    num_of_steps = 5
+    num_of_steps = 200
     sumo_sim = SumoSimulation()
 
     # initialize simulation
@@ -250,7 +250,8 @@ if __name__ == '__main__':
                   cost_function,
                   path_solutions, overwrite=True)
 
-    solution = CommonRoadSolutionReader.open(os.path.join(path_solutions, name_scenario))
+    solution = CommonRoadSolutionReader.open(os.path.join(path_solutions,
+                                                          f"solution_KS1:TR1:{name_scenario}:2020a.xml"))
     valid_solution(scenario, planning_problem_set, solution)
     # ce = CostFunctionEvaluator.init_from_solution(solution)
     # cost_result = ce.evaluate_solution(scenario, planning_problem_set, solution)

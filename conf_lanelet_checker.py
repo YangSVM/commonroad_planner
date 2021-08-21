@@ -159,18 +159,18 @@ def conf_lanelet_checker(ln, sub_lanelet_id: int, lanelet_state: int, lanelet_ro
     # 主程序
     # 检查主车所在的路口和incoming序号
     [id_intersect, sub_lanelet_id_in_intersection] = check_sub_car_in_incoming()
-    print("intersection no.", id_intersect)
+    # print("intersection no.", id_intersect)
     # print("incoming_lanelet_id", id_incoming)
     print("lanelet id of subjective car:", sub_lanelet_id_in_intersection)
 
     lanelet_network = ln
     # 提取路口内的lanelet的id列表
     inter_laneletid_list = check_in_intersection_lanelets()
-    print("all lanelets:", inter_laneletid_list)
+    # print("all lanelets:", inter_laneletid_list)
 
     # 检查主车在路口内所需通过的lanelet与其他路口内的lanelet的冲突情况
     cl = check_conf_lanelets(lanelet_network, inter_laneletid_list, sub_lanelet_id_in_intersection)
-    print("conflict lanelets", cl.id)
+    # print("conflict lanelets", cl.id)
     return cl
 
 

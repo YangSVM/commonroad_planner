@@ -76,15 +76,15 @@ def get_lane_feature(cv):  # cv: central vertice
 
 if __name__ == '__main__':
         #  下载 common road scenarios包。https://gitlab.lrz.de/tum-cps/commonroad-scenarios。修改为下载地址
-    # path_scenario_download = os.path.abspath(
-    #     'D:\OneDrive - tongji.edu.cn\Desktop\Study/1_Codes/1_CommonRoad\commonroad-scenarios/scenarios/hand-crafted')
-    path_scenario_download = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
+    folder_scenarios = os.path.abspath(
+        '../competition_scenarios_new/interactive/')
+    # folder_scenarios = os.path.abspath('/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/hand-crafted')
     # 文件名
-    id_scenario = 'ZAM_Tjunction-1_56_T-1'
-
-    path_scenario = os.path.join(path_scenario_download, id_scenario + '.xml')
-    # read in scenario and planning problem set
-    scenario, planning_problem_set = CommonRoadFileReader(path_scenario).open()
+    name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景
+    # name_scenario = "DEU_Frankfurt-95_2_I-1"  # 直道测试场景
+    interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
+    scenario_file = os.path.join(interactive_scenario_path, f"{name_scenario}.cr.xml")
+    scenario, planning_problem_set = CommonRoadFileReader(scenario_file).open()
     # lanelets
     lanelets = scenario.lanelet_network.lanelets
     plt.figure(1)
