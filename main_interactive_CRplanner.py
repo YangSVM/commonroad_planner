@@ -142,8 +142,8 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     # 晓聪
-    # folder_scenarios = os.path.abspath(   
-    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    folder_scenarios = os.path.abspath(
+        '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     vehicle_type = VehicleType.FORD_ESCORT
     vehicle_model = VehicleModel.KS
@@ -248,7 +248,8 @@ if __name__ == '__main__':
                   cost_function,
                   path_solutions, overwrite=True)
 
-    solution = CommonRoadSolutionReader.open(os.path.join(path_solutions, f"{name_scenario}:2020a.xml"))
+    solution = CommonRoadSolutionReader.open(os.path.join(path_solutions,
+                                                          f"solution_KS1:TR1:{name_scenario}:2020a.xml"))
     valid_solution(scenario, planning_problem_set, solution)
     # ce = CostFunctionEvaluator.init_from_solution(solution)
     # cost_result = ce.evaluate_solution(scenario, planning_problem_set, solution)
