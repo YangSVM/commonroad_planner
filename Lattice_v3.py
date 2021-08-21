@@ -14,7 +14,7 @@ M_PI = 3.141593
 #车辆属性, global const. and local var. check!
 VEH_L = 1
 VEH_W = 0.5
-MAX_V = 120/3.6
+MAX_V = 150/3.6
 MIN_V = 0
 '''
 MAX_A = 10
@@ -326,8 +326,6 @@ def LinearInterpolate(path_point_0, path_point_1, rs_inter):
     return PathPoint([rx_inter, ry_inter, rs_inter, rtheta_inter, rkappa_inter, rdkappa_inter])
 
 def TrajObsFree(xoy_traj, obstacle, delta_t):
-    '''
-    '''
     obstacle_copy = copy.deepcopy(obstacle)
     if obstacle_copy.v == 0:
         dis_sum = 0
@@ -469,26 +467,32 @@ class PolyTraj:
     def plot_Curve(self,delta_t):
         size = int(self.total_t/delta_t)
         s_all = []
+        v_all = []
         t_all = []
         for i in range(size):
-            s = self.Evaluate(self.long_coef, 1, i * delta_t)
+            s = self.Evaluate_long(self.long_coef, 0, i * delta_t)
+            v = self.Evaluate_long(self.long_coef, 1, i * delta_t)
             t_all.append(i * delta_t)
             s_all.append(s)
+            v_all.append(v)
         # plt.ion()  #打开交互模式
+        plt.figure(1)
         plt.plot(t_all,s_all,'b')
+        plt.figure(2)
+        plt.plot(t_all,v_all,'r')
         plt.show()
         # plt.pause(0.08)
         # plt.clf()
     
     def GenLongTraj(self, s_cond_end):
-        self.long_coef =  self.__QuinticPolyCurve(self.s_cond_init, s_cond_end, self.total_t)
-        self.delta_s = self.long_coef[1] * self.total_t + self.long_coef[2] * self.total_t ** 2 + \
-            self.long_coef[3] * self.total_t ** 3 + self.long_coef[4] * self.total_t ** 4 + \
-                self.long_coef[5] * self.total_t ** 5
+        # self.long_coef =  self.__QuinticPolyCurve(self.s_cond_init, s_cond_end, self.total_t)
+        # self.delta_s = self.long_coef[1] * self.total_t + self.long_coef[2] * self.total_t ** 2 + \
+        #     self.long_coef[3] * self.total_t ** 3 + self.long_coef[4] * self.total_t ** 4 + \
+        #         self.long_coef[5] * self.total_t ** 5
         
-        # self.long_coef = self.__QuadraticPolyCurve(self.s_cond_init, s_cond_end, self.total_t)
-        # self.delta_s = self.long_coef[1] * self.total_t + self.long_coef[2] * self.total_t ** 2
-        # return self.long_coef
+        self.long_coef = self.__QuadraticPolyCurve(self.s_cond_init, s_cond_end, self.total_t)
+        self.delta_s = self.long_coef[1] * self.total_t + self.long_coef[2] * self.total_t ** 2
+        return self.long_coef
 
     def GenLatTraj(self, d_cond_end):
         # GenLatTraj should be posterior to GenLongTraj
@@ -526,7 +530,7 @@ class PolyTraj:
         size = int(self.total_t/delta_t)
         global MAX_V, MIN_V
         for i in range(size):
-            v = self.Evaluate(self.long_coef, 1, i * delta_t)
+            v = self.Evaluate_long(self.long_coef, 1, i * delta_t)
             #print(v)
             if v > MAX_V or v < MIN_V:
                 # print(v, "纵向速度超出约束")
@@ -552,12 +556,12 @@ class PolyTraj:
         global LAT_COMFORT_COST_WEIGHT, LAT_OFFSET_COST_WEIGHT
         max_cost = 0
         for i in range(size):
-            s = self.Evaluate(self.long_coef, 0, i*delta_t)
+            s = self.Evaluate_long(self.long_coef, 0, i*delta_t)
             d = self.Evaluate(self.lat_coef, 0, s)
             dd_ds = self.Evaluate(self.lat_coef, 1, s)
-            ds_dt = self.Evaluate(self.long_coef, 1, i*delta_t)
+            ds_dt = self.Evaluate_long(self.long_coef, 1, i*delta_t)
             d2d_ds2 = self.Evaluate(self.lat_coef, 2, s)
-            d2s_dt2 = self.Evaluate(self.long_coef, 2, i*delta_t)
+            d2s_dt2 = self.Evaluate_long(self.long_coef, 2, i*delta_t)
 
             # s = self.Evaluate_long(self.long_coef, 0, i*delta_t)
             # d = self.Evaluate(self.lat_coef, 0, s)
@@ -592,68 +596,10 @@ class PolyTraj:
         #print("满足横向约束")
         return True
     
-    # def GenCombinedTraj(self, path_points, delta_t):
-    #     ''' combine long and lat traj together
-    #     F2C function is used to output future traj points in a list to follow'''
-    #     a0_s, a1_s, a2_s = self.long_coef[0], self.long_coef[1], self.long_coef[2]
-    #     a0_d, a1_d, a2_d, a3_d, a4_d, a5_d = self.lat_coef[0], self.lat_coef[1], self.lat_coef[2], \
-    #         self.lat_coef[3], self.lat_coef[4], self.lat_coef[5]
-
-    #     rs_pp_all = []              # the rs value of all the path points
-    #     for path_point in path_points:
-    #         rs_pp_all.append(path_point.rs)
-    #     rs_pp_all = np.array(rs_pp_all)
-    #     num_points = math.floor(self.total_t / delta_t)
-    #     s_cond_all = []             # possibly useless
-    #     d_cond_all = []             # possibly useless
-    #     pp_inter = []               # possibly useless
-    #     tp_all = []                 # all the future traj points in a list
-    #     t, s = 0, 0                 # initialize variables, s(t), d(s) or l(s)
-    #     v = []
-    #     t_a = []
-    #     for i in range(int(num_points)):
-    #         s_cond = np.zeros(3)
-    #         d_cond = np.zeros(3)
-
-    #         t = t + delta_t
-    #         s_cond[0] = a0_s + a1_s * t + a2_s * t ** 2
-    #         s_cond[1] = a1_s + 2 * a2_s * t
-    #         s_cond[2] = 2 * a2_s
-    #         s_cond_all.append(s_cond)
-    #         v.append(s_cond[1])
-    #         t_a.append(t)
-
-    #         s = s_cond[0] - a0_s
-    #         d_cond[0] = a0_d + a1_d * s + a2_d * s ** 2 + a3_d * s ** 3 + a4_d * s ** 4 + a5_d * s ** 5
-    #         d_cond[1] = a1_d + 2 * a2_d * s + 3 * a3_d * s ** 2 + 4 * a4_d * s ** 3 + 5 * a5_d * s ** 4
-    #         d_cond[2] = 2 * a2_d + 6 * a3_d * s + 12 * a4_d * s ** 2 + 20 * a5_d * s ** 3
-    #         d_cond_all.append(d_cond)
-
-    #         index_min = np.argmin(np.abs(rs_pp_all - s_cond[0]))
-    #         path_point_min = path_points[index_min]
-    #         if index_min == 0 or index_min == len(path_points) - 1:
-    #             path_point_inter = path_point_min
-    #         else:
-    #             if s_cond[0] >= path_point_min.rs:
-    #                 path_point_next = path_points[index_min + 1]
-    #                 path_point_inter = LinearInterpolate(path_point_min, path_point_next, s_cond[0])
-    #             else:
-    #                 path_point_last = path_points[index_min - 1]
-    #                 path_point_inter = LinearInterpolate(path_point_last, path_point_min, s_cond[0])
-    #         pp_inter.append(path_point_inter)
-    #         traj_point = FrenetToCartesian(path_point_inter, s_cond, d_cond)
-    #         #traj_point.v = v_tgt
-    #         tp_all.append(traj_point)
-    #     # plt.plot(t_a,v)
-    #     # plt.show()
-    #     self.tp_all = tp_all
-    #     return tp_all
-
     def GenCombinedTraj(self, path_points, delta_t):
         ''' combine long and lat traj together
         F2C function is used to output future traj points in a list to follow'''
-        a0_s, a1_s, a2_s, a3_s, a4_s, a5_s = self.long_coef[0], self.long_coef[1], self.long_coef[2], \
-            self.long_coef[3], self.long_coef[4], self.long_coef[5]
+        a0_s, a1_s, a2_s = self.long_coef[0], self.long_coef[1], self.long_coef[2]
         a0_d, a1_d, a2_d, a3_d, a4_d, a5_d = self.lat_coef[0], self.lat_coef[1], self.lat_coef[2], \
             self.lat_coef[3], self.lat_coef[4], self.lat_coef[5]
 
@@ -674,9 +620,9 @@ class PolyTraj:
             d_cond = np.zeros(3)
 
             t = t + delta_t
-            s_cond[0] = a0_s + a1_s * t + a2_s * t ** 2 + a3_s * t ** 3 + a4_s * t ** 4 + a5_s * t ** 5
-            s_cond[1] = a1_s + 2 * a2_s * t + 3 * a3_s * t ** 2 + 4 * a4_s * t ** 3 + 5 * a5_s * t ** 4
-            s_cond[2] = 2 * a2_s + 6 * a3_s * t + 12 * a4_s * t ** 2 + 20 * a5_s * t ** 3
+            s_cond[0] = a0_s + a1_s * t + a2_s * t ** 2
+            s_cond[1] = a1_s + 2 * a2_s * t
+            s_cond[2] = 2 * a2_s
             s_cond_all.append(s_cond)
             v.append(s_cond[1])
             t_a.append(t)
@@ -706,6 +652,64 @@ class PolyTraj:
         # plt.show()
         self.tp_all = tp_all
         return tp_all
+
+    # def GenCombinedTraj(self, path_points, delta_t):
+    #     ''' combine long and lat traj together
+    #     F2C function is used to output future traj points in a list to follow'''
+    #     a0_s, a1_s, a2_s, a3_s, a4_s, a5_s = self.long_coef[0], self.long_coef[1], self.long_coef[2], \
+    #         self.long_coef[3], self.long_coef[4], self.long_coef[5]
+    #     a0_d, a1_d, a2_d, a3_d, a4_d, a5_d = self.lat_coef[0], self.lat_coef[1], self.lat_coef[2], \
+    #         self.lat_coef[3], self.lat_coef[4], self.lat_coef[5]
+
+    #     rs_pp_all = []              # the rs value of all the path points
+    #     for path_point in path_points:
+    #         rs_pp_all.append(path_point.rs)
+    #     rs_pp_all = np.array(rs_pp_all)
+    #     num_points = math.floor(self.total_t / delta_t)
+    #     s_cond_all = []             # possibly useless
+    #     d_cond_all = []             # possibly useless
+    #     pp_inter = []               # possibly useless
+    #     tp_all = []                 # all the future traj points in a list
+    #     t, s = 0, 0                 # initialize variables, s(t), d(s) or l(s)
+    #     v = []
+    #     t_a = []
+    #     for i in range(int(num_points)):
+    #         s_cond = np.zeros(3)
+    #         d_cond = np.zeros(3)
+
+    #         t = t + delta_t
+    #         s_cond[0] = a0_s + a1_s * t + a2_s * t ** 2 + a3_s * t ** 3 + a4_s * t ** 4 + a5_s * t ** 5
+    #         s_cond[1] = a1_s + 2 * a2_s * t + 3 * a3_s * t ** 2 + 4 * a4_s * t ** 3 + 5 * a5_s * t ** 4
+    #         s_cond[2] = 2 * a2_s + 6 * a3_s * t + 12 * a4_s * t ** 2 + 20 * a5_s * t ** 3
+    #         s_cond_all.append(s_cond)
+    #         v.append(s_cond[1])
+    #         t_a.append(t)
+
+    #         s = s_cond[0] - a0_s
+    #         d_cond[0] = a0_d + a1_d * s + a2_d * s ** 2 + a3_d * s ** 3 + a4_d * s ** 4 + a5_d * s ** 5
+    #         d_cond[1] = a1_d + 2 * a2_d * s + 3 * a3_d * s ** 2 + 4 * a4_d * s ** 3 + 5 * a5_d * s ** 4
+    #         d_cond[2] = 2 * a2_d + 6 * a3_d * s + 12 * a4_d * s ** 2 + 20 * a5_d * s ** 3
+    #         d_cond_all.append(d_cond)
+
+    #         index_min = np.argmin(np.abs(rs_pp_all - s_cond[0]))
+    #         path_point_min = path_points[index_min]
+    #         if index_min == 0 or index_min == len(path_points) - 1:
+    #             path_point_inter = path_point_min
+    #         else:
+    #             if s_cond[0] >= path_point_min.rs:
+    #                 path_point_next = path_points[index_min + 1]
+    #                 path_point_inter = LinearInterpolate(path_point_min, path_point_next, s_cond[0])
+    #             else:
+    #                 path_point_last = path_points[index_min - 1]
+    #                 path_point_inter = LinearInterpolate(path_point_last, path_point_min, s_cond[0])
+    #         pp_inter.append(path_point_inter)
+    #         traj_point = FrenetToCartesian(path_point_inter, s_cond, d_cond)
+    #         #traj_point.v = v_tgt
+    #         tp_all.append(traj_point)
+    #     # plt.plot(t_a,v)
+    #     # plt.show()
+    #     self.tp_all = tp_all
+    #     return tp_all
 
 class SampleBasis:
     # the basis of sampling: theta, dist, d_end (, v_end); normally for the planning_out cruising case
@@ -746,14 +750,12 @@ class LocalPlanner:
         global delta_t, sight_range
         delta_t = 0.1
         sight_range = 40
-        # 判断是否有太近的障碍物
         for obstacle in self.obstacles:
             if obstacle.matched_point.rs < self.traj_point.matched_point.rs - 2:
                 continue
             if Dist(obstacle.x, obstacle.y, self.traj_point.x, self.traj_point.y) > sight_range:
                 #只看眼前一段距离
                 continue
-            # 
             temp = TrajObsFree(self.path_points, obstacle, delta_t)
             if not temp[1]:#有碰撞
                 colli = 1
@@ -1115,8 +1117,8 @@ if __name__ == '__main__':
     obstacles.append(Obstacle([rx[150], ry[150], 0, 0.5, 0.5, M_PI/6]))
     obstacles.append(Obstacle([rx[300]+1, ry[300], 0, 1, 1, M_PI/2]))
     obstacles.append(Obstacle([rx[500]+1, ry[500], 0, 1, 1, M_PI/3]))
-    cts_points = np.array([rx, ry])             # [2, n_points]
-    path_points = CalcRefLine(cts_points)       # path points list. n_points
+    cts_points = np.array([rx, ry])
+    path_points = CalcRefLine(cts_points)
     # theta_init = math.atan2((ry[1]-ry[0]), (rx[1]-rx[0]))
     tp_list = [rx[0], ry[0], 0, 0, 3., 0]   # from sensor actually, an example here
     traj_point = TrajPoint(tp_list)
