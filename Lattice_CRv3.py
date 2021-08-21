@@ -14,7 +14,7 @@ from intersection_planner import distance_lanelet
 
 from grid_lanelet import edit_scenario4test
 from grid_lanelet import lanelet_network2grid
-from grid_lanelet import ego_pos2tree
+from grid_lanelet import get_obstacle_info
 
 from commonroad.geometry.shape import Rectangle
 from commonroad.scenario.obstacle import DynamicObstacle, ObstacleType
@@ -241,7 +241,7 @@ if __name__ == '__main__':
     # 提供初始状态。位于哪个lanelet，距离lanelet 末端位置
     lanelet_network  = scenario.lanelet_network
     lanelet_id_matrix  = lanelet_network2grid(lanelet_network)
-    grid, ego_d, obstacle_states =ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, T)
+    grid, ego_d, obstacle_states =get_obstacle_info(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, T)
     # print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
     ego_lane_init = np.nonzero(grid)[0][0]
     #print('自车初始速度： ', v_ego)
@@ -345,7 +345,7 @@ if __name__ == '__main__':
             break
 
         if t % T == 0:
-            grid, ego_d, obstacle_states =ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, t)
+            grid, ego_d, obstacle_states =get_obstacle_info(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, t)
             # print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
             # print(np.nonzero(grid)[0][0])
             if np.nonzero(grid)[0][0]:
@@ -457,7 +457,7 @@ if __name__ == '__main__':
             theta_thr = M_PI/6   # calibration!!
             # ttcs_ = [2, 3, 4, 5, 6, 7, 8]
 
-            grid, ego_d, obstacle_states =ego_pos2tree(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, t)
+            grid, ego_d, obstacle_states =get_obstacle_info(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, t)
             s_init = ego_d
             
             samp_basis = SampleBasis(traj_point, theta_thr, from_decision,s_init)
