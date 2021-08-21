@@ -217,22 +217,31 @@ def get_obstacle_info(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwo
 
 
 
-def get_map_info(goal_pos,  lanelet_ids_frenet_axis, lanelet_id_matrix, lanelet_network, is_interactive=False):
+def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_matrix, ln: LaneletNetwork, is_interactive=False):
     '''
 
     return:
         map	地图信息，表达决策任务	1x3矩阵：[总车道数，目标车道编号，目标位置]（注：最左侧车道为0号）
     '''
+    # 获取 goal_pos_end：未延长的目标终点。延长放在之后做
+    if is_goal:
+        # 如果是直接规划到 goal。goal pos设置为矩形区域"前部分"
+        # 如果目标车道的头几个点在
+        goal_pos_end  = planning_problem.goal.state_list[0].position.shapes[0].center
+    else:
+        lanelet_goal = ln.find_lanelet_by_id( lanelet_id_goal)
+        # ！！！ lanelet中心线最后一个点，居然不是该lanelet的
+        goal_pos_end = lanelet_goal.center_vertices[-1, :]
+
     map  = []
     n_lane = lanelet_id_matrix.shape[0]         # 总车道数
     
     # 目标车道编号
-    lanelet_id_goal = lanelet_network.find_lanelet_by_position([goal_pos])[0][0]
+    # lanelet_id_goal = lanelet_network.find_lanelet_by_position([goal_pos])[0][0]
     lane_pos_ = np.where(lanelet_id_matrix==lanelet_id_goal)[0]
-    if lane_pos_.shape[0] == 0:
-        print('error. cannot found goal lanelet position')
-    else:
-        lane_pos = lane_pos_[0]
+    assert lane_pos_.shape[0] != 0, 'error. cannot found goal lanelet position'
+
+    lane_pos = lane_pos_[0]
 
     # 求取frenet s轴对应的加密后的cv
     cv = []
@@ -242,8 +251,8 @@ def get_map_info(goal_pos,  lanelet_ids_frenet_axis, lanelet_id_matrix, lanelet_
     cv = np.concatenate(cv, axis=0)
     cv, _, s_cv = detail_cv(cv)
     
-    # 目标s位置
-    goal_s = distance_lanelet(cv, s_cv, [cv[0][0], cv[1][0]], goal_pos)
+    # 目标s位置. 增加5米，直接延长至路口内。
+    goal_s = distance_lanelet(cv, s_cv, [cv[0][0], cv[1][0]], goal_pos_end) + 5
 
     map = [n_lane, lane_pos, goal_s]
     return map

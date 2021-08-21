@@ -158,22 +158,13 @@ class MCTs_CRv3():
 
 
         lanelet_ids_frenet_axis = get_frenet_lanelet_axis(lanelet_id_matrix)
-
-        # 获取 goal_pos_end：未延长的目标终点。延长放在之后做
-        if is_goal:
-            # 如果是直接规划到 goal。goal pos设置为矩形区域"前部分"
-            goal_pos_end  = planning_problem.goal.state_list[0].position.shapes[0].center
-        else:
-            end_lanelet = ln.find_lanelet_by_id( self.lanelet_route[end_route_id])
-            # ！！！ lanelet中心线最后一个点，居然不是该lanelet的
-            goal_pos_end = end_lanelet.center_vertices[-2, :]
-            # next_lanelet = ln.find_lanelet_by_id( self.lanelet_route[end_route_id +1])
-            # # ！！！ lanelet中心线最后一个点，居然不是该lanelet的
-            # goal_pos = next_lanelet.center_vertices[0, :]
-
-        map = get_map_info(goal_pos_end, lanelet_ids_frenet_axis, lanelet_id_matrix, ln, is_interactive=True)
+        
+        # 地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
+        lanelet_id_goal = self.lanelet_route[end_route_id]
+        map = get_map_info(is_goal,  lanelet_id_goal, lanelet_ids_frenet_axis, lanelet_id_matrix, ln, is_interactive=True)
         speed_limit = extract_speed_limit_from_traffic_sign(ln)
         map.append(speed_limit)
+
         if len(lane_ego_n_array)>0:
             lane_ego_n = lane_ego_n_array[0]
         else:

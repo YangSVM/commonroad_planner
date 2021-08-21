@@ -143,15 +143,15 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
     # 晓聪
-    folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     vehicle_type = VehicleType.FORD_ESCORT
     vehicle_model = VehicleModel.KS
     cost_function = CostFunction.TR1
     vehicle = VehicleDynamics.KS(vehicle_type)
     dt = 0.1
-    name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景
+    name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
     # name_scenario = "DEU_Frankfurt-95_9_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
