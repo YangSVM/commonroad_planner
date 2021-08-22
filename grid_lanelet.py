@@ -50,7 +50,7 @@ def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetw
     '''
     # 判断在第几条车道
     n_lane = np.where(lanelet_id_matrix == lanelet_id_target)[0]
-    assert i.shape[0]>0, 'lanelet_id_target do not in lanelet_id_matrix!'
+    assert n_lane.shape[0]>0, 'lanelet_id_target do not in lanelet_id_matrix!'
     lanelets_frenet_axis = lanelet_id_matrix[n_lane[0], :]
 
     lanelets_frenet_axis_ = []
@@ -145,9 +145,6 @@ def lanelet_network2grid(ln : LaneletNetwork, route):
         
     return lanelet_id_matrix
 
-def zxc_calculate_lanelet(ln, lanelet_id):
-    list = []
-    return list
 
 def get_obstacle_info(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwork, scenario, T):
     '''通过自车位置，标记对应的1。并且返回自车位置相对于左上角lanelet的中心线的frenet坐标系的距离。
@@ -246,7 +243,7 @@ def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_
     # 求取frenet s轴对应的加密后的cv
     cv = []
     for lanelet in lanelet_ids_frenet_axis:
-        cv.append(lanelet_network.find_lanelet_by_id(lanelet).center_vertices)
+        cv.append(ln.find_lanelet_by_id(lanelet).center_vertices)
     
     cv = np.concatenate(cv, axis=0)
     cv, _, s_cv = detail_cv(cv)
@@ -411,22 +408,22 @@ if __name__ == '__main__':
     # ---------------可视化 end ------------------------------
 
     # 提供初始状态。位于哪个lanelet，距离lanelet 末端位置
-    lanelet_network = scenario.lanelet_network
-    lanelet_id_matrix = lanelet_network2grid(lanelet_network)
+    ln = scenario.lanelet_network
+    lanelet_id_matrix = lanelet_network2grid(ln)
     print('lanelet_id_matrix: ', lanelet_id_matrix)
 
     # 在每次规划过程中，可能需要反复调用这个函数得到目前车辆所在的lanelet，以及相对距离
     T = 50  # 5*0.1=0.5.返回0.5s时周车的状态。注意下面函数返回的自车状态仍然是初始时刻的。
-    grid, ego_d, obstacles = get_obstacle_info(ego_pos_init, lanelet_id_matrix, lanelet_network, scenario, T)
+    grid, ego_d, obstacles = get_obstacle_info(ego_pos_init, lanelet_id_matrix, ln, scenario, T)
     # print('车辆所在车道标记矩阵：',grid,'自车frenet距离', ego_d)
 
     v_ego = planning_problem.initial_state.velocity
 
-    lanelet00_cv_info = detail_cv(lanelet_network.find_lanelet_by_id(lanelet_id_matrix[0, 0]).center_vertices)
+    lanelet00_cv_info = detail_cv(ln.find_lanelet_by_id(lanelet_id_matrix[0, 0]).center_vertices)
     lane_ego_n_array, _ = np.where(grid == 1)
 
     goal_pos  =  planning_problem.goal.state_list[0].position.shapes[0].center
-    map = get_map_info(goal_pos, grid, lanelet00_cv_info, lanelet_id_matrix, lanelet_network)
+    map = get_map_info(goal_pos, grid, lanelet00_cv_info, lanelet_id_matrix, ln)
     if len(lane_ego_n_array)>0:
         lane_ego_n = lane_ego_n_array[0]
     else:

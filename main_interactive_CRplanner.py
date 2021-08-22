@@ -152,6 +152,7 @@ if __name__ == '__main__':
     vehicle = VehicleDynamics.KS(vehicle_type)
     dt = 0.1
     name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
+    # name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
     # name_scenario = "DEU_Frankfurt-95_9_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
@@ -165,7 +166,7 @@ if __name__ == '__main__':
     scenario_wrapper.initial_scenario = scenario
 
     # num_of_steps = conf.simulation_steps
-    num_of_steps = 200
+    num_of_steps = 2
     sumo_sim = SumoSimulation()
 
     # initialize simulation
