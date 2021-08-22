@@ -13,7 +13,7 @@ from intersection_planner import IntersectionPlanner
 from Lattice_CRv3 import Lattice_CRv3
 # from simulation.simulations import create_video_for_simulation
 # from bezier import biz_planner
-from MCTs_CRv3 import MCTs_CRv3
+from MCTs_CR import MCTs_CR
 from sumocr.visualization.video import create_video
 from commonroad.scenario.scenario import Tag
 from simulation.utility import save_solution
@@ -107,7 +107,7 @@ class InteractiveCRPlanner:
 
             # === insert straight-going planner here
             if is_new_action_needed:
-                mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
+                mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action = mcts_planner.planner(current_time_step)
             else:
                 # update action
