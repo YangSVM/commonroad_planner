@@ -12,7 +12,7 @@ from detail_central_vertices import detail_cv
 from intersection_planner import distance_lanelet
 import numpy as np
 import matplotlib.pyplot as plt
-from grid_lanelet import lanelet_network2grid, state_cr2state_mcts
+from grid_lanelet import get_detail_cv_of_lanelets, lanelet_network2grid, state_cr2state_mcts
 from grid_lanelet import get_obstacle_info
 from grid_lanelet import get_map_info
 from grid_lanelet import edit_scenario4test
@@ -145,6 +145,11 @@ class MCTs_CR():
         #     is_goal = False
         return start_route_id, end_route_id, is_meet_intersection
 
+    def get_goal_info(self, is_goal, lanelet_ids_frenet_axis, s_goal):
+        cv, _, s_cv = get_detail_cv_of_lanelets(lanelet_ids_frenet_axis, self.scenario.lanelet_network)
+        return [is_goal, cv, s_cv, s_goal]
+        
+
     def planner(self, T):
         T = 0
         planning_problem  = self.planning_problem
@@ -208,8 +213,8 @@ class MCTs_CR():
         action_addition.v_end = out[2]
         action_addition.ego_state_init = ego_state_init
         s_ego = ego_state_mcts[1]
-        s_goal = action_addition.delta_s + s_ego
-        lanelet_id_target = action_addition.find_lanelet_id_target(s_goal, lanelet_id_matrix, out[0], ln)
+        s_goal_temp = action_addition.delta_s + s_ego
+        lanelet_id_target = action_addition.find_lanelet_id_target(s_goal_temp, lanelet_id_matrix, out[0], ln)
         action_addition.lanelet_id_target = lanelet_id_target
         frenet_cv = find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln)
         action_addition.frenet_cv = frenet_cv
@@ -220,8 +225,10 @@ class MCTs_CR():
         # print('delta_s', action_addition.delta_s)
         # print('v_end', action_addition.v_end)
 
-
-        return action.act, action_addition
+        goal_info = self.get_goal_info(is_goal, lanelet_ids_frenet_axis, map[2])
+        print('goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: \n' , goal_info[0], goal_info[3])
+        print('中线lanelet id: ', lanelet_ids_frenet_axis)
+        return action.act, action_addition, goal_info
 
 
 if __name__=='__main__':

@@ -2,6 +2,7 @@
 # it takes the current state of the CR scenario
 # and outputs the next state of the ego vehicle
 
+from CR_tools.utility import distance_lanelet
 from networkx.generators import ego
 from MCTs_v3a import output
 import os
@@ -34,12 +35,18 @@ class InteractiveCRPlanner:
     lanelet_ego = None
     lanelet_state = None
 
-    def __init__(self, current_scenario, state_current_ego):
+    def __init__(self):
         # get current scenario info. from CR
-        self.scenario = current_scenario
-        self.ego_state = state_current_ego
         self.lanelet_ego = None  # the lanelet which ego car is located in
         self.lanelet_state = None  # straight-going /incoming /in-intersection
+
+        # initialize the last action info
+        self.is_new_action_needed = True
+        self.last_action = []
+        self.last_semantic_action = []
+
+        # goal infomation
+        self.goal_info = None
 
     def check_state(self):
         """check if ego car is straight-going /incoming /in-intersection"""
@@ -82,18 +89,34 @@ class InteractiveCRPlanner:
 
         return lanelet_route
 
+    def check_goal_state(self, goal_info, position):
+        # 没有经过
+        if goal_info is None:
+            return False
+        
+        is_goal = False
+        is_goal4mcts = goal_info[0]
+        # 必须是mcts的终点是问题终点
+        if is_goal4mcts:
+            cv, cv_s, s_goal = goal_info[1:]
+            s_ego = distance_lanelet(cv, cv_s, cv[0, :], position)
+            # 自车s距离已经超过终点距离
+            if s_ego >= s_goal:
+                is_goal = True
+        return is_goal
+
     def planning(self, current_scenario,
                  planning_problem,
                  ego_vehicle,
-                 current_time_step,
-                 last_action,
-                 last_semantic_action,
-                 is_new_action_needed):
+                 current_time_step):
 
         """body of our planner"""
         #  get last action
-        action = last_action
-        semantic_action = last_semantic_action
+        self.scenario = current_scenario
+        self.ego_state = ego_vehicle.current_state
+
+        action = self.last_action
+        semantic_action = self.last_semantic_action
         # generate a global lanelet route from initial position to goal region
         lanelet_route = self.generate_route(current_scenario, planning_problem)
 
@@ -106,9 +129,9 @@ class InteractiveCRPlanner:
         if self.lanelet_state == 2 or self.lanelet_state == 1:
 
             # === insert straight-going planner here
-            if is_new_action_needed:
+            if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
-                semantic_action, action = mcts_planner.planner(current_time_step)
+                semantic_action, action, goal_info = mcts_planner.planner(current_time_step)
             else:
                 # update action
 
@@ -123,18 +146,24 @@ class InteractiveCRPlanner:
             print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
             print('delta_s:', action.delta_s)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            next_state, is_new_action_needed = lattice_planner.planner(action)
+            next_state, self.is_new_action_needed = lattice_planner.planner(action)
             # === end of straight-going planner
 
         # if self.lanelet_state == 2 or self.lanelet_state == 3:
         if self.lanelet_state == 3:
             # === insert intersection planner here
-            is_new_action_needed = 1
+            self.is_new_action_needed = 1
             ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle, self.lanelet_state)
             next_state = ip.planning(current_time_step)
             # === end of intersection planner
 
-        return next_state, action, semantic_action, is_new_action_needed
+        # check for goal info
+
+        # update the last action info
+        self.last_action =action
+        self.last_semantic_action = semantic_action
+
+        return next_state
 
 
 if __name__ == '__main__':
@@ -182,10 +211,11 @@ if __name__ == '__main__':
     # generate ego vehicle
     ego_vehicles = sumo_sim.ego_vehicles
 
-    is_new_action_needed = True
-    last_action = []
-    last_semantic_action = []
+
     t_record = 0
+
+    main_planner = InteractiveCRPlanner()
+
     for step in range(num_of_steps):
         print("process:", step, "/", num_of_steps)
         current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
@@ -202,15 +232,12 @@ if __name__ == '__main__':
         #     t_record = 0
 
         # generate a CR planner
-        main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
-        next_state, last_action, \
-        last_semantic_action, is_new_action_needed = main_planner.planning(current_scenario,
+
+        next_state = main_planner.planning(current_scenario,
                                                                            planning_problem,
                                                                            ego_vehicle,
-                                                                           sumo_sim.current_time_step,
-                                                                           last_action,
-                                                                           last_semantic_action,
-                                                                           is_new_action_needed)
+                                                                           sumo_sim.current_time_step)
+
         print('velocity:', next_state.velocity)
         print('position:', next_state.position)
         # ====== paste in simulations
