@@ -161,7 +161,7 @@ def conf_lanelet_checker(ln, sub_lanelet_id: int, lanelet_state: int, lanelet_ro
     [id_intersect, sub_lanelet_id_in_intersection] = check_sub_car_in_incoming()
     # print("intersection no.", id_intersect)
     # print("incoming_lanelet_id", id_incoming)
-    print("lanelet id of subjective car:", sub_lanelet_id_in_intersection)
+    # print("lanelet id of subjective car:", sub_lanelet_id_in_intersection)
 
     lanelet_network = ln
     # 提取路口内的lanelet的id列表
