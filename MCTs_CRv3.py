@@ -1,4 +1,6 @@
+from posixpath import ismount
 from commonroad.common.file_reader import CommonRoadFileReader
+from commonroad.planning.planning_problem import PlanningProblem
 from commonroad.scenario.lanelet import LaneletNetwork
 from commonroad.scenario.obstacle import Obstacle
 from commonroad.scenario.scenario import Scenario
@@ -55,7 +57,7 @@ class ActionAddition:
 
 
 class MCTs_CRv3():
-    def __init__(self, scenario: Scenario, planning_problem, lanelet_route, ego_vehicle):
+    def __init__(self, scenario: Scenario, planning_problem: PlanningProblem, lanelet_route, ego_vehicle):
         self.scenario = scenario
         self.planning_problem = planning_problem
         self.lanelet_route = lanelet_route
@@ -136,18 +138,21 @@ class MCTs_CRv3():
             end_lanelet_id = self.lanelet_route[-1]
         end_route_id = self.lanelet_route.index(end_lanelet_id)
 
-        if len(self.lanelet_route) == end_lanelet_id:
-            is_goal  = True
-        else:
-            is_goal = False
-        return start_route_id, end_route_id, is_goal
+        # if len(self.lanelet_route) == end_route_id:
+        #     is_goal  = True
+        # else:
+        #     is_goal = False
+        return start_route_id, end_route_id, is_meet_intersection
 
     def planner(self, T):
         T = 0
         planning_problem  = self.planning_problem
         scenario =self.scenario
         ego_vehicle = self.ego_vehicle
-        start_route_id, end_route_id, is_goal = self.cut_lanelet_route(ego_vehicle.current_state)
+        start_route_id, end_route_id, is_meet_intersection = self.cut_lanelet_route(ego_vehicle.current_state)
+
+        # 直接判断是否在终点lanelet 是否是 planning problem的goal
+        is_goal = self.lanelet_route[end_route_id] in planning_problem.goal.lanelets_of_goal_position[0]
 
         ego_pos = self.ego_vehicle.current_state.position
         # 提供初始状态。位于哪个lanelet，距离lanelet 末端位置

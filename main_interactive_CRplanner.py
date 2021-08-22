@@ -76,9 +76,9 @@ class InteractiveCRPlanner:
         """
         route = route_planner(scenario, planning_problem)
         lanelet_route = route.list_ids_lanelets
-        add_successor = scenario.lanelet_network.find_lanelet_by_id(lanelet_route[-1]).successor
-        if add_successor:
-            lanelet_route.append(add_successor[0])
+        # add_successor = scenario.lanelet_network.find_lanelet_by_id(lanelet_route[-1]).successor
+        # if add_successor:
+        #     lanelet_route.append(add_successor[0])
 
         return lanelet_route
 
@@ -158,8 +158,8 @@ if __name__ == '__main__':
     vehicle = VehicleDynamics.KS(vehicle_type)
     dt = 0.1
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
-    name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
-    # name_scenario = "DEU_Frankfurt-95_9_I-1"  # 直道测试场景
+    # name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
+    name_scenario = "DEU_Frankfurt-95_9_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     scenario_wrapper.initial_scenario = scenario
 
     # num_of_steps = conf.simulation_steps
-    num_of_steps = 190
+    num_of_steps = 5
     sumo_sim = SumoSimulation()
 
     # initialize simulation

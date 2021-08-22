@@ -214,7 +214,7 @@ class IntersectionPlanner():
         for idx in potential_ego_lanelet_id_list:
             if idx in self.route:
                 lanelet_id_ego = idx
-
+        # route中没有 lanelet_id_ego: 
         # cl_info: 两个属性。id: 直接冲突lanelet的ID list。conf_point：对应的冲突点坐标list。
         cl_info = conf_lanelet_checker(lanelet_network, lanelet_id_ego, self.lanelet_state, self.route)
 
