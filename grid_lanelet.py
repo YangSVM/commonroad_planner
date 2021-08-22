@@ -50,7 +50,7 @@ def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetw
     '''
     # 判断在第几条车道
     n_lane = np.where(lanelet_id_matrix == lanelet_id_target)[0]
-    assert i.shape[0]>0, 'lanelet_id_target do not in lanelet_id_matrix!'
+    assert n_lane.shape[0]>0, 'lanelet_id_target do not in lanelet_id_matrix!'
     lanelets_frenet_axis = lanelet_id_matrix[n_lane[0], :]
 
     lanelets_frenet_axis_ = []
@@ -246,7 +246,7 @@ def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_
     # 求取frenet s轴对应的加密后的cv
     cv = []
     for lanelet in lanelet_ids_frenet_axis:
-        cv.append(lanelet_network.find_lanelet_by_id(lanelet).center_vertices)
+        cv.append(ln.find_lanelet_by_id(lanelet).center_vertices)
     
     cv = np.concatenate(cv, axis=0)
     cv, _, s_cv = detail_cv(cv)
