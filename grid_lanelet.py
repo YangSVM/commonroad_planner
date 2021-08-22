@@ -5,6 +5,7 @@ from commonroad.scenario.scenario import Scenario
 from commonroad.scenario.trajectory import Trajectory
 from commonroad.visualization.draw_dispatch_cr import draw_object
 from commonroad.scenario.lanelet import LaneletNetwork
+from commonroad.planning.planning_problem import PlanningProblem
 import os
 
 from detail_central_vertices import get_lane_feature
@@ -76,7 +77,7 @@ def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetw
     cv = []
     for lanelet_id in lanelets_frenet_axis:
         lanelet = ln.find_lanelet_by_id(lanelet_id)
-        cv.append(lanelet.center_vertices[1:])
+        cv.append(lanelet.center_vertices[0:])
     cv = np.concatenate(cv, axis=0)
 
     return cv
@@ -214,7 +215,7 @@ def get_obstacle_info(ego_pos,  lanelet_id_matrix, lanelet_network: LaneletNetwo
 
 
 
-def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_matrix, ln: LaneletNetwork, is_interactive=False):
+def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_matrix, ln: LaneletNetwork, planning_problem: PlanningProblem, is_interactive=False):
     '''
 
     return:
@@ -225,10 +226,20 @@ def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_
         # 如果是直接规划到 goal。goal pos设置为矩形区域"前部分"
         # 如果目标车道的头几个点在
         goal_pos_end  = planning_problem.goal.state_list[0].position.shapes[0].center
+        
+        # 假设 planning_problem.goal.state_list[0].position.shapes 就是对应一整个lanelet
+        goal_lanelet_id = planning_problem.goal.lanelets_of_goal_position[0]
+        goal_lanelet = ln.find_lanelet_by_id(goal_lanelet_id)
+        goal_pos_end_ = goal_lanelet.center_vertices[0,:]
+        lanelets_of_goal = ln.find_lanelet_by_position([goal_pos_end_])[0]
+        if lanelet_id_goal in lanelets_of_goal:
+            goal_pos_end = goal_pos_end_
+        
     else:
         lanelet_goal = ln.find_lanelet_by_id( lanelet_id_goal)
         # ！！！ lanelet中心线最后一个点，居然不是该lanelet的
         goal_pos_end = lanelet_goal.center_vertices[-1, :]
+        
 
     map  = []
     n_lane = lanelet_id_matrix.shape[0]         # 总车道数

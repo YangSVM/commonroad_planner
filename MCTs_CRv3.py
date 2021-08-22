@@ -4,9 +4,8 @@ from commonroad.scenario.obstacle import Obstacle
 from commonroad.scenario.scenario import Scenario
 from commonroad.visualization.draw_dispatch_cr import draw_object
 import os
-# from networkx.algorithms.summarization import snap_aggregation
-from networkx.classes.function import selfloop_edges
-from numpy.lib.function_base import gradient
+
+
 from detail_central_vertices import detail_cv
 from intersection_planner import distance_lanelet
 import numpy as np
@@ -15,11 +14,11 @@ from grid_lanelet import lanelet_network2grid
 from grid_lanelet import get_obstacle_info
 from grid_lanelet import get_map_info
 from grid_lanelet import edit_scenario4test
-from MCTs_v3a import NaughtsAndCrossesState
-from MCTs_v3a import mcts
+from MCTs_v3pro import NaughtsAndCrossesState
+from MCTs_v3pro import mcts
 from grid_lanelet import get_frenet_lanelet_axis
 from grid_lanelet import generate_len_map,find_target_frenet_axis,extract_speed_limit_from_traffic_sign
-from MCTs_v3a import output
+from MCTs_v3pro import output
 
 
 class ActionAddition:
@@ -136,7 +135,12 @@ class MCTs_CRv3():
         if not is_meet_intersection:
             end_lanelet_id = self.lanelet_route[-1]
         end_route_id = self.lanelet_route.index(end_lanelet_id)
-        return start_route_id, end_route_id, not is_meet_intersection
+
+        if len(self.lanelet_route) == end_lanelet_id:
+            is_goal  = True
+        else:
+            is_goal = False
+        return start_route_id, end_route_id, is_goal
 
     def planner(self, T):
         T = 0
@@ -161,7 +165,7 @@ class MCTs_CRv3():
         
         # 地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
         lanelet_id_goal = self.lanelet_route[end_route_id]
-        map = get_map_info(is_goal,  lanelet_id_goal, lanelet_ids_frenet_axis, lanelet_id_matrix, ln, is_interactive=True)
+        map = get_map_info(is_goal,  lanelet_id_goal, lanelet_ids_frenet_axis, lanelet_id_matrix, ln, planning_problem,is_interactive=True)
         speed_limit = extract_speed_limit_from_traffic_sign(ln)
         map.append(speed_limit)
 
@@ -183,10 +187,10 @@ class MCTs_CRv3():
         print('可用道路信息列表：[[该车道可用起点, 可用路段终点]...]\n', map_info)
 
  
-        initialState = NaughtsAndCrossesState(state, map, obstacles)
+        initialState = NaughtsAndCrossesState(state, map, obstacles, map_info)
         searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
         action = searcher.search(initialState=initialState)  # 一整个类都是其状态
-        out = output(state, action.act)
+        out = output(state, action.act, speed_limit)
         print('out: ',out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
         # print(action.act)
         
