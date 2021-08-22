@@ -13,6 +13,7 @@ from sumocr.interface.ego_vehicle import EgoVehicle
 from shapely.geometry import LineString
 from scipy.interpolate import splrep, splev
 
+
 def visualize_scenario_with_trajectory(scenario: Scenario,
                                        planning_problem_set: PlanningProblemSet,
                                        ego_vehicles: Dict[int, EgoVehicle] = None,
@@ -37,7 +38,7 @@ def visualize_scenario_with_trajectory(scenario: Scenario,
             rnd.draw_list(ego_vehicles,
                           draw_params={'time_begin': i,
                                        'dynamic_obstacle': {'vehicle_shape': {"occupancy": {"shape": {"rectangle": {
-                                              "facecolor": "green"}}}}}})
+                                           "facecolor": "green"}}}}}})
         rnd.render(show=True)
 
 
@@ -91,9 +92,8 @@ def distance_lanelet(center_line, s, p1, p2):
 
     return s[i2] - s[i1]
 
-def smooth_cv(cv):
-    cv_str = LineString(cv)
 
+def smooth_cv(cv):
     list_x = cv[:, 0]
     list_y = cv[:, 1]
     bspl = splrep(list_x, list_y, s=0.1)
@@ -111,7 +111,6 @@ def smooth_cv(cv):
     # plt.yticks(fontsize=10)
     # plt.show()
     return new_cv
-
 
 
 if __name__ == '__main__':
