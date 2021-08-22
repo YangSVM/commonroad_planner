@@ -54,7 +54,8 @@ class InteractiveCRPlanner:
 
             for idx_inc, incoming in enumerate(incomings):
                 incoming_lanelets = list(incoming.incoming_lanelets)
-                in_intersection_lanelets = list(incoming.successors_straight)
+                in_intersection_lanelets = list(incoming.successors_straight)+\
+                    list(incoming.successors_right)+list(incoming.successors_left)
 
                 for laneletid in incoming_lanelets:
                     if self.lanelet_ego == laneletid:
@@ -157,8 +158,8 @@ if __name__ == '__main__':
     vehicle = VehicleDynamics.KS(vehicle_type)
     dt = 0.1
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
-    # name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
-    name_scenario = "DEU_Frankfurt-95_9_I-1"  # 直道测试场景
+    name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
+    # name_scenario = "DEU_Frankfurt-95_9_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
@@ -245,10 +246,6 @@ if __name__ == '__main__':
                  True,
                  "_planner")
 
-    pp_id = list(planning_problem_set.planning_problem_dict.keys())[0]
-    ego_ori_key = list(ego_vehicles.keys())[0]
-    ego_vehicles[pp_id] = ego_vehicle
-    ego_vehicles.pop(ego_ori_key)
     # write simulated scenario to file
     fw = CommonRoadFileWriter(simulated_scenario, planning_problem_set, author, affiliation, source, tags)
     fw.write_to_file(f"{path_scenarios_simulated}{name_scenario}_planner.xml", OverwriteExistingFile.ALWAYS)
