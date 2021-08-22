@@ -47,6 +47,7 @@ class InteractiveCRPlanner:
         ln = self.scenario.lanelet_network
         # find current lanelet
         self.lanelet_ego = ln.find_lanelet_by_position([self.ego_state.position])[0][0]
+        print('current lanelet id:', self.lanelet_ego)
 
         for idx_inter, intersection in enumerate(ln.intersections):
             incomings = intersection.incomings
@@ -85,12 +86,13 @@ class InteractiveCRPlanner:
                  ego_vehicle,
                  current_time_step,
                  last_action,
+                 last_semantic_action,
                  is_new_action_needed):
 
         """body of our planner"""
         #  get last action
         action = last_action
-
+        semantic_action = last_semantic_action
         # generate a global lanelet route from initial position to goal region
         lanelet_route = self.generate_route(current_scenario, planning_problem)
 
@@ -106,7 +108,7 @@ class InteractiveCRPlanner:
             if is_new_action_needed:
                 mcts_planner = MCTs_CRv3(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action = mcts_planner.planner(current_time_step)
-            # else:
+            else:
                 # update action
 
                 # for straight-going
@@ -114,9 +116,11 @@ class InteractiveCRPlanner:
                 # action.ego_state_init[1] = ego_vehicle.current_state.position[1]
 
                 # for lane=changing
-                # action.T -= 0.1
-
-            # next_state, is_new_action_needed = biz_planner(current_scenario, action)
+                if semantic_action == 1 or semantic_action == 2:
+                    action.T -= 0.1
+            print('init position:', action.ego_state_init)
+            print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
+            print('delta_s:', action.delta_s)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
             next_state, is_new_action_needed = lattice_planner.planner(action)
             # === end of straight-going planner
@@ -129,7 +133,7 @@ class InteractiveCRPlanner:
             next_state = ip.planning(current_time_step)
             # === end of intersection planner
 
-        return next_state, action, is_new_action_needed
+        return next_state, action, semantic_action, is_new_action_needed
 
 
 if __name__ == '__main__':
@@ -153,8 +157,8 @@ if __name__ == '__main__':
     vehicle = VehicleDynamics.KS(vehicle_type)
     dt = 0.1
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
-    name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
-    # name_scenario = "DEU_Frankfurt-95_9_I-1"  # 直道测试场景
+    # name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
+    name_scenario = "DEU_Frankfurt-95_9_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
@@ -167,16 +171,19 @@ if __name__ == '__main__':
     scenario_wrapper.initial_scenario = scenario
 
     # num_of_steps = conf.simulation_steps
-    num_of_steps = 300
+    num_of_steps = 190
     sumo_sim = SumoSimulation()
 
     # initialize simulation
     sumo_sim.initialize(conf, scenario_wrapper, None)
 
-    #
+
+    # generate ego vehicle
     ego_vehicles = sumo_sim.ego_vehicles
+
     is_new_action_needed = True
     last_action = []
+    last_semantic_action = []
     t_record = 0
     for step in range(num_of_steps):
         print("process:", step, "/", num_of_steps)
@@ -195,12 +202,14 @@ if __name__ == '__main__':
 
         # generate a CR planner
         main_planner = InteractiveCRPlanner(current_scenario, ego_vehicle.current_state)
-        next_state, last_action, is_new_action_needed = main_planner.planning(current_scenario,
-                                                                              planning_problem,
-                                                                              ego_vehicle,
-                                                                              sumo_sim.current_time_step,
-                                                                              last_action,
-                                                                              is_new_action_needed)
+        next_state, last_action, \
+        last_semantic_action, is_new_action_needed = main_planner.planning(current_scenario,
+                                                                           planning_problem,
+                                                                           ego_vehicle,
+                                                                           sumo_sim.current_time_step,
+                                                                           last_action,
+                                                                           last_semantic_action,
+                                                                           is_new_action_needed)
         print('velocity:', next_state.velocity)
         print('position:', next_state.position)
         # ====== paste in simulations
@@ -249,6 +258,10 @@ if __name__ == '__main__':
     feasible, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory, vehicle, dt)
     print('Feasible? {}'.format(feasible))
 
+    # change pp_id of ego_vehicles, stupid!!!
+    ego_vehicles[list(planning_problem_set.planning_problem_dict)[0]] = ego_vehicles[list(ego_vehicles)[0]]
+    del ego_vehicles[list(ego_vehicles)[0]]
+
     # saves trajectory to solution file
     save_solution(simulated_scenario, planning_problem_set, ego_vehicles,
                   vehicle_type,
@@ -258,7 +271,8 @@ if __name__ == '__main__':
 
     solution = CommonRoadSolutionReader.open(os.path.join(path_solutions,
                                                           f"solution_KS1:TR1:{name_scenario}:2020a.xml"))
-    valid_solution(scenario, planning_problem_set, solution)
+    res = valid_solution(scenario, planning_problem_set, solution)
+    print(res)
     # ce = CostFunctionEvaluator.init_from_solution(solution)
     # cost_result = ce.evaluate_solution(scenario, planning_problem_set, solution)
     # print(cost_result)
