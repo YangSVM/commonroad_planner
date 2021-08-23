@@ -157,6 +157,8 @@ class InteractiveCRPlanner:
                 # for lane=changing
                 if semantic_action == 1 or semantic_action == 2:
                     action.T -= 0.1
+                    action.ego_state_init[0] = self.ego_state.position[0]
+                    action.ego_state_init[1] = self.ego_state.position[1]
 
                 # get front car info.
                 front_veh_info = front_vehicle_info_extraction(self.scenario,
@@ -233,7 +235,7 @@ if __name__ == '__main__':
     scenario_wrapper.initial_scenario = scenario
 
     num_of_steps = conf.simulation_steps
-    # num_of_steps = 5
+    # num_of_steps = 142
     sumo_sim = SumoSimulation()
 
     # initialize simulation
