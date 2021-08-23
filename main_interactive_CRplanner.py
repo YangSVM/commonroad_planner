@@ -1,6 +1,7 @@
 # this main function as the body of the interactive planner
 # it takes the current state of the CR scenario
 # and outputs the next state of the ego vehicle
+import copy
 
 from CR_tools.utility import distance_lanelet, brake
 from networkx.generators import ego
@@ -13,7 +14,7 @@ from route_planner import route_planner
 from intersection_planner import IntersectionPlanner
 from Lattice_CRv3 import Lattice_CRv3
 # from simulation.simulations import create_video_for_simulation
-# from bezier import biz_planner
+from intersection_planner import front_vehicle_info_extraction
 from MCTs_CR import MCTs_CR
 from sumocr.visualization.video import create_video
 from commonroad.scenario.scenario import Tag
@@ -131,7 +132,6 @@ class InteractiveCRPlanner:
             self.is_new_action_needed = False
             # update the last action info
             self.last_action = action
-            self.last_semantic_action = 9
 
             # lattice planning
             lattice_planner = Lattice_CRv3(self.scenario, ego_vehicle)
@@ -144,27 +144,43 @@ class InteractiveCRPlanner:
         # self.lanelet_state = 1
         # send to sub planner according to current lanelet state
         if self.lanelet_state == 2 or self.lanelet_state == 1:
-            # if self.lanelet_state == 2 or self.lanelet_state == 1:
-
+            action_temp = []
             # === insert straight-going planner here
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
             else:
                 # update action
-
                 # for straight-going
-                # action.ego_state_init[0] = ego_vehicle.current_state.position[0]
-                # action.ego_state_init[1] = ego_vehicle.current_state.position[1]
+                # if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
 
                 # for lane=changing
                 if semantic_action == 1 or semantic_action == 2:
                     action.T -= 0.1
+
+                # get front car info.
+                front_veh_info = front_vehicle_info_extraction(self.scenario,
+                                                               self.ego_state.position,
+                                                               lanelet_route)
+
+                # too close to front car, start to car-following
+                ttc = front_veh_info['dhw'] / (self.ego_state.velocity - front_veh_info['v'])
+
+                if 0 < ttc < 3:
+                    print(ttc)
+                    print('too close to front car, start to car-following')
+                    action_temp = copy.deepcopy(action)
+                    action_temp.delta_s = front_veh_info['dhw']
+                    action_temp.v_end = front_veh_info['v']
+                    action_temp.T = action_temp.delta_s / (action_temp.v_end + self.ego_state.velocity) * 2
             print('init position:', action.ego_state_init)
             print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
             print('delta_s:', action.delta_s)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            next_state, self.is_new_action_needed = lattice_planner.planner(action)
+            if action_temp:
+                next_state, self.is_new_action_needed = lattice_planner.planner(action_temp)
+            else:
+                next_state, self.is_new_action_needed = lattice_planner.planner(action)
             # === end of straight-going planner
 
         # if self.lanelet_state == 2 or self.lanelet_state == 3:
