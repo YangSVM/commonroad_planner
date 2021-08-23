@@ -15,6 +15,17 @@ from shapely.geometry import LineString
 from scipy.interpolate import splrep, splev
 from commonroad.scenario.trajectory import  State
 
+
+class Ipaction():
+    def __init__(self):
+        self.v_end = 0
+        self.a_end = 0
+        self.delta_s = None
+        self.frenet_cv = []
+        self.T = None
+        self.ego_state_init = []
+        self.lanelet_id_target = None
+
 def visualize_scenario_with_trajectory(scenario: Scenario,
                                        planning_problem_set: PlanningProblemSet,
                                        ego_vehicles: Dict[int, EgoVehicle] = None,
@@ -113,32 +124,57 @@ def smooth_cv(cv):
     # plt.show()
     return new_cv
 
-def brake(current_state: State, cv, cv_s):
-    '''按照轨迹中线进行匀速停车
-    '''
-    a = -3
-    dt = 0.1
-    pos = current_state.position
-    v = current_state.velocity
-    orientation = current_state.orientation
 
-    v_next = v +a*dt
-    if v_next<0:
-        v_next=0
-    cv_s = np.array(cv_s)
-    s = distance_lanelet(cv, cv_s, cv[0, :], pos)
-    s_next = s +v_next * dt
-    i_s = np.argmin(abs(s_next - cv_s))
-    pos_next = cv[i_s, :]
+def brake(scenario, ego_vehicle):
+    ego_state = ego_vehicle.current_state
+    action = Ipaction()
+    # 1. cv
+    ln = scenario.lanelet_network
+    ego_lanelet = ln.find_lanelet_by_position([ego_state.position])[0][0]
+    action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet).center_vertices
 
-    next_state = State()
+    # 2. initial state
+    ego_state_init = [0 for i in range(6)]
+    ego_state_init[0] = ego_state.position[0]  # x
+    ego_state_init[1] = ego_state.position[1]  # y
+    ego_state_init[2] = ego_state.velocity  # velocity
+    ego_state_init[3] = ego_state.acceleration  # accleration
+    ego_state_init[4] = ego_state.orientation  # orientation.
+    action.ego_state_init = ego_state_init
 
-    next_state.position = pos_next
-    next_state.velocity = v_next
-    next_state.orientation = orientation
-    next_state.time_step = 1
-    next_state.acceleration = a
-    return next_state
+    # 3. planning distance and end velocity
+    action.v_end = 0
+    action.delta_s = ego_state.velocity * 3
+    action.T = 5
+    action.a_end = 0
+
+    return action
+# def brake(current_state: State, cv, cv_s):
+#     '''按照轨迹中线进行匀速停车
+#     '''
+#     a = -3
+#     dt = 0.1
+#     pos = current_state.position
+#     v = current_state.velocity
+#     orientation = current_state.orientation
+#
+#     v_next = v +a*dt
+#     if v_next<0:
+#         v_next=0
+#     cv_s = np.array(cv_s)
+#     s = distance_lanelet(cv, cv_s, cv[0, :], pos)
+#     s_next = s +v_next * dt
+#     i_s = np.argmin(abs(s_next - cv_s))
+#     pos_next = cv[i_s, :]
+#
+#     next_state = State()
+#
+#     next_state.position = pos_next
+#     next_state.velocity = v_next
+#     next_state.orientation = orientation
+#     next_state.time_step = 1
+#     next_state.acceleration = a
+#     return next_state
     
 
 if __name__ == '__main__':
