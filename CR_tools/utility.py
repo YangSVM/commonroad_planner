@@ -116,7 +116,7 @@ def smooth_cv(cv):
 def brake(current_state: State, cv, cv_s):
     '''按照轨迹中线进行匀速停车
     '''
-    a = -3
+    a = -1
     dt = 0.1
     pos = current_state.position
     v = current_state.velocity
@@ -129,8 +129,13 @@ def brake(current_state: State, cv, cv_s):
     s = distance_lanelet(cv, cv_s, cv[0, :], pos)
     s_next = s +v_next * dt
     i_s = np.argmin(abs(s_next - cv_s))
-    pos_next = cv[i_s, :]
+    pos_next_ = cv[i_s, :]
 
+    # pos_next可能距离不准。插值过去
+    d_real = np.linalg.norm(pos_next_ - pos)
+    d_ideal = v_next*dt
+    print('brake error: ', d_real - d_ideal)
+    pos_next = pos + (pos_next_ - pos) * d_ideal/d_real
     next_state = State()
 
     next_state.position = pos_next
