@@ -145,8 +145,10 @@ class MCTs_CR():
         #     is_goal = False
         return start_route_id, end_route_id, is_meet_intersection
 
-    def get_goal_info(self, is_goal, lanelet_ids_frenet_axis, s_goal):
-        cv, _, s_cv = get_detail_cv_of_lanelets(lanelet_ids_frenet_axis, self.scenario.lanelet_network)
+    def get_goal_info(self, is_goal, frenet_cv, s_goal):
+
+        cv, _, s_cv = detail_cv(frenet_cv)
+        cv = np.array(cv).T
         return [is_goal, cv, s_cv, s_goal]
         
 
@@ -225,7 +227,7 @@ class MCTs_CR():
         # print('delta_s', action_addition.delta_s)
         # print('v_end', action_addition.v_end)
 
-        goal_info = self.get_goal_info(is_goal, lanelet_ids_frenet_axis, map[2])
+        goal_info = self.get_goal_info(is_goal, frenet_cv, map[2])
         print('goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: \n' , goal_info[0], goal_info[3])
         print('中线lanelet id: ', lanelet_ids_frenet_axis)
         return action.act, action_addition, goal_info

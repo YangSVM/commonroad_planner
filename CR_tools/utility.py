@@ -9,10 +9,11 @@ from commonroad.planning.planning_problem import PlanningProblemSet
 from commonroad.scenario.scenario import Scenario
 from commonroad.visualization.mp_renderer import MPRenderer
 from commonroad.common.file_reader import CommonRoadFileReader
+from scipy.signal.bsplines import cubic
 from sumocr.interface.ego_vehicle import EgoVehicle
 from shapely.geometry import LineString
 from scipy.interpolate import splrep, splev
-
+from commonroad.scenario.trajectory import  State
 
 def visualize_scenario_with_trajectory(scenario: Scenario,
                                        planning_problem_set: PlanningProblemSet,
@@ -112,6 +113,33 @@ def smooth_cv(cv):
     # plt.show()
     return new_cv
 
+def brake(current_state: State, cv, cv_s):
+    '''按照轨迹中线进行匀速停车
+    '''
+    a = -3
+    dt = 0.1
+    pos = current_state.position
+    v = current_state.velocity
+    orientation = current_state.orientation
+
+    v_next = v +a*dt
+    if v_next<0:
+        v_next=0
+    cv_s = np.array(cv_s)
+    s = distance_lanelet(cv, cv_s, cv[0, :], pos)
+    s_next = s +v_next * dt
+    i_s = np.argmin(abs(s_next - cv_s))
+    pos_next = cv[i_s, :]
+
+    next_state = State()
+
+    next_state.position = pos_next
+    next_state.velocity = v_next
+    next_state.orientation = orientation
+    next_state.time_step = 1
+    next_state.acceleration = a
+    return next_state
+    
 
 if __name__ == '__main__':
     import matplotlib.pyplot  as plt
