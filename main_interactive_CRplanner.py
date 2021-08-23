@@ -1,6 +1,7 @@
 # this main function as the body of the interactive planner
 # it takes the current state of the CR scenario
 # and outputs the next state of the ego vehicle
+import copy
 
 from CR_tools.utility import distance_lanelet, brake
 from networkx.generators import ego
@@ -13,7 +14,7 @@ from route_planner import route_planner
 from intersection_planner import IntersectionPlanner
 from Lattice_CRv3 import Lattice_CRv3
 # from simulation.simulations import create_video_for_simulation
-# from bezier import biz_planner
+from intersection_planner import front_vehicle_info_extraction
 from MCTs_CR import MCTs_CR
 from sumocr.visualization.video import create_video
 from commonroad.scenario.scenario import Tag
@@ -61,8 +62,8 @@ class InteractiveCRPlanner:
 
             for idx_inc, incoming in enumerate(incomings):
                 incoming_lanelets = list(incoming.incoming_lanelets)
-                in_intersection_lanelets = list(incoming.successors_straight)+\
-                    list(incoming.successors_right)+list(incoming.successors_left)
+                in_intersection_lanelets = list(incoming.successors_straight) + \
+                                           list(incoming.successors_right) + list(incoming.successors_left)
 
                 for laneletid in incoming_lanelets:
                     if self.lanelet_ego == laneletid:
@@ -124,8 +125,17 @@ class InteractiveCRPlanner:
         # check for goal info
         is_goal = self.check_goal_state(ego_vehicle.current_state.position)
         if is_goal:
+            print('goal reached! braking!')
             # 直接刹车
-            next_state = brake(ego_vehicle.current_state, self.goal_info[1], self.goal_info[2])
+            # next_state = brake(ego_vehicle.current_state, self.goal_info[1], self.goal_info[2])
+            action = brake(self.scenario, ego_vehicle)
+            self.is_new_action_needed = False
+            # update the last action info
+            self.last_action = action
+
+            # lattice planning
+            lattice_planner = Lattice_CRv3(self.scenario, ego_vehicle)
+            next_state, _ = lattice_planner.planner(action)
             return next_state
 
         # check state 1:straight-going /2:incoming /3:in-intersection
@@ -133,28 +143,46 @@ class InteractiveCRPlanner:
         print("current state:", self.lanelet_state)
         # self.lanelet_state = 1
         # send to sub planner according to current lanelet state
-        # if self.lanelet_state == 1:
         if self.lanelet_state == 2 or self.lanelet_state == 1:
-
+            action_temp = []
             # === insert straight-going planner here
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
             else:
                 # update action
-
                 # for straight-going
-                # action.ego_state_init[0] = ego_vehicle.current_state.position[0]
-                # action.ego_state_init[1] = ego_vehicle.current_state.position[1]
+                # if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
 
                 # for lane=changing
                 if semantic_action == 1 or semantic_action == 2:
                     action.T -= 0.1
+                    action.ego_state_init[0] = self.ego_state.position[0]
+                    action.ego_state_init[1] = self.ego_state.position[1]
+
+                # get front car info.
+                front_veh_info = front_vehicle_info_extraction(self.scenario,
+                                                               self.ego_state.position,
+                                                               lanelet_route)
+
+                # too close to front car, start to car-following
+                ttc = front_veh_info['dhw'] / (self.ego_state.velocity - front_veh_info['v'])
+
+                if 0 < ttc < 3:
+                    print(ttc)
+                    print('too close to front car, start to car-following')
+                    action_temp = copy.deepcopy(action)
+                    action_temp.delta_s = front_veh_info['dhw']
+                    action_temp.v_end = front_veh_info['v']
+                    action_temp.T = action_temp.delta_s / (action_temp.v_end + self.ego_state.velocity) * 2
             print('init position:', action.ego_state_init)
             print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
             print('delta_s:', action.delta_s)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            next_state, self.is_new_action_needed = lattice_planner.planner(action)
+            if action_temp:
+                next_state, self.is_new_action_needed = lattice_planner.planner(action_temp)
+            else:
+                next_state, self.is_new_action_needed = lattice_planner.planner(action)
             # === end of straight-going planner
 
         # if self.lanelet_state == 2 or self.lanelet_state == 3:
@@ -166,7 +194,7 @@ class InteractiveCRPlanner:
             # === end of intersection planner
 
         # update the last action info
-        self.last_action =action
+        self.last_action = action
         self.last_semantic_action = semantic_action
 
         return next_state
@@ -181,11 +209,11 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    folder_scenarios = os.path.abspath(
-        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
-    # 晓聪
     # folder_scenarios = os.path.abspath(
-    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    # 晓聪
+    folder_scenarios = os.path.abspath(
+        '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     vehicle_type = VehicleType.FORD_ESCORT
     vehicle_model = VehicleModel.KS
@@ -206,17 +234,15 @@ if __name__ == '__main__':
     scenario_wrapper.sumo_cfg_file = os.path.join(interactive_scenario_path, f"{conf.scenario_name}.sumo.cfg")
     scenario_wrapper.initial_scenario = scenario
 
-    # num_of_steps = conf.simulation_steps
-    num_of_steps = 200
+    num_of_steps = conf.simulation_steps
+    # num_of_steps = 142
     sumo_sim = SumoSimulation()
 
     # initialize simulation
     sumo_sim.initialize(conf, scenario_wrapper, None)
 
-
     # generate ego vehicle
     ego_vehicles = sumo_sim.ego_vehicles
-
 
     t_record = 0
 
@@ -240,9 +266,9 @@ if __name__ == '__main__':
         # generate a CR planner
 
         next_state = main_planner.planning(current_scenario,
-                                                                                planning_problem,
-                                                                                ego_vehicle,
-                                                                                sumo_sim.current_time_step)
+                                           planning_problem,
+                                           ego_vehicle,
+                                           sumo_sim.current_time_step)
 
         print('velocity:', next_state.velocity)
         print('position:', next_state.position)
@@ -262,8 +288,8 @@ if __name__ == '__main__':
     sumo_sim.stop()
 
     # path for outputting results
-    # output_path = '/home/zxc/Videos/CR_outputs/'
-    output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    output_path = '/home/zxc/Videos/CR_outputs/'
+    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
     # solution

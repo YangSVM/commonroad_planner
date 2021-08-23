@@ -99,12 +99,13 @@ def find_reference(s, ref_cv, ref_orientation, ref_cv_len):
     return ref_cv[id, :], ref_orientation[id]
 
 
-def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet_route, T):
+def front_vehicle_info_extraction(scenario, ego_pos, lanelet_route):
     '''lanelet_route第一个是自车车道。route直接往前找，直到找到前车。
     新思路：利用函数`find_lanelet_successors_in_range`寻找后继的lanelet节点。寻找在这些节点
     return:
         front_vehicle: dict. key: pos, vel, distance
     '''
+    ln = scenario.lanelet_network
     front_vehicle = {}
     ref_cv, ref_orientation, ref_s = get_route_frenet_line(lanelet_route, ln)
     min_dhw = 500
@@ -311,7 +312,8 @@ class IntersectionPlanner():
         # # ① ===== test planner
 
         # ② ==== lattice planner
-            next_state, is_new_action_needed = self.motion_planner_lattice(a, dis_ego2cp)
+            front_vehicle = front_vehicle_info_extraction(scenario, ego_state.position, self.route)
+            next_state, is_new_action_needed = self.motion_planner_lattice(a, dis_ego2cp, front_vehicle)
             state_list.append(next_state)
         return state_list[1]
         # ② ==== lattice planner
@@ -403,63 +405,76 @@ class IntersectionPlanner():
         # end of test planner
         return tmp_state, s
 
-    def motion_planner_lattice(self, a, dis_ego2cp):
+    def motion_planner_lattice(self, a, dis_ego2cp, front_veh):
+        action = Ipaction()
+
+        # 1. cv
         ln = self.scenario.lanelet_network
         ego_lanelet_list = ln.find_lanelet_by_position([self.ego_state.position])[0]
         ego_lanelet = list(set(self.route).intersection(set(ego_lanelet_list)))[0]
         ego_successor_lanelet = []
+        action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet).center_vertices
         if self.route.index(ego_lanelet) < len(self.route)-1:
             curret_index = self.route.index(ego_lanelet)
             ego_successor_lanelet_id = self.route[curret_index+1]
             ego_successor_lanelet = ln.find_lanelet_by_id(ego_successor_lanelet_id)
+        if ego_successor_lanelet:
+            action.frenet_cv = np.concatenate((action.frenet_cv, ego_successor_lanelet.center_vertices), axis=0)
+
+        # 2. initial state
+        ego_state_init = [0 for i in range(6)]
+        ego_state_init[0] = self.ego_state.position[0]  # x
+        ego_state_init[1] = self.ego_state.position[1]  # y
+        ego_state_init[2] = self.ego_state.velocity  # velocity
+        ego_state_init[3] = self.ego_state.acceleration  # accleration
+        ego_state_init[4] = self.ego_state.orientation  # orientation.
+        action.ego_state_init = ego_state_init
+
+        v_end_limit = max(self.ego_state.velocity, 80 / 3.6)
+        v_end_conf = v_end_limit  # deal with potential lane-crossing conflicts
+        delta_s_conf = 100
+        v_end_cf = v_end_limit  # deal with car-following
+        delta_s_cf = 100
+
+        # 3. planning distance and end velocity
+        # considering lane-crossing conflicts
         a_thre = -2  # 非交互式情况，协作加速度阈值(threshold) 设置为0
+        a1, a2 = 100, 100
         if len(a) > 1:
             a1 = a[0]
             a2 = a[1]
         elif len(a) == 1:
             a1 = a[0]
             a2 = a[0]
-        else:
-            a1 = 100
-            a2 = 100
-
-        action = Ipaction()
-
-        ego_state_init = [0 for i in range(6)]
-        ego_state_init[0] = self.ego_state.position[0]      # x
-        ego_state_init[1] = self.ego_state.position[1]      # y
-        ego_state_init[2] = self.ego_state.velocity             # velocity
-        ego_state_init[3] = self.ego_state.acceleration      # accleration
-        ego_state_init[4] = self.ego_state.orientation      # orientation.
-        action.ego_state_init = ego_state_init
-
-        action.v_end = max(self.ego_state.velocity, 60 / 3.6)
-        action.a_end = 0
-        # action.lanelet_id_target = self.route[1]
-
-        action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet).center_vertices
-        if ego_successor_lanelet:
-            action.frenet_cv = np.concatenate((action.frenet_cv, ego_successor_lanelet.center_vertices), axis=0)
-
         if a1 < a_thre or a2 < a_thre:  # 避让
+            v_end_conf = 10
             if a1 <= a2:
-                action.delta_s = dis_ego2cp[0] - 5
-                action.v_end = 0
-                action.T = action.delta_s / (self.ego_state.velocity + action.v_end) * 2
-
+                delta_s_conf = dis_ego2cp[0] - 5
             elif a1 > a2:
-                action.delta_s = dis_ego2cp[1] - 5
-                action.v_end = 0
-                action.T = action.delta_s / (self.ego_state.velocity + action.v_end) * 2
+                delta_s_conf = dis_ego2cp[1] - 5
+        # considering car-following
+        if front_veh:  # leading car exists
+            dhw = front_veh['dhw']
+            v_f = front_veh['v']
+            delta_s_cf = dhw
+            v_end_cf = v_f
 
-        else:
-            action.delta_s = 100
-            action.T = 100 / (self.ego_state.velocity + action.v_end) * 2
+        action.v_end = min(v_end_conf, v_end_cf)
+        action.delta_s = min(delta_s_conf, delta_s_cf)
+
+        # 4. planning horizon
+        action.T = action.delta_s / (self.ego_state.velocity + action.v_end) * 2
+
+        # 5. final acceleration
+        action.a_end = 0
+
         print('dis_ego2cp', dis_ego2cp)
         print('T', action.T)
         print('delta_s', action.delta_s)
         print('v_end', action.v_end)
-        print('frenet_cv', action.frenet_cv[-1, :])
+        print('cv: from', action.frenet_cv[0, :], 'to ', action.frenet_cv[-1, :])
+
+        # lattice planning
         lattice_planner = Lattice_CRv3(self.scenario, self.ego_vehicle)
         next_state, is_new_action_needed = lattice_planner.planner(action)
         return next_state, is_new_action_needed
