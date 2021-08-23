@@ -99,12 +99,13 @@ def find_reference(s, ref_cv, ref_orientation, ref_cv_len):
     return ref_cv[id, :], ref_orientation[id]
 
 
-def front_vehicle_info_extraction(scenario, ln: LaneletNetwork, ego_pos, lanelet_route, T):
+def front_vehicle_info_extraction(scenario, ego_pos, lanelet_route):
     '''lanelet_route第一个是自车车道。route直接往前找，直到找到前车。
     新思路：利用函数`find_lanelet_successors_in_range`寻找后继的lanelet节点。寻找在这些节点
     return:
         front_vehicle: dict. key: pos, vel, distance
     '''
+    ln = scenario.lanelet_network
     front_vehicle = {}
     ref_cv, ref_orientation, ref_s = get_route_frenet_line(lanelet_route, ln)
     min_dhw = 500
@@ -311,7 +312,7 @@ class IntersectionPlanner():
         # # ① ===== test planner
 
         # ② ==== lattice planner
-            front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
+            front_vehicle = front_vehicle_info_extraction(scenario, ego_state.position, self.route)
             next_state, is_new_action_needed = self.motion_planner_lattice(a, dis_ego2cp, front_vehicle)
             state_list.append(next_state)
         return state_list[1]
