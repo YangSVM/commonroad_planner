@@ -157,7 +157,7 @@ def brake(scenario, ego_vehicle):
 #     pos = current_state.position
 #     v = current_state.velocity
 #     orientation = current_state.orientation
-#
+
 #     v_next = v +a*dt
 #     if v_next<0:
 #         v_next=0
@@ -166,9 +166,9 @@ def brake(scenario, ego_vehicle):
 #     s_next = s +v_next * dt
 #     i_s = np.argmin(abs(s_next - cv_s))
 #     pos_next = cv[i_s, :]
-#
+
 #     next_state = State()
-#
+
 #     next_state.position = pos_next
 #     next_state.velocity = v_next
 #     next_state.orientation = orientation

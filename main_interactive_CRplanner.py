@@ -149,6 +149,8 @@ class InteractiveCRPlanner:
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
+                action.T = action.T/2
+                # delta_s change inside
             else:
                 # update action
                 # for straight-going
@@ -209,11 +211,11 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    # folder_scenarios = os.path.abspath(
-    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
-    # 晓聪
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive')
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    # 晓聪
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     vehicle_type = VehicleType.FORD_ESCORT
     vehicle_model = VehicleModel.KS
@@ -235,7 +237,7 @@ if __name__ == '__main__':
     scenario_wrapper.initial_scenario = scenario
 
     num_of_steps = conf.simulation_steps
-    # num_of_steps = 142
+    num_of_steps = 200
     sumo_sim = SumoSimulation()
 
     # initialize simulation
@@ -288,8 +290,8 @@ if __name__ == '__main__':
     sumo_sim.stop()
 
     # path for outputting results
-    output_path = '/home/zxc/Videos/CR_outputs/'
-    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    # output_path = '/home/zxc/Videos/CR_outputs/'
+    output_path = '/home/thicv/codes/commonroad/CR_outputs'
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
     # solution
@@ -313,7 +315,9 @@ if __name__ == '__main__':
     trajectory = ego_vehicle.driven_trajectory.trajectory
     feasible, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory, vehicle, dt)
     print('Feasible? {}'.format(feasible))
-
+    if not feasible:
+        # if not feasible. reconstruct the inputs
+        ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
     # change pp_id of ego_vehicles, stupid!!!
     ego_vehicles[list(planning_problem_set.planning_problem_dict)[0]] = ego_vehicles[list(ego_vehicles)[0]]
     del ego_vehicles[list(ego_vehicles)[0]]

@@ -246,8 +246,8 @@ def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_
         # 假设 planning_problem.goal.state_list[0].position.shapes 就是对应一整个lanelet
         goal_lanelet_id = planning_problem.goal.lanelets_of_goal_position[0][0]
         goal_lanelet = ln.find_lanelet_by_id(goal_lanelet_id)
-        # goal_pos_end_ = goal_lanelet.center_vertices[0, :]
-        goal_pos_end_ = goal_lanelet.center_vertices[-1, :]
+        goal_pos_end_ = goal_lanelet.center_vertices[0, :]
+        # goal_pos_end_ = goal_lanelet.center_vertices[-1, :]
         lanelets_of_goal = ln.find_lanelet_by_position([goal_pos_end_])[0]
         if lanelet_id_goal in lanelets_of_goal:
             # 如果假设成立，再进行赋值

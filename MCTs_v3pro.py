@@ -2,6 +2,7 @@
 # 外部输入信息：详细接口定义，见接口说明文档
 
 from __future__ import division
+import copy
 import time
 import math
 import random
@@ -10,7 +11,7 @@ import numpy
 import time
 
 def output(state,action,speedLimit):
-    state_out = state
+    state_out = copy.deepcopy(state) 
     t = 6
     print('speedLimit',speedLimit)
     if action == 1:
