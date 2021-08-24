@@ -215,7 +215,7 @@ class MCTs_CR():
         # 曹磊使用
         # 
         action_addition = ActionAddition()
-        action_addition.delta_s = out[1]/2
+        action_addition.delta_s = out[1]
         action_addition.v_end = out[2]
         action_addition.ego_state_init = ego_state_init
         s_ego = _ego_state_mcts[1]

@@ -149,7 +149,9 @@ class InteractiveCRPlanner:
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
-                action.T = action.T/2
+                if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
+                    action.delta_s = action.delta_s / 2
+                    action.T = action.T / 2
                 # delta_s change inside
             else:
                 # update action
@@ -211,11 +213,11 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    folder_scenarios = os.path.abspath(
-        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
-    # 晓聪
     # folder_scenarios = os.path.abspath(
-    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    # 晓聪
+    folder_scenarios = os.path.abspath(
+        '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     vehicle_type = VehicleType.FORD_ESCORT
     vehicle_model = VehicleModel.KS
@@ -237,7 +239,7 @@ if __name__ == '__main__':
     scenario_wrapper.initial_scenario = scenario
 
     num_of_steps = conf.simulation_steps
-    num_of_steps = 200
+    # num_of_steps = 200
     sumo_sim = SumoSimulation()
 
     # initialize simulation
@@ -290,8 +292,8 @@ if __name__ == '__main__':
     sumo_sim.stop()
 
     # path for outputting results
-    # output_path = '/home/zxc/Videos/CR_outputs/'
-    output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    output_path = '/home/zxc/Videos/CR_outputs/'
+    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
     # solution
