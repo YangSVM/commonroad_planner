@@ -19,12 +19,12 @@ from grid_lanelet import edit_scenario4test
 from MCTs_v3pro import NaughtsAndCrossesState
 from MCTs_v3pro import mcts
 from grid_lanelet import get_frenet_lanelet_axis
-from grid_lanelet import generate_len_map,find_target_frenet_axis,extract_speed_limit_from_traffic_sign
+from grid_lanelet import generate_len_map, find_target_frenet_axis, extract_speed_limit_from_traffic_sign
 from MCTs_v3pro import output
 
 
 class ActionAddition:
-    def __init__(self) :
+    def __init__(self):
         self.v_end = -1
         self.a_end = -1
         self.delta_s = -1
@@ -44,16 +44,16 @@ class ActionAddition:
         '''
         # 仅需要判断在哪个 len 区间中即可。
         len_map = generate_len_map(ln, lanelet_id_matrix, isContinous=False)
-        n_s_lanelet = len(lanelet_id_matrix[n_target,:])
+        n_s_lanelet = len(lanelet_id_matrix[n_target, :])
         index_target = -1
         for i in range(n_s_lanelet):
             len_lanelet = len_map[n_target][i]
-            if  len_lanelet[0] < s_goal and s_goal<len_lanelet[1]:
+            if len_lanelet[0] < s_goal and s_goal < len_lanelet[1]:
                 index_target = i
                 break
-        assert index_target!=-1
+        assert index_target != -1
         lanelet_id_target = lanelet_id_matrix[n_target, index_target]
-        assert lanelet_id_target!=-1
+        assert lanelet_id_target != -1
         return lanelet_id_target
 
 
@@ -74,30 +74,30 @@ class MCTs_CR():
         # find current lanelet
         lanelet_id_ego = ln.find_lanelet_by_position([ego_state.position])[0][0]
         lanelet_ego = ln.find_lanelet_by_id(lanelet_id_ego)
-    
-        #1. find the nearest lanelet in self.lanelet_route:
+
+        # 1. find the nearest lanelet in self.lanelet_route:
         # 如果自车车道在lanelet route上
 
         # 1.1 找同向邻车道
-        lanelets_id_adj = []           # 与lanelet_ego左右相邻的车道的ID
-        
+        lanelets_id_adj = []  # 与lanelet_ego左右相邻的车道的ID
+
         # 从自车道一直往左遍历相邻车道
         tmp_lanelet = lanelet_ego
         while tmp_lanelet.adj_left is not None:
-            if tmp_lanelet.adj_left_same_direction:     # 行驶方向相同
+            if tmp_lanelet.adj_left_same_direction:  # 行驶方向相同
                 tmp_lanelet_id = tmp_lanelet.adj_left
                 lanelets_id_adj.append(tmp_lanelet_id)
-                tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)       
+                tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)
 
-        # 从自车道一直往右遍历相邻车道
+                # 从自车道一直往右遍历相邻车道
         tmp_lanelet = lanelet_ego
         while tmp_lanelet.adj_right is not None:
-            if tmp_lanelet.adj_right_same_direction:    # 行驶方向相同
+            if tmp_lanelet.adj_right_same_direction:  # 行驶方向相同
                 tmp_lanelet_id = tmp_lanelet.adj_right
                 lanelets_id_adj.append(tmp_lanelet_id)
-                tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)       
-        
-        # 2. 找自车最相近的lanelet_id
+                tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)
+
+                # 2. 找自车最相近的lanelet_id
         start_lanelet_id = None
 
         if lanelet_id_ego in self.lanelet_route:
@@ -106,9 +106,9 @@ class MCTs_CR():
             print('warning. maybe wrong. mcts_cr cannot cut the lanelet right')
             for lanelet_id_adj in lanelets_id_adj:
                 if lanelet_id_adj in self.lanelet_route:
-                    start_lanelet_id = lanelet_id_adj 
-                            
-        # cannot cut the lanelet route
+                    start_lanelet_id = lanelet_id_adj
+
+                    # cannot cut the lanelet route
         assert start_lanelet_id is not None
         start_route_id = self.lanelet_route.index(start_lanelet_id)
 
@@ -123,18 +123,24 @@ class MCTs_CR():
                 incomings = intersection.incomings
 
                 for idx_inc, incoming in enumerate(incomings):
-                    incoming_lanelets = list(incoming.incoming_lanelets)            # 进入路口的lanelet
-                    in_intersection_lanelets = list(incoming.successors_straight)   # 出路口的lanelet
-                    # 如果self.route中有lanelet在路口上, 赋值为end_lanelet_id
+                    incoming_lanelets = list(incoming.incoming_lanelets)  # 进入路口的lanelet
+                    in_intersection_lanelets = list(incoming.successors_straight)  # 出路口的lanelet
+                    # 如果self.route中有lanelet在路口上,**并且左右侧lanelet不在route内**, 赋值为end_lanelet_id
                     if tmp_lanelet_id_route in incoming_lanelets or tmp_lanelet_id_route in in_intersection_lanelets:
-                        end_lanelet_id = tmp_lanelet_id_route
-                        is_meet_intersection = True
-                        break
+                        # print('left', ln.find_lanelet_by_id(tmp_lanelet_id_route).adj_left_same_direction)
+                        # print('right', ln.find_lanelet_by_id(tmp_lanelet_id_route).adj_right_same_direction)
+                        if not (ln.find_lanelet_by_id(
+                                tmp_lanelet_id_route).adj_left in self.lanelet_route or
+                                ln.find_lanelet_by_id(
+                                    tmp_lanelet_id_route).adj_right in self.lanelet_route):
+                            end_lanelet_id = tmp_lanelet_id_route
+                            is_meet_intersection = True
+                            break
                 if is_meet_intersection:
                     break
             if is_meet_intersection:
                 break
-        
+
         if not is_meet_intersection:
             end_lanelet_id = self.lanelet_route[-1]
         end_route_id = self.lanelet_route.index(end_lanelet_id)
@@ -150,27 +156,27 @@ class MCTs_CR():
         cv, _, s_cv = detail_cv(frenet_cv)
         cv = np.array(cv).T
         return [is_goal, cv, s_cv, s_goal]
-        
 
     def planner(self, T):
         T = 0
-        planning_problem  = self.planning_problem
-        scenario =self.scenario
-        ln  = scenario.lanelet_network
+        planning_problem = self.planning_problem
+        scenario = self.scenario
+        ln = scenario.lanelet_network
         ego_vehicle = self.ego_vehicle
 
         start_route_id, end_route_id, is_meet_intersection = self.cut_lanelet_route(ego_vehicle.current_state)
-
+        print('goal lanelet', self.lanelet_route[end_route_id])
+        print('route:', self.lanelet_route)
         # 直接判断是否在终点lanelet 是否是 planning problem的goal
         is_goal = self.lanelet_route[end_route_id] in planning_problem.goal.lanelets_of_goal_position[0]
 
         # 将 有向无环图 的道路结构。展开成矩阵
-        _lanelet_id_matrix  = lanelet_network2grid(ln, self.lanelet_route[start_route_id:end_route_id+1])
+        _lanelet_id_matrix = lanelet_network2grid(ln, self.lanelet_route[start_route_id:end_route_id + 1])
 
         # 在直道中，选择一条可行的lanelet序列，使其中线做frenet轴线
         lanelet_ids_frenet_axis = get_frenet_lanelet_axis(_lanelet_id_matrix)
         # 获取：障碍物矩阵
-        _obstacles =get_obstacle_info(lanelet_ids_frenet_axis, _lanelet_id_matrix, ln, scenario.obstacles, T)
+        _obstacles = get_obstacle_info(lanelet_ids_frenet_axis, _lanelet_id_matrix, ln, scenario.obstacles, T)
 
         # 获取自车信息：自车在第几个车道，自车s坐标，
         ego_state = ego_vehicle.current_state
@@ -179,8 +185,8 @@ class MCTs_CR():
 
         # 地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
         lanelet_id_goal = self.lanelet_route[end_route_id]
-        _map = get_map_info(is_goal,  lanelet_id_goal, lanelet_ids_frenet_axis, _lanelet_id_matrix, ln, planning_problem,is_interactive=True)
-
+        _map = get_map_info(is_goal, lanelet_id_goal, lanelet_ids_frenet_axis, _lanelet_id_matrix, ln, planning_problem,
+                            is_interactive=True)
 
         # 获取可行地图信息
         _map_info = generate_len_map(ln, _lanelet_id_matrix)
@@ -194,23 +200,23 @@ class MCTs_CR():
         ego_state_mcts = copy.deepcopy(_ego_state_mcts)
         map = copy.deepcopy(_map)
         obstacles = copy.deepcopy(_obstacles)
-        map_info  = copy.deepcopy(_map_info)
+        map_info = copy.deepcopy(_map_info)
 
         initialState = NaughtsAndCrossesState(ego_state_mcts, map, obstacles, map_info)
         searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
         action = searcher.search(initialState=initialState)  # 一整个类都是其状态
         speed_limit = map[3]
         out = output(ego_state_mcts, action.act, speed_limit)
-        print('out: ',out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
+        print('out: ', out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
         # print(action.act)
-        
+
         # Motion planner 其他所需信息
         ego_state_init = [0 for i in range(6)]
-        ego_state_init[0] = self.ego_vehicle.current_state.position[0]      # x
-        ego_state_init[1] = self.ego_vehicle.current_state.position[1]      # y
-        ego_state_init[2] = self.ego_vehicle.current_state.velocity             # velocity
-        ego_state_init[3] = self.ego_vehicle.current_state.acceleration      # accleration
-        ego_state_init[4] = self.ego_vehicle.current_state.orientation      # orientation. 
+        ego_state_init[0] = self.ego_vehicle.current_state.position[0]  # x
+        ego_state_init[1] = self.ego_vehicle.current_state.position[1]  # y
+        ego_state_init[2] = self.ego_vehicle.current_state.velocity  # velocity
+        ego_state_init[3] = self.ego_vehicle.current_state.acceleration  # accleration
+        ego_state_init[4] = self.ego_vehicle.current_state.orientation  # orientation.
 
         # 曹磊使用
         # 
@@ -232,11 +238,11 @@ class MCTs_CR():
         # print('v_end', action_addition.v_end)
 
         goal_info = self.get_goal_info(is_goal, frenet_cv, _map[2])
-        print('goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: \n' , goal_info[0], goal_info[3])
+        print('goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: \n', goal_info[0], goal_info[3])
         print('中线lanelet id: ', lanelet_ids_frenet_axis)
         return action.act, action_addition, goal_info
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     # test function
     pass
