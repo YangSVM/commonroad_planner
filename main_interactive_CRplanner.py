@@ -124,7 +124,7 @@ class InteractiveCRPlanner:
 
         # check for goal info
         is_goal = self.check_goal_state(ego_vehicle.current_state.position)
-        if is_goal:
+        if is_goal and self.is_new_action_needed:
             print('goal reached! braking!')
             # 直接刹车
             # next_state = brake(ego_vehicle.current_state, self.goal_info[1], self.goal_info[2])
@@ -150,8 +150,8 @@ class InteractiveCRPlanner:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
                 if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
-                    action.delta_s = action.delta_s / 2
-                    action.T = action.T / 2
+                    action.delta_s = action.delta_s / 5
+                    action.T = action.T / 5
                 # delta_s change inside
             else:
                 # update action
