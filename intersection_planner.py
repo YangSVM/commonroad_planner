@@ -453,13 +453,15 @@ class IntersectionPlanner():
             elif a1 > a2:
                 delta_s_conf = dis_ego2cp[1] - 5
         # considering car-following
-        if front_veh:  # leading car exists
+        if not front_veh['v'] == -1:  # leading car exists
             dhw = front_veh['dhw']
             v_f = front_veh['v']
             delta_s_cf = dhw
             v_end_cf = v_f
 
         action.v_end = min(v_end_conf, v_end_cf)
+        # print('v_end_conf', v_end_conf)
+        # print('v_end_cf', v_end_cf)
         action.delta_s = min(delta_s_conf, delta_s_cf)
 
         # 4. planning horizon
