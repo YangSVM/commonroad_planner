@@ -71,7 +71,7 @@ def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetw
     extend_lanelet_id_list = end_lanelet.successor
     if len(extend_lanelet_id_list) > 0:
         extend_lanelet_id = extend_lanelet_id_list[0]
-    lanelets_frenet_axis_.append(extend_lanelet_id)
+        lanelets_frenet_axis_.append(extend_lanelet_id)
 
     lanelets_frenet_axis = np.array(lanelets_frenet_axis_)
             
@@ -328,6 +328,7 @@ def extract_speed_limit_from_traffic_sign(ln :Scenario.lanelet_network):
         return None
     position_list = []
     speed_list = []
+    max_speed = 120/3.6
     for traffic_sign in ln.traffic_signs:
         position = traffic_sign.position
         for traffic_sign_element in traffic_sign.traffic_sign_elements:
@@ -336,7 +337,8 @@ def extract_speed_limit_from_traffic_sign(ln :Scenario.lanelet_network):
 
             position_list.append(position)
             speed_list.append(float(traffic_sign_element.additional_values[0]))
-    max_speed = max(speed_list)
+    if speed_list:
+        max_speed = max(speed_list)
     # print('speed limit: ', max_speed)
     return max_speed
 
