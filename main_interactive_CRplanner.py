@@ -149,20 +149,20 @@ class InteractiveCRPlanner:
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
-                if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
-                    action.delta_s = action.delta_s / 5
-                    action.T = action.T / 5
+                # if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
+                    # action.delta_s = action.delta_s / 3
+                    # action.T = action.T / 3
                 # delta_s change inside
             else:
                 # update action
+                action.T -= 0.1
                 # for straight-going
                 # if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
 
                 # for lane=changing
-                if semantic_action == 1 or semantic_action == 2:
-                    action.T -= 0.1
-                    action.ego_state_init[0] = self.ego_state.position[0]
-                    action.ego_state_init[1] = self.ego_state.position[1]
+                # if semantic_action == 1 or semantic_action == 2:
+                #     action.ego_state_init[0] = self.ego_state.position[0]
+                #     action.ego_state_init[1] = self.ego_state.position[1]
 
                 # get front car info.
                 front_veh_info = front_vehicle_info_extraction(self.scenario,
@@ -172,7 +172,7 @@ class InteractiveCRPlanner:
                 # too close to front car, start to car-following
                 ttc = front_veh_info['dhw'] / (self.ego_state.velocity - front_veh_info['v'])
 
-                if 0 < ttc < 3:
+                if 0 < ttc < 4:
                     print(ttc)
                     print('too close to front car, start to car-following')
                     action_temp = copy.deepcopy(action)
@@ -226,7 +226,7 @@ if __name__ == '__main__':
     dt = 0.1
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
     # name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
-    name_scenario = "DEU_Frankfurt-95_6_I-1"  # 直道测试场景
+    name_scenario = "DEU_Frankfurt-4_2_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
@@ -320,6 +320,7 @@ if __name__ == '__main__':
     if not feasible:
         # if not feasible. reconstruct the inputs
         ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
+
     # change pp_id of ego_vehicles, stupid!!!
     ego_vehicles[list(planning_problem_set.planning_problem_dict)[0]] = ego_vehicles[list(ego_vehicles)[0]]
     del ego_vehicles[list(ego_vehicles)[0]]
