@@ -116,10 +116,11 @@ def front_vehicle_info_extraction(scenario, ego_pos, lanelet_route):
     for obs in obstacles:
         if obs.state_at_time(0):
             pos = obs.state_at_time(0).position
-            # print(pos)
-            obs_lanelet_id = ln.find_lanelet_by_position([pos])[0][0]
-            if obs_lanelet_id not in lanelet_route:
-                continue
+            # print(ln.find_lanelet_by_position([pos]))
+            if not ln.find_lanelet_by_position([pos]) == [[]]:
+                obs_lanelet_id = ln.find_lanelet_by_position([pos])[0][0]
+                if obs_lanelet_id not in lanelet_route:
+                    continue
             s_obs = distance_lanelet(ref_cv, ref_s, ref_cv[0, :], pos)
             dhw = s_obs - s_ego
             if dhw < 0:
