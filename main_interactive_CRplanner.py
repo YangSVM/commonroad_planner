@@ -149,9 +149,9 @@ class InteractiveCRPlanner:
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
-                # if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
-                    # action.delta_s = action.delta_s / 3
-                    # action.T = action.T / 3
+                if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
+                    action.delta_s = action.delta_s / 4
+                    action.T = action.T / 4
                 # delta_s change inside
             else:
                 # update action
@@ -226,7 +226,7 @@ if __name__ == '__main__':
     dt = 0.1
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
     # name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
-    name_scenario = "DEU_Frankfurt-4_2_I-1"  # 直道测试场景
+    name_scenario = "DEU_Frankfurt-95_6_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
