@@ -225,7 +225,7 @@ if __name__ == '__main__':
     vehicle = VehicleDynamics.KS(vehicle_type)
     dt = 0.1
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
-    # name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
+    # name_scenario = "DEU_Frankfurt-4_5_I-1"  # 交叉口测试场景 2
     name_scenario = "DEU_Frankfurt-95_6_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
@@ -258,14 +258,18 @@ if __name__ == '__main__':
         planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
         ego_vehicle = list(ego_vehicles.values())[0]
 
+        # initial positions do not match, stupid!!!
+        planning_problem.initial_state.position = copy.deepcopy(ego_vehicle.initial_state.position)
+        planning_problem.initial_state.orientation = copy.deepcopy(ego_vehicle.initial_state.orientation)
+        planning_problem.initial_state.velocity = copy.deepcopy(ego_vehicle.initial_state.velocity)
         # ====== plug in your motion planner here
         # ====== paste in simulations
 
         # force to get a new action every 3 sceonds
-        # t_record += 0.1
-        # if t_record > 3:
-        #     is_new_action_needed = True
-        #     t_record = 0
+        t_record += 0.1
+        if t_record > 1 and main_planner.last_semantic_action not in {1, 2}:
+            main_planner.is_new_action_needed = True
+            t_record = 0
 
         # generate a CR planner
 
@@ -321,7 +325,7 @@ if __name__ == '__main__':
         # if not feasible. reconstruct the inputs
         ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
 
-    # change pp_id of ego_vehicles, stupid!!!
+    # change pp_id of ego_vehicles, stupid!!! (there is another solution, rewrite latter)
     ego_vehicles[list(planning_problem_set.planning_problem_dict)[0]] = ego_vehicles[list(ego_vehicles)[0]]
     del ego_vehicles[list(ego_vehicles)[0]]
 
