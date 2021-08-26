@@ -3,6 +3,8 @@
 # and outputs the next state of the ego vehicle
 import copy
 
+from commonroad.planning.planning_problem import PlanningProblem
+
 from CR_tools.utility import distance_lanelet, brake
 from networkx.generators import ego
 from MCTs_v3a import output
@@ -108,7 +110,7 @@ class InteractiveCRPlanner:
         return is_goal
 
     def planning(self, current_scenario,
-                 planning_problem,
+                 planning_problem:PlanningProblem,
                  ego_vehicle,
                  current_time_step):
 
@@ -119,6 +121,8 @@ class InteractiveCRPlanner:
 
         action = self.last_action
         semantic_action = self.last_semantic_action
+
+        # planning problem start from current vehicle states
         # generate a global lanelet route from initial position to goal region
         lanelet_route = self.generate_route(current_scenario, planning_problem)
 
@@ -213,11 +217,11 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    # folder_scenarios = os.path.abspath(
-    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
-    # 晓聪
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive')
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/')
+    # 晓聪
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
 
     vehicle_type = VehicleType.FORD_ESCORT
     vehicle_model = VehicleModel.KS
@@ -226,7 +230,7 @@ if __name__ == '__main__':
     dt = 0.1
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
     # name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景 2
-    name_scenario = "DEU_Frankfurt-4_2_I-1"  # 直道测试场景
+    name_scenario = "DEU_Frankfurt-95_6_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
