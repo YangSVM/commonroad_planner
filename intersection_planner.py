@@ -412,15 +412,25 @@ class IntersectionPlanner():
         # 1. cv
         ln = self.scenario.lanelet_network
         ego_lanelet_list = ln.find_lanelet_by_position([self.ego_state.position])[0]
-        ego_lanelet = list(set(self.route).intersection(set(ego_lanelet_list)))[0]
-        ego_successor_lanelet = []
-        action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet).center_vertices
-        if self.route.index(ego_lanelet) < len(self.route)-1:
-            curret_index = self.route.index(ego_lanelet)
-            ego_successor_lanelet_id = self.route[curret_index+1]
-            ego_successor_lanelet = ln.find_lanelet_by_id(ego_successor_lanelet_id)
-        if ego_successor_lanelet:
-            action.frenet_cv = np.concatenate((action.frenet_cv, ego_successor_lanelet.center_vertices), axis=0)
+        ego_lanelet_id = list(set(self.route).intersection(set(ego_lanelet_list)))[0]
+        ego_lanelet = ln.find_lanelet_by_id(ego_lanelet_id)
+        next_lanelet = []
+        next_lanelet_id = None
+        action.frenet_cv = ego_lanelet.center_vertices
+        if self.route.index(ego_lanelet_id) < len(self.route)-1:
+            curret_index = self.route.index(ego_lanelet_id)
+            next_lanelet_id = self.route[curret_index+1]
+            next_lanelet = ln.find_lanelet_by_id(next_lanelet_id)
+        if next_lanelet:
+
+            action.frenet_cv = np.concatenate((action.frenet_cv, next_lanelet.center_vertices), axis=0)
+
+            if ego_lanelet.adj_left:
+                if next_lanelet_id == ego_lanelet.adj_left:
+                    action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet.adj_left).center_vertices
+            if ego_lanelet.adj_right:
+                if next_lanelet_id == ego_lanelet.adj_right:
+                    action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet.adj_right).center_vertices
 
         # 2. initial state
         ego_state_init = [0 for i in range(6)]
