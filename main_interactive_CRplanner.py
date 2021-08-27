@@ -40,7 +40,7 @@ class InteractiveCRPlanner:
         # get current scenario info. from CR
         self.lanelet_ego = None  # the lanelet which ego car is located in
         self.lanelet_state = None  # straight-going /incoming /in-intersection
-
+        self.lanelet_route = None
         # initialize the last action info
         self.is_new_action_needed = True
         self.last_action = []
@@ -54,7 +54,11 @@ class InteractiveCRPlanner:
 
         ln = self.scenario.lanelet_network
         # find current lanelet
-        self.lanelet_ego = ln.find_lanelet_by_position([self.ego_state.position])[0][0]
+        potential_ego_lanelet_id_list = self.scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0]
+        for idx in potential_ego_lanelet_id_list:
+            if idx in self.lanelet_route:
+                lanelet_id_ego = idx
+        self.lanelet_ego = lanelet_id_ego
         print('current lanelet id:', self.lanelet_ego)
 
         for idx_inter, intersection in enumerate(ln.intersections):
@@ -83,12 +87,12 @@ class InteractiveCRPlanner:
         :return: lanelet_route
         """
         route = route_planner(scenario, planning_problem)
-        lanelet_route = route.list_ids_lanelets
+        self.lanelet_route = route.list_ids_lanelets
         # add_successor = scenario.lanelet_network.find_lanelet_by_id(lanelet_route[-1]).successor
         # if add_successor:
         #     lanelet_route.append(add_successor[0])
 
-        return lanelet_route
+        return self.lanelet_route
 
     def check_goal_state(self, position):
         # 没有经过
@@ -120,7 +124,7 @@ class InteractiveCRPlanner:
         action = self.last_action
         semantic_action = self.last_semantic_action
         # generate a global lanelet route from initial position to goal region
-        lanelet_route = self.generate_route(current_scenario, planning_problem)
+        self.generate_route(current_scenario, planning_problem)
 
         # check for goal info
         is_goal = self.check_goal_state(ego_vehicle.current_state.position)
@@ -147,7 +151,7 @@ class InteractiveCRPlanner:
             action_temp = []
             # === insert straight-going planner here
             if self.is_new_action_needed:
-                mcts_planner = MCTs_CR(current_scenario, planning_problem, lanelet_route, ego_vehicle)
+                mcts_planner = MCTs_CR(current_scenario, planning_problem, self.lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
                 if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
                     action.delta_s = action.delta_s / 4
@@ -167,7 +171,7 @@ class InteractiveCRPlanner:
                 # get front car info.
                 front_veh_info = front_vehicle_info_extraction(self.scenario,
                                                                self.ego_state.position,
-                                                               lanelet_route)
+                                                               self.lanelet_route)
 
                 # too close to front car, start to car-following
                 ttc = front_veh_info['dhw'] / (self.ego_state.velocity - front_veh_info['v'])
@@ -193,7 +197,8 @@ class InteractiveCRPlanner:
         if self.lanelet_state == 3:
             # === insert intersection planner here
             self.is_new_action_needed = 1
-            ip = IntersectionPlanner(current_scenario, lanelet_route, ego_vehicle, self.lanelet_state)
+            semantic_action = 9
+            ip = IntersectionPlanner(current_scenario, self.lanelet_route, ego_vehicle, self.lanelet_state)
             next_state = ip.planning(current_time_step)
             # === end of intersection planner
 
@@ -226,7 +231,7 @@ if __name__ == '__main__':
     dt = 0.1
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
     # name_scenario = "DEU_Frankfurt-4_5_I-1"  # 交叉口测试场景 2
-    name_scenario = "DEU_Frankfurt-95_6_I-1"  # 直道测试场景
+    name_scenario = "DEU_Frankfurt-24_2_I-1"  # 直道测试场景
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
@@ -259,9 +264,9 @@ if __name__ == '__main__':
         ego_vehicle = list(ego_vehicles.values())[0]
 
         # initial positions do not match, stupid!!!
-        planning_problem.initial_state.position = copy.deepcopy(ego_vehicle.initial_state.position)
-        planning_problem.initial_state.orientation = copy.deepcopy(ego_vehicle.initial_state.orientation)
-        planning_problem.initial_state.velocity = copy.deepcopy(ego_vehicle.initial_state.velocity)
+        planning_problem.initial_state.position = copy.deepcopy(ego_vehicle.current_state.position)
+        planning_problem.initial_state.orientation = copy.deepcopy(ego_vehicle.current_state.orientation)
+        planning_problem.initial_state.velocity = copy.deepcopy(ego_vehicle.current_state.velocity)
         # ====== plug in your motion planner here
         # ====== paste in simulations
 
