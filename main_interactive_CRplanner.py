@@ -87,7 +87,8 @@ class InteractiveCRPlanner:
         :return: lanelet_route
         """
         route = route_planner(scenario, planning_problem)
-        self.lanelet_route = route.list_ids_lanelets
+        if route:
+            self.lanelet_route = route.list_ids_lanelets
         # add_successor = scenario.lanelet_network.find_lanelet_by_id(lanelet_route[-1]).successor
         # if add_successor:
         #     lanelet_route.append(add_successor[0])
@@ -229,9 +230,8 @@ if __name__ == '__main__':
     cost_function = CostFunction.TR1
     vehicle = VehicleDynamics.KS(vehicle_type)
     dt = 0.1
-    # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
-    # name_scenario = "DEU_Frankfurt-4_5_I-1"  # 交叉口测试场景 2
-    name_scenario = "DEU_Frankfurt-24_2_I-1"  # 直道测试场景
+
+    name_scenario = "DEU_Frankfurt-7_7_I-1"
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
@@ -300,6 +300,15 @@ if __name__ == '__main__':
     # stop the simulation
     sumo_sim.stop()
 
+    # match pp_id
+    ego_vehicles = {list(planning_problem_set.planning_problem_dict.keys())[0]:
+                         ego_v for _, ego_v in sumo_sim.ego_vehicles.items()}
+
+    for pp_id, planning_problem in planning_problem_set.planning_problem_dict.items():
+        obstacle_ego = ego_vehicles[pp_id].get_dynamic_obstacle()
+        simulated_scenario.add_objects(obstacle_ego)
+
+
     # path for outputting results
     output_path = '/home/zxc/Videos/CR_outputs/'
     # output_path = '/home/thicv/codes/commonroad/CR_outputs'
@@ -329,10 +338,6 @@ if __name__ == '__main__':
     if not feasible:
         # if not feasible. reconstruct the inputs
         ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
-
-    # change pp_id of ego_vehicles, stupid!!! (there is another solution, rewrite latter)
-    ego_vehicles[list(planning_problem_set.planning_problem_dict)[0]] = ego_vehicles[list(ego_vehicles)[0]]
-    del ego_vehicles[list(ego_vehicles)[0]]
 
     # saves trajectory to solution file
     save_solution(simulated_scenario, planning_problem_set, ego_vehicles,
