@@ -66,26 +66,29 @@ def conf_lanelet_checker(ln, sub_lanelet_id: int, lanelet_state: int, lanelet_ro
 
     def check_in_intersection_lanelets():
         """ 返回提取路口内所有的lanelet的id列表 """
-        interscetionlist = list(lanelet_network.intersections)
-        intersection = interscetionlist[id_intersect]  # 主车所在路口
-        incomings = intersection.incomings
 
-        laneletlist = list()
-        for n in range(len(incomings)):
-            incoming = incomings[n]
-            if len(incoming.successors_left):
-                # print("incoming_id =", n, "left successor exists")
-                list_temp = list(incoming.successors_left)
-                laneletlist.append(list_temp[0])
-            if len(incoming.successors_straight):
-                # print("incoming_id =", n, "straight successor exists")
-                list_temp = list(incoming.successors_straight)
-                laneletlist.append(list_temp[0])
-            if len(incoming.successors_right):
-                # print("incoming_id =", n, "right successor exists")
-                list_temp = list(incoming.successors_right)
-                laneletlist.append(list_temp[0])
-        return laneletlist
+        lanelet_list = list()
+
+        interscetionlist = list(lanelet_network.intersections)
+        if id_intersect:
+            intersection = interscetionlist[id_intersect]  # 主车所在路口
+            incomings = intersection.incomings
+
+            for n in range(len(incomings)):
+                incoming = incomings[n]
+                if len(incoming.successors_left):
+                    # print("incoming_id =", n, "left successor exists")
+                    list_temp = list(incoming.successors_left)
+                    lanelet_list.append(list_temp[0])
+                if len(incoming.successors_straight):
+                    # print("incoming_id =", n, "straight successor exists")
+                    list_temp = list(incoming.successors_straight)
+                    lanelet_list.append(list_temp[0])
+                if len(incoming.successors_right):
+                    # print("incoming_id =", n, "right successor exists")
+                    list_temp = list(incoming.successors_right)
+                    lanelet_list.append(list_temp[0])
+        return lanelet_list
 
     def check_collision(cv_sub_origin, cv_other_origin):
         """检测两条中线之间是否存在冲突，返回冲突是否存在，以及冲突点位置（若存在） """
