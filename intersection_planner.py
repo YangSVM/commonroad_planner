@@ -427,9 +427,11 @@ class IntersectionPlanner():
 
             if ego_lanelet.adj_left:
                 if next_lanelet_id == ego_lanelet.adj_left:
+                    print('left lane-change in ip')
                     action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet.adj_left).center_vertices
             if ego_lanelet.adj_right:
                 if next_lanelet_id == ego_lanelet.adj_right:
+                    print('right lane-change in ip')
                     action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet.adj_right).center_vertices
 
         # 2. initial state
@@ -441,11 +443,11 @@ class IntersectionPlanner():
         ego_state_init[4] = self.ego_state.orientation  # orientation.
         action.ego_state_init = ego_state_init
 
-        v_end_limit = max(self.ego_state.velocity, 120 / 3.6)
+        v_end_limit = min(self.ego_state.velocity + 10, 120 / 3.6)
         v_end_conf = v_end_limit  # deal with potential lane-crossing conflicts
-        delta_s_conf = 100
+        delta_s_conf = 200
         v_end_cf = v_end_limit  # deal with car-following
-        delta_s_cf = 100
+        delta_s_cf = 200
 
         # 3. planning distance and end velocity
         # considering lane-crossing conflicts
@@ -470,10 +472,13 @@ class IntersectionPlanner():
             delta_s_cf = dhw
             v_end_cf = v_f
 
-        action.v_end = min(v_end_conf, v_end_cf)
         # print('v_end_conf', v_end_conf)
         # print('v_end_cf', v_end_cf)
         action.delta_s = min(delta_s_conf, delta_s_cf)
+        if action.delta_s == delta_s_conf:
+            action.v_end = v_end_conf
+        elif action.delta_s == delta_s_cf:
+            action.v_end = v_end_cf
 
         # 4. planning horizon
         action.T = action.delta_s / (self.ego_state.velocity + action.v_end) * 2
