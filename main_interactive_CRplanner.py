@@ -51,7 +51,7 @@ class InteractiveCRPlanner:
 
     def check_state(self):
         """check if ego car is straight-going /incoming /in-intersection"""
-
+        lanelet_id_ego = self.lanelet_ego
         ln = self.scenario.lanelet_network
         # find current lanelet
         potential_ego_lanelet_id_list = \
@@ -308,7 +308,7 @@ if __name__ == '__main__':
     # 晓聪
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive')
-    name_scenario = "DEU_Frankfurt-3_3_I-1"
+    name_scenario = "DEU_Frankfurt-24_7_I-1"
 
     main_planner = InteractiveCRPlanner()
 
