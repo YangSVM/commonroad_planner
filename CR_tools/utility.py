@@ -119,18 +119,18 @@ def smooth_cv(cv_init):
     new_cv = np.array([x_smooth, bspl_y]).T
     new_cv_x, new_cv_y = rotate(new_cv, new_cv[0, :], -angle)
     new_cv_out = np.array([new_cv_x, new_cv_y]).T
-    plt.figure()
-    # original data points
-    plt.plot(cv_init[:, 0], cv_init[:, 1], 'rx')
-    # after rotate
-    plt.plot(list_x, list_y, 'b')
-    # interpolated curve
-    plt.plot(x_smooth, bspl_y, 'b')
-    # re rotate
-    plt.plot(new_cv_out[:, 0], new_cv_out[:, 1], 'r')
-    plt.xticks(fontsize=10)
-    plt.yticks(fontsize=10)
-    plt.show()
+    # plt.figure()
+    # # original data points
+    # plt.plot(cv_init[:, 0], cv_init[:, 1], 'rx')
+    # # after rotate
+    # plt.plot(list_x, list_y, 'b')
+    # # interpolated curve
+    # plt.plot(x_smooth, bspl_y, 'b')
+    # # re rotate
+    # plt.plot(new_cv_out[:, 0], new_cv_out[:, 1], 'r')
+    # plt.xticks(fontsize=10)
+    # plt.yticks(fontsize=10)
+    # plt.show()
     return new_cv_out
 
 
