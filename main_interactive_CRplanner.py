@@ -2,28 +2,28 @@
 # it takes the current state of the CR scenario
 # and outputs the next state of the ego vehicle
 import copy
-
-from CR_tools.utility import distance_lanelet, brake
-from networkx.generators import ego
-from MCTs_v3a import output
 import os
-import matplotlib as plt
+
 from commonroad.common.file_reader import CommonRoadFileReader
 from commonroad.common.file_writer import CommonRoadFileWriter, OverwriteExistingFile
-from route_planner import route_planner
-from intersection_planner import IntersectionPlanner
-from Lattice_CRv3 import Lattice_CRv3
-# from simulation.simulations import create_video_for_simulation
-from intersection_planner import front_vehicle_info_extraction
-from MCTs_CR import MCTs_CR
-from sumocr.visualization.video import create_video
 from commonroad.scenario.scenario import Tag
-from simulation.utility import save_solution
 from commonroad.common.solution import CommonRoadSolutionReader, VehicleType, VehicleModel, CostFunction
 import commonroad_dc.feasibility.feasibility_checker as feasibility_checker
 from commonroad_dc.feasibility.vehicle_dynamics import VehicleDynamics
 # from commonroad_dc.costs.evaluation import CostFunctionEvaluator
 from commonroad_dc.feasibility.solution_checker import valid_solution
+from sumocr.visualization.video import create_video
+from sumocr.maps.sumo_scenario import ScenarioWrapper
+from sumocr.interface.sumo_simulation import SumoSimulation
+from simulation.utility import save_solution
+from simulation.simulations import load_sumo_configuration
+
+from route_planner import route_planner
+from Lattice_CRv3 import Lattice_CRv3
+from intersection_planner import front_vehicle_info_extraction, IntersectionPlanner
+from MCTs_CR import MCTs_CR
+from CR_tools.utility import distance_lanelet, brake
+
 
 # attributes for saving the simualted scenarios
 author = 'Desmond'
@@ -54,7 +54,8 @@ class InteractiveCRPlanner:
 
         ln = self.scenario.lanelet_network
         # find current lanelet
-        potential_ego_lanelet_id_list = self.scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0]
+        potential_ego_lanelet_id_list = \
+        self.scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0]
         for idx in potential_ego_lanelet_id_list:
             if idx in self.lanelet_route:
                 lanelet_id_ego = idx
@@ -100,7 +101,7 @@ class InteractiveCRPlanner:
         goal_info = self.goal_info
         if goal_info is None:
             return False
-        
+
         is_goal = False
         is_goal4mcts = goal_info[0]
         # 必须是mcts的终点是问题终点
@@ -111,6 +112,92 @@ class InteractiveCRPlanner:
             if s_ego >= s_goal:
                 is_goal = True
         return is_goal
+
+    def initialize(self, folder_scenarios, name_scenario):
+
+        self.vehicle_type = VehicleType.FORD_ESCORT
+        self.vehicle_model = VehicleModel.KS
+        self.cost_function = CostFunction.TR1
+        self.vehicle = VehicleDynamics.KS(self.vehicle_type)
+        self.dt = 0.1
+
+        interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
+
+        conf = load_sumo_configuration(interactive_scenario_path)
+        scenario_file = os.path.join(interactive_scenario_path, f"{name_scenario}.cr.xml")
+        self.scenario, self.planning_problem_set = CommonRoadFileReader(scenario_file).open()
+
+        #
+        scenario_wrapper = ScenarioWrapper()
+        scenario_wrapper.sumo_cfg_file = os.path.join(interactive_scenario_path, f"{conf.scenario_name}.sumo.cfg")
+        scenario_wrapper.initial_scenario = self.scenario
+
+        self.num_of_steps = conf.simulation_steps
+        sumo_sim = SumoSimulation()
+
+        # initialize simulation
+        sumo_sim.initialize(conf, scenario_wrapper, None)
+
+        self.t_record = 0
+
+        return sumo_sim
+
+    def process(self, sumo_sim):
+
+        # generate ego vehicle
+        ego_vehicles = sumo_sim.ego_vehicles
+
+        for step in range(self.num_of_steps):
+            print("process:", step, "/", self.num_of_steps)
+            current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
+            planning_problem = list(self.planning_problem_set.planning_problem_dict.values())[0]
+            ego_vehicle = list(ego_vehicles.values())[0]
+
+            # initial positions do not match, stupid!!!
+            planning_problem.initial_state.position = copy.deepcopy(ego_vehicle.current_state.position)
+            planning_problem.initial_state.orientation = copy.deepcopy(ego_vehicle.current_state.orientation)
+            planning_problem.initial_state.velocity = copy.deepcopy(ego_vehicle.current_state.velocity)
+            # ====== plug in your motion planner here
+            # ====== paste in simulations
+
+            # force to get a new action every 1 sceonds
+            self.t_record += 0.1
+            if self.t_record > 1 and main_planner.last_semantic_action not in {1, 2}:
+                main_planner.is_new_action_needed = True
+                t_record = 0
+
+            # generate a CR planner
+            next_state = self.planning(current_scenario,
+                                               planning_problem,
+                                               ego_vehicle,
+                                               sumo_sim.current_time_step)
+
+            print('velocity:', next_state.velocity)
+            print('position:', next_state.position)
+            # ====== paste in simulations
+            # ====== end of motion planner
+            next_state.time_step = 1
+            next_state.steering_angle = 0.0
+            trajectory_ego = [next_state]
+            ego_vehicle.set_planned_trajectory(trajectory_ego)
+
+            sumo_sim.simulate_step()
+
+        # retrieve the simulated scenario in CR format
+        simulated_scenario = sumo_sim.commonroad_scenarios_all_time_steps()
+
+        # stop the simulation
+        sumo_sim.stop()
+
+        # match pp_id
+        ego_vehicles = {list(self.planning_problem_set.planning_problem_dict.keys())[0]:
+                            ego_v for _, ego_v in sumo_sim.ego_vehicles.items()}
+
+        for pp_id, planning_problem in self.planning_problem_set.planning_problem_dict.items():
+            obstacle_ego = ego_vehicles[pp_id].get_dynamic_obstacle()
+            simulated_scenario.add_objects(obstacle_ego)
+
+        return simulated_scenario, ego_vehicles
 
     def planning(self, current_scenario,
                  planning_problem,
@@ -157,7 +244,7 @@ class InteractiveCRPlanner:
                 if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
                     action.delta_s = action.delta_s / 4
                     action.T = action.T / 4
-                # delta_s change inside
+                    action.v_end = action.ego_state_init[2] + (action.v_end - action.ego_state_init[2]) / 4
             else:
                 # update action
                 action.T -= 0.1
@@ -211,9 +298,6 @@ class InteractiveCRPlanner:
 
 
 if __name__ == '__main__':
-    from simulation.simulations import load_sumo_configuration
-    from sumocr.maps.sumo_scenario import ScenarioWrapper
-    from sumocr.interface.sumo_simulation import SumoSimulation
 
     # 曹雷
     # folder_scenarios = os.path.abspath(
@@ -224,94 +308,18 @@ if __name__ == '__main__':
     # 晓聪
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive')
-
-    vehicle_type = VehicleType.FORD_ESCORT
-    vehicle_model = VehicleModel.KS
-    cost_function = CostFunction.TR1
-    vehicle = VehicleDynamics.KS(vehicle_type)
-    dt = 0.1
-
-    name_scenario = "DEU_Frankfurt-7_7_I-1"
-    interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
-
-    conf = load_sumo_configuration(interactive_scenario_path)
-    scenario_file = os.path.join(interactive_scenario_path, f"{name_scenario}.cr.xml")
-    scenario, planning_problem_set = CommonRoadFileReader(scenario_file).open()
-
-    #
-    scenario_wrapper = ScenarioWrapper()
-    scenario_wrapper.sumo_cfg_file = os.path.join(interactive_scenario_path, f"{conf.scenario_name}.sumo.cfg")
-    scenario_wrapper.initial_scenario = scenario
-
-    num_of_steps = conf.simulation_steps
-    # num_of_steps = 200
-    sumo_sim = SumoSimulation()
-
-    # initialize simulation
-    sumo_sim.initialize(conf, scenario_wrapper, None)
-
-    # generate ego vehicle
-    ego_vehicles = sumo_sim.ego_vehicles
-
-    t_record = 0
+    name_scenario = "DEU_Frankfurt-3_3_I-1"
 
     main_planner = InteractiveCRPlanner()
 
-    for step in range(num_of_steps):
-        print("process:", step, "/", num_of_steps)
-        current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
-        planning_problem = list(planning_problem_set.planning_problem_dict.values())[0]
-        ego_vehicle = list(ego_vehicles.values())[0]
+    sumo_sim = main_planner.initialize(folder_scenarios, name_scenario)
 
-        # initial positions do not match, stupid!!!
-        planning_problem.initial_state.position = copy.deepcopy(ego_vehicle.current_state.position)
-        planning_problem.initial_state.orientation = copy.deepcopy(ego_vehicle.current_state.orientation)
-        planning_problem.initial_state.velocity = copy.deepcopy(ego_vehicle.current_state.velocity)
-        # ====== plug in your motion planner here
-        # ====== paste in simulations
-
-        # force to get a new action every 3 sceonds
-        t_record += 0.1
-        if t_record > 1 and main_planner.last_semantic_action not in {1, 2}:
-            main_planner.is_new_action_needed = True
-            t_record = 0
-
-        # generate a CR planner
-
-        next_state = main_planner.planning(current_scenario,
-                                           planning_problem,
-                                           ego_vehicle,
-                                           sumo_sim.current_time_step)
-
-        print('velocity:', next_state.velocity)
-        print('position:', next_state.position)
-        # ====== paste in simulations
-        # ====== end of motion planner
-        next_state.time_step = 1
-        next_state.steering_angle = 0.0
-        trajectory_ego = [next_state]
-        ego_vehicle.set_planned_trajectory(trajectory_ego)
-
-        sumo_sim.simulate_step()
-
-    # retrieve the simulated scenario in CR format
-    simulated_scenario = sumo_sim.commonroad_scenarios_all_time_steps()
-
-    # stop the simulation
-    sumo_sim.stop()
-
-    # match pp_id
-    ego_vehicles = {list(planning_problem_set.planning_problem_dict.keys())[0]:
-                         ego_v for _, ego_v in sumo_sim.ego_vehicles.items()}
-
-    for pp_id, planning_problem in planning_problem_set.planning_problem_dict.items():
-        obstacle_ego = ego_vehicles[pp_id].get_dynamic_obstacle()
-        simulated_scenario.add_objects(obstacle_ego)
-
+    simulated_scenario, ego_vehicles = main_planner.process(sumo_sim)
 
     # path for outputting results
     output_path = '/home/zxc/Videos/CR_outputs/'
     # output_path = '/home/thicv/codes/commonroad/CR_outputs'
+
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
     # solution
@@ -322,33 +330,36 @@ if __name__ == '__main__':
     # create mp4 animation
     create_video(simulated_scenario,
                  output_folder_path,
-                 planning_problem_set,
+                 main_planner.planning_problem_set,
                  ego_vehicles,
                  True,
                  "_planner")
 
     # write simulated scenario to file
-    fw = CommonRoadFileWriter(simulated_scenario, planning_problem_set, author, affiliation, source, tags)
+    fw = CommonRoadFileWriter(simulated_scenario, main_planner.planning_problem_set, author, affiliation, source, tags)
     fw.write_to_file(f"{path_scenarios_simulated}{name_scenario}_planner.xml", OverwriteExistingFile.ALWAYS)
 
     # get trajectory
+    ego_vehicle = list(ego_vehicles.values())[0]
     trajectory = ego_vehicle.driven_trajectory.trajectory
-    feasible, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory, vehicle, dt)
+    feasible, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory,
+                                                                                main_planner.vehicle,
+                                                                                main_planner.dt)
     print('Feasible? {}'.format(feasible))
     if not feasible:
         # if not feasible. reconstruct the inputs
         ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
 
     # saves trajectory to solution file
-    save_solution(simulated_scenario, planning_problem_set, ego_vehicles,
-                  vehicle_type,
-                  vehicle_model,
-                  cost_function,
+    save_solution(simulated_scenario, main_planner.planning_problem_set, ego_vehicles,
+                  main_planner.vehicle_type,
+                  main_planner.vehicle_model,
+                  main_planner.cost_function,
                   path_solutions, overwrite=True)
 
     solution = CommonRoadSolutionReader.open(os.path.join(path_solutions,
                                                           f"solution_KS1:TR1:{name_scenario}:2020a.xml"))
-    res = valid_solution(scenario, planning_problem_set, solution)
+    res = valid_solution(main_planner.scenario, main_planner.planning_problem_set, solution)
     print(res)
     # ce = CostFunctionEvaluator.init_from_solution(solution)
     # cost_result = ce.evaluate_solution(scenario, planning_problem_set, solution)
