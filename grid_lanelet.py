@@ -109,7 +109,7 @@ def lanelet_network2grid(ln : LaneletNetwork, route):
     #straight_route_id： 从route[0]出发。找一条直线，直到end_lanelets或其相邻车道
     straight_route_id = []      
     current_lanelet_id = route[0]
-    current_lanelet  =ln.find_lanelet_by_id(route[0])
+    current_lanelet = ln.find_lanelet_by_id(route[0])
     straight_route_id.append(current_lanelet_id)
     # left_n_max。车道max数目。
     _, left_n_max, right_n_max = find_adj_lanelets(ln, route[0])
@@ -127,11 +127,22 @@ def lanelet_network2grid(ln : LaneletNetwork, route):
                 current_lanelet_id = tmp_lanelet_id
                 is_next = True
                 break
+
         if not is_next:
-            print('error. cannot found the next lanelet')
-        assert is_next
+            current_adj, _, _ = find_adj_lanelets(ln, current_lanelet_id, False)
+            for temp_current_adj in  current_adj:
+                if temp_current_adj in route:
+                    current_lanelet_id = temp_current_adj
+                    break
+
+        # if not is_next:
+        #     print('error. cannot found the next lanelet')
+        #     print('current lanelet', current_lanelets_id)
+        #     print('end_lanelets', end_lanelets)
+        # assert is_next
         current_lanelet = ln.find_lanelet_by_id(current_lanelet_id)
-        straight_route_id.append(current_lanelet_id)
+        if is_next:
+            straight_route_id.append(current_lanelet_id)
 
         _, left_n, right_n = find_adj_lanelets(ln, current_lanelet_id)
         if left_n>left_n_max:
