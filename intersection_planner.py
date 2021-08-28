@@ -443,7 +443,7 @@ class IntersectionPlanner():
         ego_state_init[4] = self.ego_state.orientation  # orientation.
         action.ego_state_init = ego_state_init
 
-        v_end_limit = min(self.ego_state.velocity + 10, 120 / 3.6)
+        v_end_limit = min(self.ego_state.velocity, 80 / 3.6)
         v_end_conf = v_end_limit  # deal with potential lane-crossing conflicts
         delta_s_conf = 200
         v_end_cf = v_end_limit  # deal with car-following
@@ -485,6 +485,11 @@ class IntersectionPlanner():
 
         # 5. final acceleration
         action.a_end = 0
+
+        # cut action
+        action.delta_s = action.delta_s / 4
+        action.T = action.T / 4
+        action.v_end = action.ego_state_init[2] + (action.v_end - action.ego_state_init[2]) / 4
 
         print('dis_ego2cp', dis_ego2cp)
         print('T', action.T)
