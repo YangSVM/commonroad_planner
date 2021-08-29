@@ -170,7 +170,7 @@ class InteractiveCRPlanner:
             self.t_record += 0.1
             if self.t_record > 1 and main_planner.last_semantic_action not in {1, 2}:
                 main_planner.is_new_action_needed = True
-                t_record = 0
+                self.t_record = 0
 
             # generate a CR planner
             next_state = self.planning(current_scenario,
@@ -249,36 +249,30 @@ class InteractiveCRPlanner:
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, self.lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
-                if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
+                self.is_new_action_needed = False
+                if semantic_action in {3, 4, 5}:
                     action.delta_s = action.delta_s / 4
                     action.T = action.T / 4
                     action.v_end = action.ego_state_init[2] + (action.v_end - action.ego_state_init[2]) / 4
             else:
                 # update action
                 action.T -= 0.1
-                # for straight-going
-                # if semantic_action == 3 or semantic_action == 4 or semantic_action == 5:
 
-                # for lane=changing
-                # if semantic_action == 1 or semantic_action == 2:
-                #     action.ego_state_init[0] = self.ego_state.position[0]
-                #     action.ego_state_init[1] = self.ego_state.position[1]
-
-                # get front car info.
-                front_veh_info = front_vehicle_info_extraction(self.scenario,
-                                                               self.ego_state.position,
-                                                               self.lanelet_route)
-
+            # get front car info.
+            front_veh_info = front_vehicle_info_extraction(self.scenario,
+                                                           self.ego_state.position,
+                                                           self.lanelet_route)
+            if semantic_action in {3, 4, 5}:
                 # too close to front car, start to car-following
                 ttc = front_veh_info['dhw'] / (self.ego_state.velocity - front_veh_info['v'])
-
-                if 0 < ttc < 4:
+                if 0 < ttc < 5:
                     print(ttc)
                     print('too close to front car, start to car-following')
                     action_temp = copy.deepcopy(action)
                     action_temp.delta_s = front_veh_info['dhw']
-                    action_temp.v_end = front_veh_info['v']
+                    action_temp.v_end = front_veh_info['v'] - 3
                     action_temp.T = action_temp.delta_s / (action_temp.v_end + self.ego_state.velocity) * 2
+
             print('init position:', action.ego_state_init)
             print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
             print('delta_s:', action.delta_s)

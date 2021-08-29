@@ -408,7 +408,7 @@ class IntersectionPlanner():
 
     def motion_planner_lattice(self, a, dis_ego2cp, front_veh):
         action = Ipaction()
-
+        is_lane_change = False
         # 1. cv
         ln = self.scenario.lanelet_network
         ego_lanelet_list = ln.find_lanelet_by_position([self.ego_state.position])[0]
@@ -427,11 +427,13 @@ class IntersectionPlanner():
 
             if ego_lanelet.adj_left:
                 if next_lanelet_id == ego_lanelet.adj_left:
-                    print('left lane-change in ip')
+                    print('** left lane-change in ip')
+                    is_lane_change = True
                     action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet.adj_left).center_vertices
             if ego_lanelet.adj_right:
                 if next_lanelet_id == ego_lanelet.adj_right:
-                    print('right lane-change in ip')
+                    print('** right lane-change in ip')
+                    is_lane_change = True
                     action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet.adj_right).center_vertices
 
         # 2. initial state
@@ -453,6 +455,7 @@ class IntersectionPlanner():
         # considering lane-crossing conflicts
         a_thre = -2  # 非交互式情况，协作加速度阈值(threshold) 设置为0
         a1, a2 = 100, 100
+        ttc = 100
         if len(a) > 1:
             a1 = a[0]
             a2 = a[1]
@@ -469,11 +472,14 @@ class IntersectionPlanner():
         if not front_veh['v'] == -1:  # leading car exists
             dhw = front_veh['dhw']
             v_f = front_veh['v']
+            ttc = dhw / (ego_state_init[2] - v_f)
             delta_s_cf = dhw
             v_end_cf = v_f
 
         # print('v_end_conf', v_end_conf)
         # print('v_end_cf', v_end_cf)
+        # print('delta_s_conf', delta_s_conf)
+        # print('delta_s_cf', delta_s_cf)
         action.delta_s = min(delta_s_conf, delta_s_cf)
         if action.delta_s == delta_s_conf:
             action.v_end = v_end_conf
@@ -486,10 +492,19 @@ class IntersectionPlanner():
         # 5. final acceleration
         action.a_end = 0
 
+        # lane-change exception
+        if is_lane_change:  # 换道的时候规划时域不能太短，固定为5s
+            action.v_end = action.ego_state_init[2]
+            if 0 < ttc < 4:
+                action.v_end = 0
+            action.T = 5
+            action.delta_s = action.T * (action.v_end + action.ego_state_init[2]) / 2
+
         # cut action
-        action.delta_s = action.delta_s / 4
-        action.T = action.T / 4
-        action.v_end = action.ego_state_init[2] + (action.v_end - action.ego_state_init[2]) / 4
+        # if not is_lane_change:
+        #     action.delta_s = action.delta_s / 4
+        #     action.T = action.T / 4
+        #     action.v_end = action.ego_state_init[2] + (action.v_end - action.ego_state_init[2]) / 4
 
         print('dis_ego2cp', dis_ego2cp)
         print('T', action.T)
