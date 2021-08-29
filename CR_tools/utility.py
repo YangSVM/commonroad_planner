@@ -107,8 +107,8 @@ def distance_lanelet(center_line, s, p1, p2):
     return s[i2] - s[i1]
 
 
-def smooth_cv(cv_init):
-    cv, angle = flatten(cv_init)
+def smooth_cv(cv):
+    # cv, angle = flatten(cv_init)
     list_x = cv[:, 0]
     list_y = cv[:, 1]
     if type(cv) is not np.ndarray:
