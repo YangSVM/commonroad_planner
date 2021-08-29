@@ -32,7 +32,9 @@ def find_adj_lanelets(ln:LaneletNetwork, lanelet_id, include_ego=True):
             n_left += 1
             tmp_lanelet_id = tmp_lanelet.adj_left
             lanelets_id_adj_left.append(tmp_lanelet_id)
-            tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)       
+            tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)
+        else:
+            break
 
     tmp_lanelet_id = lanelet_id
     tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)
@@ -42,6 +44,8 @@ def find_adj_lanelets(ln:LaneletNetwork, lanelet_id, include_ego=True):
             tmp_lanelet_id = tmp_lanelet.adj_right
             lanelets_id_adj_right.append(tmp_lanelet_id)
             tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)     
+         else:
+            break
     if include_ego:
         lanelets_id_adj = lanelets_id_adj_left[::-1] + [lanelet_id] + lanelets_id_adj_right
     else:
