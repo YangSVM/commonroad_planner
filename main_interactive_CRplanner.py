@@ -2,15 +2,11 @@
 # it takes the current state of the CR scenario
 # and outputs the next state of the ego vehicle
 import copy
-<<<<<<< HEAD
 
 from commonroad.planning.planning_problem import PlanningProblem
 
 from CR_tools.utility import distance_lanelet, brake
 from networkx.generators import ego
-from MCTs_v3a import output
-=======
->>>>>>> cee4403b0e97a371bfe73b1156d7eed92c8629d4
 import os
 
 from commonroad.common.file_reader import CommonRoadFileReader
