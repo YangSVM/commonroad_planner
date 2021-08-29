@@ -29,6 +29,8 @@ from intersection_planner import front_vehicle_info_extraction, IntersectionPlan
 from MCTs_CR import MCTs_CR
 from CR_tools.utility import distance_lanelet, brake
 
+from commonroad.common.solution import PlanningProblemSolution, Solution, CommonRoadSolutionWriter, VehicleType, \
+    VehicleModel, CostFunction
 
 # attributes for saving the simualted scenarios
 author = 'Desmond'
@@ -298,11 +300,14 @@ class InteractiveCRPlanner:
 
         return next_state
 
-def motion_planner_interactive(scenario_path):
+def motion_planner_interactive(scenario_path:str):
     
     main_planner = InteractiveCRPlanner()
-
-    sumo_sim = main_planner.initialize(scenario_path)
+    paths = scenario_path.split('/') 
+    name_scenario = paths[-1]
+    # folder_scenarios = os.path.join(*paths[:-1])
+    folder_scenarios = "/commonroad/scenarios"
+    sumo_sim = main_planner.initialize(folder_scenarios, name_scenario)
 
     simulated_scenario, ego_vehicles = main_planner.process(sumo_sim)
 
@@ -317,16 +322,19 @@ def motion_planner_interactive(scenario_path):
         # if not feasible. reconstruct the inputs
         ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
 
-    # saves trajectory to solution file
-    save_solution(simulated_scenario, main_planner.planning_problem_set, ego_vehicles,
-                  main_planner.vehicle_type,
-                  main_planner.vehicle_model,
-                  main_planner.cost_function,
-                  path_solutions, overwrite=True)
 
-    solution = CommonRoadSolutionReader.open(os.path.join(path_solutions,
-                                                          f"solution_KS1:TR1:{name_scenario}:2020a.xml"))
-    
+    # create solution object for benchmark
+    pps = []
+    for pp_id, ego_vehicle in ego_vehicles.items():
+        assert pp_id in main_planner.planning_problem_set.planning_problem_dict
+        pps.append(PlanningProblemSolution(planning_problem_id=pp_id,
+                                           vehicle_type=main_planner.vehicle_type,
+                                           vehicle_model=main_planner.vehicle_model,
+                                           cost_function=main_planner.cost_function,
+                                           trajectory=ego_vehicle.driven_trajectory.trajectory))
+
+    solution = Solution(simulated_scenario.scenario_id, pps)
+
     return solution
 
 if __name__ == '__main__':
