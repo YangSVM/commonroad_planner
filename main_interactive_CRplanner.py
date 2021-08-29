@@ -137,7 +137,8 @@ class InteractiveCRPlanner:
         scenario_wrapper.sumo_cfg_file = os.path.join(interactive_scenario_path, f"{conf.scenario_name}.sumo.cfg")
         scenario_wrapper.initial_scenario = self.scenario
 
-        self.num_of_steps = conf.simulation_steps
+        # self.num_of_steps = conf.simulation_steps
+        self.num_of_steps = 60
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -303,6 +304,36 @@ class InteractiveCRPlanner:
 
         return next_state
 
+def motion_planner_interactive(scenario_path):
+    
+    main_planner = InteractiveCRPlanner()
+
+    sumo_sim = main_planner.initialize(scenario_path)
+
+    simulated_scenario, ego_vehicles = main_planner.process(sumo_sim)
+
+    # get trajectory
+    ego_vehicle = list(ego_vehicles.values())[0]
+    trajectory = ego_vehicle.driven_trajectory.trajectory
+    feasible, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory,
+                                                                                main_planner.vehicle,
+                                                                                main_planner.dt)
+    print('Feasible? {}'.format(feasible))
+    if not feasible:
+        # if not feasible. reconstruct the inputs
+        ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
+
+    # saves trajectory to solution file
+    save_solution(simulated_scenario, main_planner.planning_problem_set, ego_vehicles,
+                  main_planner.vehicle_type,
+                  main_planner.vehicle_model,
+                  main_planner.cost_function,
+                  path_solutions, overwrite=True)
+
+    solution = CommonRoadSolutionReader.open(os.path.join(path_solutions,
+                                                          f"solution_KS1:TR1:{name_scenario}:2020a.xml"))
+    
+    return solution
 
 if __name__ == '__main__':
 
@@ -311,8 +342,12 @@ if __name__ == '__main__':
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive')
-    name_scenario = "DEU_Frankfurt-24_7_I-1"
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
+    # 晓聪
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    # name_scenario = "DEU_Frankfurt-24_7_I-1"
+    name_scenario = "DEU_Frankfurt-4_5_I-1"
 
     main_planner = InteractiveCRPlanner()
 
@@ -321,8 +356,8 @@ if __name__ == '__main__':
     simulated_scenario, ego_vehicles = main_planner.process(sumo_sim)
 
     # path for outputting results
-    output_path = '/home/zxc/Videos/CR_outputs/'
-    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    # output_path = '/home/zxc/Videos/CR_outputs/'
+    output_path = '/home/thicv/codes/commonroad/CR_outputs'
 
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
