@@ -195,11 +195,11 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
         self.Tstep = 6
 
         self.num = len(obstacles)
-        self.lane0 = numpy.zeros(shape=(15, 2))  # 建立5条车道的存储空间
-        self.lane1 = numpy.zeros(shape=(15, 2))
-        self.lane2 = numpy.zeros(shape=(15, 2))
-        self.lane3 = numpy.zeros(shape=(15, 2))
-        self.lane4 = numpy.zeros(shape=(15, 2))
+        self.lane0 = numpy.zeros(shape=(20, 2))  # 建立5条车道的存储空间
+        self.lane1 = numpy.zeros(shape=(20, 2))
+        self.lane2 = numpy.zeros(shape=(20, 2))
+        self.lane3 = numpy.zeros(shape=(20, 2))
+        self.lane4 = numpy.zeros(shape=(20, 2))
         self.point = numpy.zeros(shape=5).astype(int)
         for i in range(self.num):
             if obstacles[i][0] == 0:

@@ -50,7 +50,8 @@ def conf_lanelet_checker(ln, sub_lanelet_id: int, lanelet_state: int, lanelet_ro
 
         elif lanelet_state == 3:
             lanelet_id_in_intersection = sub_lanelet_id  # 此时主车已经在路口内，不用找id_in_intersection了
-            sub_lanelet_id_incoming = ln.find_lanelet_by_id(sub_lanelet_id).predecessor[0]  # 找到主车进入路口的incoming,用于确定路口序号
+            if ln.find_lanelet_by_id(sub_lanelet_id).predecessor:
+                sub_lanelet_id_incoming = ln.find_lanelet_by_id(sub_lanelet_id).predecessor[0]  # 找到主车进入路口的incoming,用于确定路口序号
 
         # 遍历场景中的路口，找到主车所在的路口
         for idx, intersection in enumerate(ln.intersections):

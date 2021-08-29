@@ -1,7 +1,8 @@
 import os
 from typing import Dict
 import numpy as np
-import matplotlib as plt
+import math
+from matplotlib import pyplot as plt
 from IPython import display
 from commonroad.common.solution import PlanningProblemSolution, Solution, CommonRoadSolutionWriter, VehicleType, \
     VehicleModel, CostFunction
@@ -13,7 +14,7 @@ from scipy.signal.bsplines import cubic
 from sumocr.interface.ego_vehicle import EgoVehicle
 from shapely.geometry import LineString
 from scipy.interpolate import splrep, splev
-from commonroad.scenario.trajectory import  State
+from commonroad.scenario.trajectory import State
 
 
 class Ipaction():
@@ -25,6 +26,7 @@ class Ipaction():
         self.T = None
         self.ego_state_init = []
         self.lanelet_id_target = None
+
 
 def visualize_scenario_with_trajectory(scenario: Scenario,
                                        planning_problem_set: PlanningProblemSet,
@@ -105,7 +107,8 @@ def distance_lanelet(center_line, s, p1, p2):
     return s[i2] - s[i1]
 
 
-def smooth_cv(cv):
+def smooth_cv(cv_init):
+    cv, angle = flatten(cv_init)
     list_x = cv[:, 0]
     list_y = cv[:, 1]
     if type(cv) is not np.ndarray:
@@ -126,13 +129,46 @@ def smooth_cv(cv):
     new_cv = np.array([x_smooth, y_smooth]).T
     # plt.figure()
     # # original data points
-    # plt.plot(list_x, list_y, 'rx-')
-    # # and interpolated curve
+    # plt.plot(cv_init[:, 0], cv_init[:, 1], 'rx')
+    # # after rotate
+    # plt.plot(list_x, list_y, 'b')
+    # # interpolated curve
     # plt.plot(x_smooth, bspl_y, 'b')
+    # # re rotate
+    # plt.plot(new_cv_out[:, 0], new_cv_out[:, 1], 'r')
     # plt.xticks(fontsize=10)
     # plt.yticks(fontsize=10)
     # plt.show()
-    return new_cv
+    return new_cv_out
+
+
+def flatten(p_list):
+    # calculate the angle between x axis and p_start-p_end
+    p_start = p_list[0, :]
+    p_end = p_list[-1, :]
+    dy = p_end[1] - p_start[1]
+    dx = p_end[0] - p_start[0]
+    angle = math.atan2(dy, dx)
+    # angle_de = int(angle * 180 / math.pi)
+    # print(angle, angle_de)
+
+    # rotate the point list
+    x_list, y_list = rotate(p_list, p_start, angle)
+
+    p_list_new = np.array([x_list, y_list]).T
+    return p_list_new, angle
+
+
+# 绕center顺时针旋转angle
+def rotate(p_list, center, angle):
+    point_x, point_y = center
+    value_x = p_list[:, 0]
+    value_y = p_list[:, 1]
+    value_x = np.array(value_x)
+    value_y = np.array(value_y)
+    rotate_x = (value_x - point_x) * math.cos(angle) + (value_y - point_y) * math.sin(angle) + point_x
+    rotate_y = (value_y - point_y) * math.cos(angle) - (value_x - point_x) * math.sin(angle) + point_y
+    return rotate_x, rotate_y
 
 
 def brake(scenario, ego_vehicle):
@@ -159,6 +195,8 @@ def brake(scenario, ego_vehicle):
     action.a_end = 0
 
     return action
+
+
 # def brake(current_state: State, cv, cv_s):
 #     '''按照轨迹中线进行匀速停车
 #     '''
@@ -185,7 +223,7 @@ def brake(scenario, ego_vehicle):
 #     next_state.time_step = 1
 #     next_state.acceleration = a
 #     return next_state
-    
+
 
 if __name__ == '__main__':
     import matplotlib.pyplot  as plt

@@ -412,15 +412,27 @@ class IntersectionPlanner():
         # 1. cv
         ln = self.scenario.lanelet_network
         ego_lanelet_list = ln.find_lanelet_by_position([self.ego_state.position])[0]
-        ego_lanelet = list(set(self.route).intersection(set(ego_lanelet_list)))[0]
-        ego_successor_lanelet = []
-        action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet).center_vertices
-        if self.route.index(ego_lanelet) < len(self.route)-1:
-            curret_index = self.route.index(ego_lanelet)
-            ego_successor_lanelet_id = self.route[curret_index+1]
-            ego_successor_lanelet = ln.find_lanelet_by_id(ego_successor_lanelet_id)
-        if ego_successor_lanelet:
-            action.frenet_cv = np.concatenate((action.frenet_cv, ego_successor_lanelet.center_vertices), axis=0)
+        ego_lanelet_id = list(set(self.route).intersection(set(ego_lanelet_list)))[0]
+        ego_lanelet = ln.find_lanelet_by_id(ego_lanelet_id)
+        next_lanelet = []
+        next_lanelet_id = None
+        action.frenet_cv = ego_lanelet.center_vertices
+        if self.route.index(ego_lanelet_id) < len(self.route)-1:
+            curret_index = self.route.index(ego_lanelet_id)
+            next_lanelet_id = self.route[curret_index+1]
+            next_lanelet = ln.find_lanelet_by_id(next_lanelet_id)
+        if next_lanelet:
+
+            action.frenet_cv = np.concatenate((action.frenet_cv, next_lanelet.center_vertices), axis=0)
+
+            if ego_lanelet.adj_left:
+                if next_lanelet_id == ego_lanelet.adj_left:
+                    print('left lane-change in ip')
+                    action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet.adj_left).center_vertices
+            if ego_lanelet.adj_right:
+                if next_lanelet_id == ego_lanelet.adj_right:
+                    print('right lane-change in ip')
+                    action.frenet_cv = ln.find_lanelet_by_id(ego_lanelet.adj_right).center_vertices
 
         # 2. initial state
         ego_state_init = [0 for i in range(6)]
@@ -431,11 +443,11 @@ class IntersectionPlanner():
         ego_state_init[4] = self.ego_state.orientation  # orientation.
         action.ego_state_init = ego_state_init
 
-        v_end_limit = max(self.ego_state.velocity, 120 / 3.6)
+        v_end_limit = max(self.ego_state.velocity, 100 / 3.6)
         v_end_conf = v_end_limit  # deal with potential lane-crossing conflicts
-        delta_s_conf = 100
+        delta_s_conf = 200
         v_end_cf = v_end_limit  # deal with car-following
-        delta_s_cf = 100
+        delta_s_cf = 200
 
         # 3. planning distance and end velocity
         # considering lane-crossing conflicts
@@ -460,16 +472,24 @@ class IntersectionPlanner():
             delta_s_cf = dhw
             v_end_cf = v_f
 
-        action.v_end = min(v_end_conf, v_end_cf)
         # print('v_end_conf', v_end_conf)
         # print('v_end_cf', v_end_cf)
         action.delta_s = min(delta_s_conf, delta_s_cf)
+        if action.delta_s == delta_s_conf:
+            action.v_end = v_end_conf
+        elif action.delta_s == delta_s_cf:
+            action.v_end = v_end_cf
 
         # 4. planning horizon
         action.T = action.delta_s / (self.ego_state.velocity + action.v_end) * 2
 
         # 5. final acceleration
         action.a_end = 0
+
+        # cut action
+        action.delta_s = action.delta_s / 4
+        action.T = action.T / 4
+        action.v_end = action.ego_state_init[2] + (action.v_end - action.ego_state_init[2]) / 4
 
         print('dis_ego2cp', dis_ego2cp)
         print('T', action.T)
