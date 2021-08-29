@@ -2,7 +2,7 @@ from commonroad.common.file_reader import CommonRoadFileReader
 
 import os
 import numpy as np
-from utils import plot_lanelet_network, plot_lanelet
+# from utils import plot_lanelet_network, plot_lanelet
 import matplotlib.pyplot as plt
 
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     # plot lanelet network and map
     # plot_lanelet(scenario.lanelet_network.find_lanelet_by_id(ego_id))
-    plot_lanelet_network(scenario.lanelet_network)
+    # plot_lanelet_network(scenario.lanelet_network)
     plt.plot(sdr_map.cv_current[:, 0], sdr_map.cv_current[:, 1])
     if sdr_map.cv_left is not None:
         plt.plot(sdr_map.cv_left[:, 0], sdr_map.cv_left[:, 1])

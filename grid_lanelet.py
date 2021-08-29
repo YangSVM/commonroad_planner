@@ -44,7 +44,7 @@ def find_adj_lanelets(ln:LaneletNetwork, lanelet_id, include_ego=True):
             tmp_lanelet_id = tmp_lanelet.adj_right
             lanelets_id_adj_right.append(tmp_lanelet_id)
             tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)     
-         else:
+        else:
             break
     if include_ego:
         lanelets_id_adj = lanelets_id_adj_left[::-1] + [lanelet_id] + lanelets_id_adj_right

@@ -4,7 +4,7 @@ import numpy as np
 import os
 import math
 import matplotlib.pyplot as plt
-from utils import plot_lanelet
+# from utils import plot_lanelet
 from commonroad.common.file_reader import CommonRoadFileReader
 
 import time
@@ -95,6 +95,6 @@ if __name__ == '__main__':
         # t2 = time.time()
         # print('total time\n',t1-t2)
         cv_new = cv_info[0]
-        plot_lanelet(lanelet)
+        # plot_lanelet(lanelet)
         plt.plot(cv_new[0][:], cv_new[1][:], 'b*')
         plt.show()
