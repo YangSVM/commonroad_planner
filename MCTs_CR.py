@@ -16,11 +16,10 @@ from grid_lanelet import get_detail_cv_of_lanelets, lanelet_network2grid, state_
 from grid_lanelet import get_obstacle_info
 from grid_lanelet import get_map_info
 from grid_lanelet import edit_scenario4test
-from MCTs_v3pro import NaughtsAndCrossesState
-from MCTs_v3pro import mcts
+from MCTs_v3pro_2 import NaughtsAndCrossesState, mcts, output, checker
+
 from grid_lanelet import get_frenet_lanelet_axis
 from grid_lanelet import generate_len_map, find_target_frenet_axis, extract_speed_limit_from_traffic_sign
-from MCTs_v3pro import output
 
 
 class ActionAddition:
@@ -202,11 +201,21 @@ class MCTs_CR():
         obstacles = copy.deepcopy(_obstacles)
         map_info = copy.deepcopy(_map_info)
 
-        initialState = NaughtsAndCrossesState(ego_state_mcts, map, obstacles, map_info)
-        searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
-        action = searcher.search(initialState=initialState)  # 一整个类都是其状态
-        speed_limit = map[3]
-        out = output(ego_state_mcts, action.act, speed_limit)
+        actionChecker = checker(ego_state_mcts, map, obstacles, map_info)
+        flag = actionChecker.checkPossibleActions()
+
+        if flag==0:
+            initialState = NaughtsAndCrossesState(ego_state_mcts, map, obstacles, map_info)
+            searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
+            action = searcher.search(initialState=initialState)  # 一整个类都是其状态
+            semantic_action = action.act
+            speed_limit = map[3]
+            out = output(ego_state_mcts, action.act, speed_limit)
+        elif flag == 1:
+            print('第一步mcts无解，进入跟车')
+            semantic_action = 5
+            out = output(ego_state_mcts, 5, map[3])
+
         print('out: ', out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
         # print(action.act)
 
@@ -240,7 +249,7 @@ class MCTs_CR():
         goal_info = self.get_goal_info(is_goal, frenet_cv, _map[2])
         print('goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: \n', goal_info[0], goal_info[3])
         print('中线lanelet id: ', lanelet_ids_frenet_axis)
-        return action.act, action_addition, goal_info
+        return semantic_action, action_addition, goal_info
 
 
 if __name__ == '__main__':

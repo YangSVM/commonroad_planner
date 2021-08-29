@@ -454,7 +454,7 @@ if __name__ == "__main__":
  [  2.,         98.5,        29.58975459],
  [  2.,         61.9,        29.365209  ]]
     initialState = NaughtsAndCrossesState(state, map, obstacles)
-    searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
+    searcher = mcts(timeLimit=1000)  # 改变循环次数或者时间
     action = searcher.search(initialState=initialState)  # 一整个类都是其状态
     out = output(state, action.act)
     print('out:',out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]

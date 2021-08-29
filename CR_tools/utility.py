@@ -108,12 +108,22 @@ def distance_lanelet(center_line, s, p1, p2):
 def smooth_cv(cv):
     list_x = cv[:, 0]
     list_y = cv[:, 1]
-    bspl = splrep(list_x, list_y, s=0.1)
+    if type(cv) is not np.ndarray:
+        cv = np.array(cv)
+    delta_cv  = cv[1:,] - cv[:-1,:]
+    s_cv = np.linalg.norm(delta_cv, axis=1)
+    
+    s_cv = np.array([0] + s_cv.tolist())
+    s_cv = np.cumsum(s_cv)
+
+    bspl_x = splrep(s_cv, list_x, s=0.1)
+    bspl_y = splrep(s_cv, list_y, s=0.1)
     # values for the x axis
-    x_smooth = np.linspace(min(list_x), max(list_x), 1000)
+    s_smooth = np.linspace(0, max(s_cv), 1000)
     # get y values from interpolated curve
-    bspl_y = splev(x_smooth, bspl)
-    new_cv = np.array([x_smooth, bspl_y]).T
+    x_smooth = splev(s_smooth, bspl_x)
+    y_smooth = splev(s_smooth, bspl_y)
+    new_cv = np.array([x_smooth, y_smooth]).T
     # plt.figure()
     # # original data points
     # plt.plot(list_x, list_y, 'rx-')

@@ -229,8 +229,9 @@ if __name__ == '__main__':
     vehicle = VehicleDynamics.KS(vehicle_type)
     dt = 0.1
     # name_scenario = "DEU_Frankfurt-4_2_I-1"  # 交叉口测试场景
-    # name_scenario = "DEU_Frankfurt-4_5_I-1"  # 交叉口测试场景 2
-    name_scenario = "DEU_Frankfurt-95_6_I-1"  # 直道测试场景
+    # name_scenario = "DEU_Frankfurt-7_7_I-1"  # 交叉口测试场景 2
+    # name_scenario = "DEU_Frankfurt-95_6_I-1"  # 直道测试场景
+    name_scenario = "DEU_Frankfurt-4_5_I-1"      # MCTS算法测试
     interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
     conf = load_sumo_configuration(interactive_scenario_path)
@@ -263,9 +264,9 @@ if __name__ == '__main__':
         ego_vehicle = list(ego_vehicles.values())[0]
 
         # initial positions do not match, stupid!!!
-        planning_problem.initial_state.position = copy.deepcopy(ego_vehicle.initial_state.position)
-        planning_problem.initial_state.orientation = copy.deepcopy(ego_vehicle.initial_state.orientation)
-        planning_problem.initial_state.velocity = copy.deepcopy(ego_vehicle.initial_state.velocity)
+        planning_problem.initial_state.position = copy.deepcopy(ego_vehicle.current_state.position)
+        planning_problem.initial_state.orientation = copy.deepcopy(ego_vehicle.current_state.orientation)
+        planning_problem.initial_state.velocity = copy.deepcopy(ego_vehicle.current_state.velocity)
         # ====== plug in your motion planner here
         # ====== paste in simulations
 
@@ -300,8 +301,8 @@ if __name__ == '__main__':
     sumo_sim.stop()
 
     # path for outputting results
-    output_path = '/home/zxc/Videos/CR_outputs/'
-    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    # output_path = '/home/zxc/Videos/CR_outputs/'
+    output_path = '/home/thicv/codes/commonroad/CR_outputs'
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
     # solution
