@@ -165,6 +165,8 @@ def get_detail_cv_of_lanelets(lanelet_ids_frenet_axis, ln: LaneletNetwork):
     '''
     cv = []
     for lanelet in lanelet_ids_frenet_axis:
+        if lanelet == -1:
+            break
         cv.append(ln.find_lanelet_by_id(lanelet).center_vertices)
     
     cv = np.concatenate(cv, axis=0)
