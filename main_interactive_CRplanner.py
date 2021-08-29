@@ -21,7 +21,7 @@ from sumocr.visualization.video import create_video
 from sumocr.maps.sumo_scenario import ScenarioWrapper
 from sumocr.interface.sumo_simulation import SumoSimulation
 from simulation.utility import save_solution
-from simulation.simulations import load_sumo_configuration
+# from simulation.simulations import load_sumo_configuration
 
 from route_planner import route_planner
 from Lattice_CRv3 import Lattice_CRv3
@@ -338,7 +338,7 @@ def motion_planner_interactive(scenario_path:str):
     return solution
 
 if __name__ == '__main__':
-
+    from simulation.simulations import load_sumo_configuration
     # 曹雷
     # folder_scenarios = os.path.abspath(
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
@@ -349,7 +349,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-4_5_I-1"
+    name_scenario = "DEU_Frankfurt-21_2_I-1"
 
     main_planner = InteractiveCRPlanner()
 
