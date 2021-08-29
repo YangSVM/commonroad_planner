@@ -264,12 +264,12 @@ class InteractiveCRPlanner:
             if semantic_action in {3, 4, 5}:
                 # too close to front car, start to car-following
                 ttc = front_veh_info['dhw'] / (self.ego_state.velocity - front_veh_info['v'])
-                if 0 < ttc < 4:
+                if 0 < ttc < 5:
                     print(ttc)
                     print('too close to front car, start to car-following')
                     action_temp = copy.deepcopy(action)
                     action_temp.delta_s = front_veh_info['dhw']
-                    action_temp.v_end = front_veh_info['v']
+                    action_temp.v_end = front_veh_info['v'] - 3
                     action_temp.T = action_temp.delta_s / (action_temp.v_end + self.ego_state.velocity) * 2
 
             print('init position:', action.ego_state_init)
