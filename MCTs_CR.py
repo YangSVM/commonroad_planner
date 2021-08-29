@@ -88,7 +88,9 @@ class MCTs_CR():
                 tmp_lanelet_id = tmp_lanelet.adj_left
                 lanelets_id_adj.append(tmp_lanelet_id)
                 tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)
-
+            else:
+                break
+       
                 # 从自车道一直往右遍历相邻车道
         tmp_lanelet = lanelet_ego
         while tmp_lanelet.adj_right is not None:
@@ -96,6 +98,8 @@ class MCTs_CR():
                 tmp_lanelet_id = tmp_lanelet.adj_right
                 lanelets_id_adj.append(tmp_lanelet_id)
                 tmp_lanelet = ln.find_lanelet_by_id(tmp_lanelet_id)
+            else:
+                break
 
                 # 2. 找自车最相近的lanelet_id
         start_lanelet_id = None
