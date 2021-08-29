@@ -139,8 +139,8 @@ class InteractiveCRPlanner:
         scenario_wrapper.sumo_cfg_file = os.path.join(interactive_scenario_path, f"{conf.scenario_name}.sumo.cfg")
         scenario_wrapper.initial_scenario = self.scenario
 
-        # self.num_of_steps = conf.simulation_steps
-        self.num_of_steps = 60
+        self.num_of_steps = conf.simulation_steps
+        # self.num_of_steps = 60
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -170,8 +170,8 @@ class InteractiveCRPlanner:
 
             # force to get a new action every 1 sceonds
             self.t_record += 0.1
-            if self.t_record > 1 and main_planner.last_semantic_action not in {1, 2}:
-                main_planner.is_new_action_needed = True
+            if self.t_record > 1 and self.last_semantic_action not in {1, 2}:
+                self.is_new_action_needed = True
                 self.t_record = 0
 
             # generate a CR planner

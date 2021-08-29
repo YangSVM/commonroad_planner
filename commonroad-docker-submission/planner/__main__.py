@@ -35,5 +35,7 @@ if __name__ == "__main__":
         try:
             solution = motion_planner_interactive(scenario_path)
             save_solution(solution, solution_dir)
-        finally :  
+        except :  
             print('cannot solve this scenario', scenario_path)
+        else:
+            print(scenario_path, 'solved already')
