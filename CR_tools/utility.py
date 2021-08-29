@@ -139,7 +139,7 @@ def smooth_cv(cv_init):
     # plt.xticks(fontsize=10)
     # plt.yticks(fontsize=10)
     # plt.show()
-    return new_cv_out
+    return new_cv
 
 
 def flatten(p_list):
