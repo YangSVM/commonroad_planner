@@ -213,9 +213,14 @@ class IntersectionPlanner():
         # --------------- 检索地图，检查冲突lanelet和冲突点 ---------------------
         # 搜索结果： cl_info: ;conf_lanelet_potentials
         potential_ego_lanelet_id_list = scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0]
+        assert len(potential_ego_lanelet_id_list) >0, 'IP wrong. ego vehicle out of lanelet network'
+        
+        lanelet_id_ego = -1
         for idx in potential_ego_lanelet_id_list:
             if idx in self.route:
                 lanelet_id_ego = idx
+        assert lanelet_id_ego !=-1, 'IP wrong. the route donot start from the ego vehicle'
+        
         # route中没有 lanelet_id_ego: 
         # cl_info: 两个属性。id: 直接冲突lanelet的ID list。conf_point：对应的冲突点坐标list。
         cl_info = conf_lanelet_checker(lanelet_network, lanelet_id_ego, self.lanelet_state, self.route)

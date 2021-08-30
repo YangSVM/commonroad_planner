@@ -2,7 +2,6 @@ from commonroad.common.file_reader import CommonRoadFileReader
 
 import os
 import numpy as np
-from utils import plot_lanelet_network, plot_lanelet
 import matplotlib.pyplot as plt
 
 

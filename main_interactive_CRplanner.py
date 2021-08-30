@@ -349,7 +349,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-21_2_I-1"
+    name_scenario = "DEU_Frankfurt-18_6_I-1"
 
     main_planner = InteractiveCRPlanner()
 
