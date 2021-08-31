@@ -255,7 +255,7 @@ class InteractiveCRPlanner:
             # lattice planning
             lattice_planner = Lattice_CRv3(self.scenario, ego_vehicle)
             next_state, _ = lattice_planner.planner(action, 3)
-            return next_state
+            return next_state[0]
 
         # check state 1:straight-going /2:incoming /3:in-intersection
         self.last_state = copy.deepcopy(self.lanelet_state)
