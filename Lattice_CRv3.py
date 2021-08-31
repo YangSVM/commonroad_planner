@@ -124,7 +124,8 @@ class Lattice_CRv3():
         # plot reference line
         # self.plot_reference_line(path_points)
         is_new_action_needed = self.is_require_decision(action,path_points)
-        print('current action finished, new action needed!')
+        if is_new_action_needed:
+            print('current action finished, new action needed!')
         
         # get ego planning init traj point
         ego_pos = self.ego_state.position
