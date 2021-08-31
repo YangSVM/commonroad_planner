@@ -62,7 +62,7 @@ class InteractiveCRPlanner:
         ln = self.scenario.lanelet_network
         # find current lanelet
         potential_ego_lanelet_id_list = \
-        self.scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0]
+            self.scenario.lanelet_network.find_lanelet_by_position([self.ego_state.position])[0]
         for idx in potential_ego_lanelet_id_list:
             if idx in self.lanelet_route:
                 lanelet_id_ego = idx
@@ -88,7 +88,6 @@ class InteractiveCRPlanner:
         if self.lanelet_state is None:
             self.lanelet_state = 1  # straighting-going        
 
-
     def check_state_again(self, current_scenario, ego_vehicle):
         # # 路口规划器，交一部分由MCTS进行决策
         if self.lanelet_state == 3:
@@ -97,7 +96,7 @@ class InteractiveCRPlanner:
             if len(dis_ego2cp) == 0 or dis_ego2cp > 150:
                 self.lanelet_state = 4
                 if not self.last_state == 4:  # 如果已经在4 不需要新的action
-                    self.is_new_action_needed = 1       # 必须进入MCTS
+                    self.is_new_action_needed = 1  # 必须进入MCTS
         return
 
     def generate_route(self, scenario, planning_problem):
@@ -171,7 +170,7 @@ class InteractiveCRPlanner:
             if step == 126:
                 print('debug')
                 pass
-                
+
             print("process:", step, "/", self.num_of_steps)
             current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
             planning_problem = list(self.planning_problem_set.planning_problem_dict.values())[0]
@@ -188,13 +187,14 @@ class InteractiveCRPlanner:
             self.t_record += 0.1
             if self.t_record > 1 and self.last_semantic_action not in {1, 2}:
                 self.is_new_action_needed = True
+                print('force to get a new action during straight-going')
                 self.t_record = 0
 
             # generate a CR planner
             next_state = self.planning(current_scenario,
-                                               planning_problem,
-                                               ego_vehicle,
-                                               sumo_sim.current_time_step)
+                                       planning_problem,
+                                       ego_vehicle,
+                                       sumo_sim.current_time_step)
 
             print('velocity:', next_state.velocity)
             print('position:', next_state.position)
@@ -224,7 +224,7 @@ class InteractiveCRPlanner:
         return simulated_scenario, ego_vehicles
 
     def planning(self, current_scenario,
-                 planning_problem:PlanningProblem,
+                 planning_problem: PlanningProblem,
                  ego_vehicle,
                  current_time_step):
 
@@ -271,10 +271,10 @@ class InteractiveCRPlanner:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, self.lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
                 self.is_new_action_needed = False
-                if semantic_action in {3, 4, 5}:
-                    action.delta_s = action.delta_s / 4
-                    action.T = action.T / 4
-                    action.v_end = action.ego_state_init[2] + (action.v_end - action.ego_state_init[2]) / 4
+                # if semantic_action in {3, 4, 5}:
+                #     action.T = action.T / 4
+                #     action.v_end = action.ego_state_init[2] + (action.v_end - action.ego_state_init[2]) / 4
+                #     action.delta_s = action.T * action.v_end
             else:
                 # update action
                 action.T -= 0.1
@@ -287,7 +287,7 @@ class InteractiveCRPlanner:
                 # too close to front car, start to car-following
                 ttc = front_veh_info['dhw'] / (self.ego_state.velocity - front_veh_info['v'])
                 if 0 < ttc < 5:
-                    print(ttc)
+                    print('ttc', ttc)
                     print('too close to front car, start to car-following')
                     action_temp = copy.deepcopy(action)
                     action_temp.delta_s = front_veh_info['dhw']
@@ -295,9 +295,11 @@ class InteractiveCRPlanner:
                     action_temp.T = action_temp.delta_s / (action_temp.v_end + self.ego_state.velocity) * 2
                     action = action_temp
 
-            print('init position:', action.ego_state_init)
-            print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
+            # print('init position:', action.ego_state_init)
+            # print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
             print('delta_s:', action.delta_s)
+            print('T_duration:', action.T)
+            print('v_end:', action.v_end)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
             next_state, self.is_new_action_needed = lattice_planner.planner(action)
             # === end of straight-going planner
@@ -317,10 +319,10 @@ class InteractiveCRPlanner:
 
         return next_state
 
-def motion_planner_interactive(scenario_path:str):
-    
+
+def motion_planner_interactive(scenario_path: str):
     main_planner = InteractiveCRPlanner()
-    paths = scenario_path.split('/') 
+    paths = scenario_path.split('/')
     name_scenario = paths[-1]
     # folder_scenarios = os.path.join(*paths[:-1])
     folder_scenarios = "/commonroad/scenarios"
@@ -339,7 +341,6 @@ def motion_planner_interactive(scenario_path:str):
         # if not feasible. reconstruct the inputs
         ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
 
-
     # create solution object for benchmark
     pps = []
     for pp_id, ego_vehicle in ego_vehicles.items():
@@ -353,6 +354,7 @@ def motion_planner_interactive(scenario_path:str):
     solution = Solution(simulated_scenario.scenario_id, pps)
 
     return solution
+
 
 if __name__ == '__main__':
 

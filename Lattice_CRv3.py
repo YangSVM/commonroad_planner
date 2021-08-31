@@ -124,6 +124,7 @@ class Lattice_CRv3():
         # plot reference line
         # self.plot_reference_line(path_points)
         is_new_action_needed = self.is_require_decision(action,path_points)
+        print('current action finished, new action needed!')
         
         # get ego planning init traj point
         ego_pos = self.ego_state.position
@@ -190,12 +191,13 @@ class Lattice_CRv3():
             # }
             # draw_object(self.scenario, draw_params=draw_parameters)
             # trajectory = np.array(traj_points)
-            # plt.plot(trajectory[0, 0], trajectory[0, 1], 'r*', zorder=30)
+            # plt.plot(trajectory[:, 0], trajectory[:, 1], 'r*', zorder=30)
             # plt.plot(self.ego_state.position[0], self.ego_state.position[1], 'b*', zorder=30)
             # plt.axis([trajectory[0, 0] - 10., trajectory[0, 0] + 10.,
             #           trajectory[0, 1] - 10., trajectory[0, 1] + 10.])
-            # # plt.show()
-            # plt.pause(0.1)
+            #
+            # plt.pause(0.01)
+            # plt.show()
 
             next_state = State()
             next_state.position = np.array([traj_points[0][0], traj_points[0][1]])
@@ -213,6 +215,7 @@ class Lattice_CRv3():
             tp_opt.y = ego_pos[1] + (ego_v * delta_t + 0.5 * tp_opt.a * delta_t * delta_t) * math.sin(ego_heading)
             tp_opt.theta = ego_heading
             traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
+            print('lattice has no solution, new action needed!')
             is_new_action_needed = 1
 
             next_state = State()
