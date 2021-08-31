@@ -267,7 +267,7 @@ class InteractiveCRPlanner:
         # send to sub planner according to current lanelet state
         if self.lanelet_state in {1, 2, 4}:
 
-            if len(self.next_states_queue)>0:
+            if len(self.next_states_queue) > 0:
                 print('use next_states_buffer')
                 next_state = self.next_states_queue.pop(0)
                 return next_state
@@ -306,7 +306,7 @@ class InteractiveCRPlanner:
             print('T_duration:', action.T)
             print('v_end:', action.v_end)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            self.next_states_queue, self.is_new_action_needed = lattice_planner.planner(action)
+            self.next_states_queue, self.is_new_action_needed = lattice_planner.planner(action, semantic_action)
             next_state = self.next_states_queue.pop(0)
             # === end of straight-going planner
 
@@ -316,7 +316,8 @@ class InteractiveCRPlanner:
             self.is_new_action_needed = 1
             semantic_action = 9
             ip = IntersectionPlanner(current_scenario, self.lanelet_route, ego_vehicle, self.lanelet_state)
-            next_state = ip.planning(current_time_step)
+            self.next_states_queue = ip.planning(current_time_step)
+            next_state = self.next_states_queue.pop(0)
             # === end of intersection planner
 
         # update the last action info
@@ -374,7 +375,7 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-12_12_I-1"
+    name_scenario = "DEU_Frankfurt-75_2_I-1"
 
     main_planner = InteractiveCRPlanner()
 
