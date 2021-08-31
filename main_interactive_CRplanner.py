@@ -2,6 +2,7 @@
 # it takes the current state of the CR scenario
 # and outputs the next state of the ego vehicle
 import copy
+from time import sleep
 
 from commonroad.planning.planning_problem import PlanningProblem
 
@@ -21,14 +22,13 @@ from sumocr.visualization.video import create_video
 from sumocr.maps.sumo_scenario import ScenarioWrapper
 from sumocr.interface.sumo_simulation import SumoSimulation
 from simulation.utility import save_solution
-# from simulation.simulations import load_sumo_configuration
+from simulation.simulations import load_sumo_configuration
 
 from route_planner import route_planner
 from Lattice_CRv3 import Lattice_CRv3
 from intersection_planner import front_vehicle_info_extraction, IntersectionPlanner
 from MCTs_CR import MCTs_CR
 from CR_tools.utility import distance_lanelet, brake
-
 from commonroad.common.solution import PlanningProblemSolution, Solution, CommonRoadSolutionWriter, VehicleType, \
     VehicleModel, CostFunction
 
@@ -86,7 +86,18 @@ class InteractiveCRPlanner:
                         self.lanelet_state = 3  # in-intersection
 
         if self.lanelet_state is None:
-            self.lanelet_state = 1  # straighting-going
+            self.lanelet_state = 1  # straighting-going        
+
+
+    def check_state_again(self, current_scenario, ego_vehicle):
+        # # 路口规划器，交一部分由MCTS进行决策
+        if self.lanelet_state == 3:
+            ip = IntersectionPlanner(current_scenario, self.lanelet_route, ego_vehicle, self.lanelet_state)
+            dis_ego2cp, _ = ip.desicion_making()
+            if len(dis_ego2cp)==0 or dis_ego2cp>150:
+                self.lanelet_state = 4
+                self.is_new_action_needed = 1       #必须进入MCTS
+        return
 
     def generate_route(self, scenario, planning_problem):
         """
@@ -156,6 +167,10 @@ class InteractiveCRPlanner:
         ego_vehicles = sumo_sim.ego_vehicles
 
         for step in range(self.num_of_steps):
+            if step == 126:
+                print('debug')
+                pass
+                
             print("process:", step, "/", self.num_of_steps)
             current_scenario = sumo_sim.commonroad_scenario_at_time_step(sumo_sim.current_time_step)
             planning_problem = list(self.planning_problem_set.planning_problem_dict.values())[0]
@@ -242,10 +257,12 @@ class InteractiveCRPlanner:
 
         # check state 1:straight-going /2:incoming /3:in-intersection
         self.check_state()
+        if self.lanelet_state == 3:
+            self.check_state_again(current_scenario, ego_vehicle)
         print("current state:", self.lanelet_state)
         # self.lanelet_state = 1
         # send to sub planner according to current lanelet state
-        if self.lanelet_state == 2 or self.lanelet_state == 1:
+        if self.lanelet_state == 2 or self.lanelet_state == 1 or self.lanelet_state==4:
             action_temp = []
             # === insert straight-going planner here
             if self.is_new_action_needed:
@@ -338,7 +355,7 @@ def motion_planner_interactive(scenario_path:str):
     return solution
 
 if __name__ == '__main__':
-    from simulation.simulations import load_sumo_configuration
+
     # 曹雷
     # folder_scenarios = os.path.abspath(
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
@@ -349,7 +366,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-18_6_I-1"
+    name_scenario = "DEU_Frankfurt-7_6_I-1"
 
     main_planner = InteractiveCRPlanner()
 

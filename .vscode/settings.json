@@ -1,4 +1,5 @@
 {
+    "python.envFile": "${workspaceFolder}/.vscode/.env",
     "python.autoComplete.extraPaths": [
         "/home/thicv/codes/commonroad/commonroad-interactive-scenarios",
         // "/home/thicv/codes/commonroad/commonroad-sumo-interface"
@@ -9,5 +10,8 @@
         "/home/thicv/codes/commonroad/commonroad-interactive-scenarios",
         // "/home/thicv/codes/commonroad/commonroad-sumo-interface"
     ],
-    "python.pythonPath": "/home/thicv/miniconda3/envs/cr37/bin/python:/home/thicv/codes/commonroad/commonroad-interactive-scenarios"
+    // "python.pythonPath": "/home/thicv/miniconda3/envs/cr37/bin/python:/home/thicv/codes/commonroad/commonroad-interactive-scenarios"
+    "python.pythonPath": "/home/thicv/miniconda3/envs/cr37/bin/python",
+    "terminal.integrated.env.osx": {"PYTHONPATH": "/home/thicv/codes/commonroad/commonroad-interactive-scenarios"},
+
 }

@@ -31,8 +31,8 @@
 1. 镜像包示例[https://gitlab.lrz.de/tum-cps/commonroad-docker-submission]
 2. build
    ```bash
-   docker build --tag yangyibin98/dummy-image:latest .
-
+   # docker build --tag yangyibin98/dummy-image:latest .
+   docker build --tag  yangyibin98/tongji-tsinghua-cr-planner:v1.0 .
    ```
 3. test
    ```bash

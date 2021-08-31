@@ -72,6 +72,7 @@ class MCTs_CR():
         ln = self.scenario.lanelet_network
         # find current lanelet
         lanelet_id_ego_list = ln.find_lanelet_by_position([ego_state.position])[0]
+        assert len(lanelet_id_ego_list)>0, 'ego vehicle run out of lanelet_network'
         lanelet_id_ego = list(set(self.lanelet_route).intersection(set(lanelet_id_ego_list)))[0]
         lanelet_ego = ln.find_lanelet_by_id(lanelet_id_ego)
 
