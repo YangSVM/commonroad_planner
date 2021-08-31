@@ -199,14 +199,17 @@ class Lattice_CRv3():
             #
             # plt.pause(0.01)
             # plt.show()
-
-            next_state = State()
-            next_state.position = np.array([traj_points[0][0], traj_points[0][1]])
-            next_state.velocity = traj_points[0][2]
-            # next_state.acceleration = traj_points[1][3]
-            next_state.acceleration = action.a_end
-            next_state.orientation = traj_points[0][4]
-            return next_state, is_new_action_needed
+            n_points = min(len(traj_points), 5)
+            next_states =[]
+            for i_point in range(n_points):
+                next_state = State()
+                next_state.position = np.array([traj_points[0][0], traj_points[0][1]])
+                next_state.velocity = traj_points[0][2]
+                # next_state.acceleration = traj_points[1][3]
+                next_state.acceleration = action.a_end
+                next_state.orientation = traj_points[0][4]
+                next_states.append(next_state)
+            return next_states, is_new_action_needed
         else:
             tp_list_init = [0,0,0,0,0,0]
             tp_opt = TrajPoint(tp_list_init)
@@ -225,7 +228,7 @@ class Lattice_CRv3():
             # next_state.acceleration = traj_points[1][3]
             next_state.acceleration = action.a_end
             next_state.orientation = traj_points[0][4]
-            return next_state, is_new_action_needed
+            return [next_state], is_new_action_needed
         # plot trajectory points
         # self.plot_traj_point(traj_points_opt)
 

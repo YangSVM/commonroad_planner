@@ -614,8 +614,8 @@ class IntersectionPlanner():
 
         # lattice planning
         lattice_planner = Lattice_CRv3(self.scenario, self.ego_vehicle)
-        next_state, is_new_action_needed = lattice_planner.planner(action)
-        return next_state, is_new_action_needed
+        next_states, is_new_action_needed = lattice_planner.planner(action)
+        return next_states, is_new_action_needed
 
     def conf_agent_checker(self, dict_lanelet_conf_points, T):
         """  找直接冲突点 conf_lanelets中最靠近冲突点的车，为冲突车辆
