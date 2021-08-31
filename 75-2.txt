@@ -1,0 +1,1506 @@
+Loading configuration ... done.
+***Starting server on port 51399 ***
+Loading net-file from '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive/DEU_Frankfurt-75_2_I-1/DEU_Frankfurt-75_2_I-1.net.xml' ... done (11ms).
+Loading done.
+Simulation version 1.9.2 started with time: 0.00
+ Retrying in 1 seconds
+process: 0 / 144
+current lanelet id: 854
+current state: 1
+goal lanelet 852
+route: [854, 853, 852]
+lanelet_id_matrix:  [[852]
+ [853]
+ [854]
+ [855]]
+自车初始状态列表: [车道，位置，速度]
+ [2, 28.90000000000014, 9.822321762341256]
+地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
+ [4, 0, 1503.7999999997323, 32.22222222222222]
+他车矩阵：[[所在车道编号，位置，速度]...]
+ [[  1.         285.5         34.81524238]
+ [  2.         533.7         37.15744829]
+ [  2.         185.7         25.00002902]
+ [  3.         371.          34.67886758]
+ [  2.         126.2         20.93855589]
+ [  1.          58.7         13.12051383]
+ [  3.         293.4         33.32497669]
+ [  2.           6.6          3.35091326]
+ [  2.         454.9         32.30499438]
+ [  3.         173.3         23.8724554 ]
+ [  3.         107.1         19.08361349]
+ [  3.          62.3         15.54159993]
+ [  3.          25.3          9.30138083]
+ [  3.           6.2          3.78081879]
+ [  3.         602.4         40.75692185]
+ [  3.         522.1         36.26621673]
+ [  1.         450.5         38.03732239]
+ [  0.         412.3         39.79184984]
+ [  2.         336.8         32.51736453]
+ [  2.         665.9         45.74582403]
+ [  3.         457.8         38.24617718]]
+可用道路信息列表：[[该车道可用起点, 可用路段终点]...]
+ [[[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]]]
+1
+[78.01160881170642, 9.822321762341256]
+[1, 0]
+1
+[127.1232176234127, 9.822321762341256]
+[0, 0]
+3
+[188.73482643511898, 14.822321762341256]
+[0, 0]
+3
+[275.34643524682525, 19.822321762341254]
+[0, 0]
+3
+[386.9580440585315, 24.822321762341254]
+[0, 0]
+3
+[523.5696528702379, 29.822321762341254]
+[0, 0]
+3
+[678.6810128316465, 32.22222222222222]
+[0, 0]
+4
+[839.7921239427576, 32.22222222222222]
+[0, 0]
+4
+[1000.9032350538687, 32.22222222222222]
+[0, 0]
+4
+[1162.0143461649798, 32.22222222222222]
+[0, 0]
+4
+[1323.1254572760909, 32.22222222222222]
+[0, 0]
+4
+[1484.236568387202, 32.22222222222222]
+[0, 0]
+4
+[1645.347679498313, 32.22222222222222]
+[0, 0]
+out:  [1, 49.111608811706276, 9.822321762341256]
+frenet lanelet id axis : [853 859]
+goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: 
+ True 1503.7999999997323
+中线lanelet id:  853
+delta_s: 49.111608811706276
+T_duration: 6
+v_end: 9.822321762341256
+velocity: 9.8056623715076
+position: [ 471389.38406548 5555482.48476242]
+process: 1 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.789035203364866
+position: [ 471389.05396031 5555481.56231435]
+process: 2 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.77249002443302
+position: [ 471388.72648678 5555480.6406895 ]
+process: 3 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.756094701278544
+position: [ 471388.40249656 5555479.719581  ]
+process: 4 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.739924392148497
+position: [ 471388.08272633 5555478.79872341]
+process: 5 / 144
+current lanelet id: 854
+current state: 1
+delta_s: 49.111608811706276
+T_duration: 5.9
+v_end: 9.822321762341256
+velocity: 9.724464054838208
+position: [ 471387.76570828 5555477.87858074]
+process: 6 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.709163065847001
+position: [ 471387.4501977  5555476.95955115]
+process: 7 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.694046775569948
+position: [ 471387.13708233 5555476.04130993]
+process: 8 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.679156178393656
+position: [ 471386.82713586 5555475.12357829]
+process: 9 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.664538653728659
+position: [ 471386.52102482 5555474.20611609]
+process: 10 / 144
+current lanelet id: 854
+current state: 1
+delta_s: 49.111608811706276
+T_duration: 5.800000000000001
+v_end: 9.822321762341256
+velocity: 9.65019702370845
+position: [ 471386.21740896 5555473.28934378]
+process: 11 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.636104399160082
+position: [ 471385.91514536 5555472.37362731]
+process: 12 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.622265473715894
+position: [ 471385.61502718 5555471.45867534]
+process: 13 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.60869797987305
+position: [ 471385.31774241 5555470.54424001]
+process: 14 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.595425066193208
+position: [ 471385.02388094 5555469.63010878]
+process: 15 / 144
+current lanelet id: 854
+current state: 1
+delta_s: 49.111608811706276
+T_duration: 5.700000000000001
+v_end: 9.822321762341256
+velocity: 9.582124256417817
+position: [ 471384.7322432  5555468.71665401]
+process: 16 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.569123804671282
+position: [ 471384.44179927 5555467.80420468]
+process: 17 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.556412193398398
+position: [ 471384.15323942 5555466.89250618]
+process: 18 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.543988331548977
+position: [ 471383.86715974 5555465.98134373]
+process: 19 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.531855567911071
+position: [ 471383.58406787 5555465.07053443]
+process: 20 / 144
+current lanelet id: 854
+current state: 1
+delta_s: 49.111608811706276
+T_duration: 5.600000000000001
+v_end: 9.822321762341256
+velocity: 9.51952105669706
+position: [ 471383.30291634 5555464.16039863]
+process: 21 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.507501225874412
+position: [ 471383.0227978  5555463.25122425]
+process: 22 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.495773245104147
+position: [ 471382.74429315 5555462.34279595]
+process: 23 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.484322217647408
+position: [ 471382.4679012  5555461.43493402]
+process: 24 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.473136760082676
+position: [ 471382.19404306 5555460.52748676]
+process: 25 / 144
+current lanelet id: 854
+current state: 1
+delta_s: 49.111608811706276
+T_duration: 5.500000000000002
+v_end: 9.822321762341256
+velocity: 9.461698250301808
+position: [ 471381.92183275 5555459.62071924]
+process: 26 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.450555019597681
+position: [ 471381.65049342 5555458.71487483]
+process: 27 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.43967800477878
+position: [ 471381.38049176 5555457.80977951]
+process: 28 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.429043823492764
+position: [ 471381.11222523 5555456.90529008]
+process: 29 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.41863177366241
+position: [ 471380.84602545 5555456.00128709]
+process: 30 / 144
+current lanelet id: 854
+current state: 1
+delta_s: 49.111608811706276
+T_duration: 5.400000000000002
+v_end: 9.822321762341256
+velocity: 9.408023956455551
+position: [ 471380.58117514 5555455.09797788]
+process: 31 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.39766343268914
+position: [ 471380.31703398 5555454.19555854]
+process: 32 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.38751988148656
+position: [ 471380.05395136 5555453.29389771]
+process: 33 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.377566752367972
+position: [ 471379.79222085 5555452.39288961]
+process: 34 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.367779466420469
+position: [ 471379.53208311 5555451.49244756]
+process: 35 / 144
+current lanelet id: 854
+current state: 1
+delta_s: 49.111608811706276
+T_duration: 5.3000000000000025
+v_end: 9.822321762341256
+velocity: 9.395712521280743
+position: [ 471379.27244805 5555450.59091081]
+process: 36 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.423739538922968
+position: [ 471379.01218687 5555449.68664744]
+process: 37 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.451847149234357
+position: [ 471378.75142331 5555448.7796079 ]
+process: 38 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.480022422903238
+position: [ 471378.49026104 5555447.86975485]
+process: 39 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.508252654271075
+position: [ 471378.22878416 5555446.957058  ]
+process: 40 / 144
+current lanelet id: 854
+current state: 1
+delta_s: 49.111608811706276
+T_duration: 5.200000000000003
+v_end: 9.822321762341256
+velocity: 9.534010997053933
+position: [ 471377.96682783 5555446.04168606]
+process: 41 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.559800719157701
+position: [ 471377.70421496 5555445.12382542]
+process: 42 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.585612532656382
+position: [ 471377.4409823  5555444.20345842]
+process: 43 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.611437367623529
+position: [ 471377.17715399 5555443.28057637]
+process: 44 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.637266355743854
+position: [ 471376.91274143 5555442.35517515]
+process: 45 / 144
+current lanelet id: 854
+current state: 1
+delta_s: 49.111608811706276
+T_duration: 5.100000000000003
+v_end: 9.822321762341256
+current action finished, new action needed!
+velocity: 9.660970156491642
+position: [ 471376.64770389 5555441.42737248]
+process: 46 / 144
+current lanelet id: 854
+current state: 1
+use next_states_buffer
+velocity: 9.68463669711392
+position: [ 471376.38196671 5555440.49731036]
+process: 47 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.708263014255529
+position: [ 471376.11547498 5555439.56500454]
+process: 48 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.731846442493874
+position: [ 471375.84817044 5555438.63047602]
+process: 49 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.755384646595509
+position: [ 471375.57999008 5555437.69374749]
+process: 50 / 144
+current lanelet id: 853
+current state: 1
+goal lanelet 852
+route: [853, 852]
+lanelet_id_matrix:  [[852]
+ [853]
+ [854]
+ [855]]
+自车初始状态列表: [车道，位置，速度]
+ [1, 76.69999999999992, 9.755384646595509]
+地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
+ [4, 0, 1503.7999999997323, 32.22222222222222]
+他车矩阵：[[所在车道编号，位置，速度]...]
+ [[1.00000000e+00 4.60200000e+02 3.49374407e+01]
+ [2.00000000e+00 7.19500000e+02 3.72057663e+01]
+ [2.00000000e+00 3.28900000e+02 3.20618692e+01]
+ [3.00000000e+00 5.41500000e+02 3.36379208e+01]
+ [2.00000000e+00 2.53400000e+02 2.97308510e+01]
+ [1.00000000e+00 1.43300000e+02 2.06585571e+01]
+ [3.00000000e+00 4.60100000e+02 3.33070536e+01]
+ [1.00000000e+00 4.28000000e+01 1.09794241e+01]
+ [2.00000000e+00 1.79000000e+01 7.67130510e+00]
+ [2.00000000e+00 6.16400000e+02 3.23299800e+01]
+ [2.00000000e+00 3.50000000e+00 1.52007981e+00]
+ [3.00000000e+00 3.13500000e+02 3.20304778e+01]
+ [3.00000000e+00 2.25500000e+02 2.79076570e+01]
+ [2.00000000e+00 1.66900000e+02 2.60336733e+01]
+ [3.00000000e+00 9.82000000e+01 1.96114136e+01]
+ [3.00000000e+00 5.05000000e+01 1.38416939e+01]
+ [3.00000000e+00 1.45000000e+01 5.79653400e+00]
+ [3.00000000e+00 8.06400000e+02 4.07859814e+01]
+ [3.00000000e+00 2.80000000e+00 5.25726511e-01]
+ [3.00000000e+00 7.03700000e+02 3.62646472e+01]
+ [1.00000000e+00 6.40400000e+02 3.79850301e+01]
+ [0.00000000e+00 6.11100000e+02 3.97275518e+01]
+ [2.00000000e+00 4.99500000e+02 3.24999516e+01]
+ [2.00000000e+00 8.94600000e+02 4.57002777e+01]
+ [2.00000000e+00 6.47600000e+02 3.83025707e+01]]
+可用道路信息列表：[[该车道可用起点, 可用路段终点]...]
+ [[[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]]]
+1
+[125.47692323297747, 9.755384646595509]
+[0, 0]
+3
+[186.753846465955, 14.755384646595509]
+[0, 0]
+3
+[273.03076969893254, 19.75538464659551]
+[0, 0]
+3
+[384.3076929319101, 24.75538464659551]
+[0, 0]
+3
+[520.5846161648876, 29.75538464659551]
+[0, 0]
+3
+[675.528633336932, 32.22222222222222]
+[0, 0]
+4
+[836.6397444480431, 32.22222222222222]
+[0, 0]
+4
+[997.7508555591542, 32.22222222222222]
+[0, 0]
+4
+[1158.8619666702652, 32.22222222222222]
+[0, 0]
+4
+[1319.9730777813763, 32.22222222222222]
+[0, 0]
+4
+[1481.0841888924874, 32.22222222222222]
+[0, 0]
+4
+[1642.1953000035985, 32.22222222222222]
+[0, 0]
+out:  [0, 48.776923232977545, 9.755384646595509]
+frenet lanelet id axis : [852 858]
+goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: 
+ True 1503.7999999997323
+中线lanelet id:  852
+delta_s: 48.776923232977545
+T_duration: 6
+v_end: 9.755384646595509
+velocity: 9.739339905895665
+position: [ 471375.31171978 5555436.75666144]
+process: 51 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.72385598732122
+position: [ 471375.04471824 5555435.82085082]
+process: 52 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.70888937714441
+position: [ 471374.77971104 5555434.88605567]
+process: 53 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.694409453859391
+position: [ 471374.51732312 5555433.95205112]
+process: 54 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.68039196908436
+position: [ 471374.25808794 5555433.01864521]
+process: 55 / 144
+current lanelet id: 853
+current state: 1
+delta_s: 48.776923232977545
+T_duration: 5.9
+v_end: 9.755384646595509
+velocity: 9.665426152516028
+position: [ 471374.00090281 5555432.08617852]
+process: 56 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.650981134220894
+position: [ 471373.74479115 5555431.15493851]
+process: 57 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.63700576183619
+position: [ 471373.49034417 5555430.22471504]
+process: 58 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.623458332455533
+position: [ 471373.23806543 5555429.29532689]
+process: 59 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.610302077898291
+position: [ 471372.98838199 5555428.36662039]
+process: 60 / 144
+current lanelet id: 853
+current state: 1
+delta_s: 48.776923232977545
+T_duration: 5.800000000000001
+v_end: 9.755384646595509
+velocity: 9.630849327542863
+position: [ 471372.73991045 5555427.43720867]
+process: 61 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.651669891869725
+position: [ 471372.49122749 5555426.50570899]
+process: 62 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.67273629749784
+position: [ 471372.24262128 5555425.57202107]
+process: 63 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.69402318318898
+position: [ 471371.99434104 5555424.63605521]
+process: 64 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.715506335409872
+position: [ 471371.74660384 5555423.6977333 ]
+process: 65 / 144
+current lanelet id: 853
+current state: 1
+delta_s: 48.776923232977545
+T_duration: 5.700000000000001
+v_end: 9.755384646595509
+velocity: 9.734585759307897
+position: [ 471371.49899814 5555422.75728328]
+process: 66 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.753855809085843
+position: [ 471371.25112059 5555421.81491798]
+process: 67 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.773291931910286
+position: [ 471371.00316296 5555420.87057243]
+process: 68 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.792870725162624
+position: [ 471370.75528536 5555419.92418901]
+process: 69 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.812569468866998
+position: [ 471370.5076216  5555418.97571957]
+process: 70 / 144
+current lanelet id: 853
+current state: 1
+delta_s: 48.776923232977545
+T_duration: 5.600000000000001
+v_end: 9.755384646595509
+velocity: 9.830245960976816
+position: [ 471370.25990009 5555418.02533842]
+process: 71 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.848014308483915
+position: [ 471370.01183357 5555417.07321098]
+process: 72 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.865856119589175
+position: [ 471369.76351049 5555416.11931027]
+process: 73 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.883753577539151
+position: [ 471369.51499713 5555415.16361243]
+process: 74 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.901689325334017
+position: [ 471369.26634004 5555414.2061007 ]
+process: 75 / 144
+current lanelet id: 853
+current state: 1
+delta_s: 48.776923232977545
+T_duration: 5.500000000000002
+v_end: 9.755384646595509
+velocity: 9.918028328642551
+position: [ 471369.01741727 5555413.24689233]
+process: 76 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.934350384423203
+position: [ 471368.76806672 5555412.2861024 ]
+process: 77 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.950646322570575
+position: [ 471368.51826783 5555411.32374385]
+process: 78 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.96690739453285
+position: [ 471368.26798999 5555410.3598277 ]
+process: 79 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.983125315659642
+position: [ 471368.01719158 5555409.3943689 ]
+process: 80 / 144
+current lanelet id: 853
+current state: 1
+delta_s: 48.776923232977545
+T_duration: 5.400000000000002
+v_end: 9.755384646595509
+velocity: 9.99819365514265
+position: [ 471367.76590607 5555408.42742555]
+process: 81 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 10.013133375784289
+position: [ 471367.51410276 5555407.45906064]
+process: 82 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 10.027947127827986
+position: [ 471367.26164961 5555406.48932773]
+process: 83 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 10.042638254381917
+position: [ 471367.00841784 5555405.51827317]
+process: 84 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 10.05721075867567
+position: [ 471366.7542787  5555404.54594331]
+process: 85 / 144
+current lanelet id: 853
+current state: 1
+delta_s: 48.776923232977545
+T_duration: 5.3000000000000025
+v_end: 9.755384646595509
+velocity: 10.04267352384864
+position: [ 471366.49978734 5555403.57370896]
+process: 86 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 10.02792449998691
+position: [ 471366.24542781 5555402.60294782]
+process: 87 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 10.012979621285632
+position: [ 471365.99098445 5555401.63374374]
+process: 88 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.99785568075698
+position: [ 471365.73625429 5555400.66616977]
+process: 89 / 144
+current lanelet id: 853
+current state: 1
+use next_states_buffer
+velocity: 9.982570040576414
+position: [ 471365.48104906 5555399.70029369]
+process: 90 / 144
+current lanelet id: 852
+current state: 1
+no front vehicle
+delta_s: 48.776923232977545
+T_duration: 5.200000000000003
+v_end: 9.755384646595509
+velocity: 9.959435863566863
+position: [ 471365.22577691 5555398.7364214 ]
+process: 91 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.935985857640299
+position: [ 471364.97073028 5555397.77489871]
+process: 92 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.912255926863605
+position: [ 471364.7155803  5555396.81584457]
+process: 93 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.888282994015375
+position: [ 471364.46002792 5555395.85936661]
+process: 94 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.864104073451966
+position: [ 471364.20380788 5555394.90556032]
+process: 95 / 144
+current lanelet id: 852
+current state: 1
+no front vehicle
+delta_s: 48.776923232977545
+T_duration: 5.100000000000003
+v_end: 9.755384646595509
+current action finished, new action needed!
+velocity: 9.842731853439382
+position: [ 471363.94736347 5555393.95417186]
+process: 96 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.820961093720086
+position: [ 471363.69098353 5555393.0049998 ]
+process: 97 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.798845793936806
+position: [ 471363.43423349 5555392.05820161]
+process: 98 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.776441642236232
+position: [ 471363.17672527 5555391.11391698]
+process: 99 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.75380414459944
+position: [ 471362.91811863 5555390.17226837]
+process: 100 / 144
+current lanelet id: 852
+current state: 1
+goal lanelet 852
+route: [852]
+lanelet_id_matrix:  [[852]
+ [853]
+ [854]
+ [855]]
+自车初始状态列表: [车道，位置，速度]
+ [0, 125.69999999999713, 9.75380414459944]
+地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
+ [4, 0, 1503.7999999997323, 32.22222222222222]
+他车矩阵：[[所在车道编号，位置，速度]...]
+ [[1.00000000e+00 6.34700000e+02 3.49250157e+01]
+ [2.00000000e+00 9.05300000e+02 3.70912627e+01]
+ [2.00000000e+00 5.04300000e+02 3.68841925e+01]
+ [3.00000000e+00 7.07900000e+02 3.30087928e+01]
+ [2.00000000e+00 4.15400000e+02 3.29678775e+01]
+ [1.00000000e+00 2.66900000e+02 2.84700497e+01]
+ [3.00000000e+00 6.26900000e+02 3.33769335e+01]
+ [0.00000000e+00 1.02900000e+02 1.09279920e+01]
+ [2.00000000e+00 8.14000000e+01 1.75020038e+01]
+ [2.00000000e+00 7.78000000e+02 3.23485258e+01]
+ [2.00000000e+00 3.35000000e+01 1.02360544e+01]
+ [3.00000000e+00 4.95000000e+02 4.02879009e+01]
+ [2.00000000e+00 8.70000000e+00 4.28452276e+00]
+ [3.00000000e+00 3.84200000e+02 3.38243474e+01]
+ [2.00000000e+00 3.23700000e+02 3.63601163e+01]
+ [3.00000000e+00 2.21200000e+02 2.97441868e+01]
+ [2.00000000e+00 1.48100000e+02 2.49018922e+01]
+ [3.00000000e+00 6.06000000e+01 1.26204327e+01]
+ [3.00000000e+00 1.01050000e+03 4.07436800e+01]
+ [3.00000000e+00 2.38000000e+01 7.65061889e+00]
+ [3.00000000e+00 6.20000000e+00 3.65242451e+00]
+ [3.00000000e+00 8.85300000e+02 3.63040187e+01]
+ [1.00000000e+00 8.30300000e+02 3.80011237e+01]
+ [0.00000000e+00 8.09900000e+02 3.97501287e+01]
+ [2.00000000e+00 6.62300000e+02 3.25751455e+01]
+ [2.00000000e+00 1.12350000e+03 4.57030412e+01]
+ [2.00000000e+00 8.38900000e+02 3.82809012e+01]]
+可用道路信息列表：[[该车道可用起点, 可用路段终点]...]
+ [[[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]]]
+3
+[186.96902072299434, 14.75380414459944]
+[0, 0]
+3
+[273.23804144599154, 19.753804144599442]
+[0, 0]
+3
+[384.50706216898874, 24.753804144599442]
+[0, 0]
+3
+[520.7760828919859, 29.753804144599442]
+[0, 0]
+3
+[675.7161488090401, 32.22222222222222]
+[0, 0]
+4
+[836.8272599201512, 32.22222222222222]
+[0, 0]
+4
+[997.9383710312622, 32.22222222222222]
+[0, 0]
+4
+[1159.0494821423733, 32.22222222222222]
+[0, 0]
+4
+[1320.1605932534844, 32.22222222222222]
+[0, 0]
+4
+[1481.2717043645955, 32.22222222222222]
+[0, 0]
+4
+[1642.3828154757066, 32.22222222222222]
+[0, 0]
+out:  [0, 61.269020722997205, 14.75380414459944]
+frenet lanelet id axis : [852 858]
+goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: 
+ True 1503.7999999997323
+中线lanelet id:  852
+no front vehicle
+delta_s: 61.269020722997205
+T_duration: 6
+v_end: 14.75380414459944
+velocity: 9.821005723248218
+position: [ 471362.65790881 5555389.22875015]
+process: 101 / 144
+force to get a new action during straight-going
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.887939739023642
+position: [ 471362.39556923 5555388.27886138]
+process: 102 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 9.954620500246033
+position: [ 471362.13077467 5555387.32272015]
+process: 103 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.02106593089382
+position: [ 471361.86320913 5555386.3604402 ]
+process: 104 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.087297012307697
+position: [ 471361.59256816 5555385.39213111]
+process: 105 / 144
+current lanelet id: 852
+current state: 1
+goal lanelet 852
+route: [852]
+lanelet_id_matrix:  [[852]
+ [853]
+ [854]
+ [855]]
+自车初始状态列表: [车道，位置，速度]
+ [0, 130.59999999999687, 10.087297012307697]
+地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
+ [4, 0, 1503.7999999997323, 32.22222222222222]
+他车矩阵：[[所在车道编号，位置，速度]...]
+ [[1.00000000e+00 6.52200000e+02 3.49561907e+01]
+ [2.00000000e+00 9.23900000e+02 3.71357336e+01]
+ [2.00000000e+00 5.22700000e+02 3.69041929e+01]
+ [3.00000000e+00 7.24500000e+02 3.30064679e+01]
+ [2.00000000e+00 4.31900000e+02 3.29557769e+01]
+ [1.00000000e+00 2.81300000e+02 2.92513745e+01]
+ [3.00000000e+00 6.43600000e+02 3.33338835e+01]
+ [0.00000000e+00 1.08400000e+02 1.09549007e+01]
+ [2.00000000e+00 9.05000000e+01 1.85527848e+01]
+ [2.00000000e+00 7.94100000e+02 3.23407523e+01]
+ [2.00000000e+00 3.89000000e+01 1.11311095e+01]
+ [3.00000000e+00 5.15400000e+02 4.09437651e+01]
+ [2.00000000e+00 1.11000000e+01 5.02390974e+00]
+ [3.00000000e+00 4.01200000e+02 3.38860449e+01]
+ [2.00000000e+00 2.80000000e+00 1.42558714e+00]
+ [2.00000000e+00 3.42100000e+02 3.67754045e+01]
+ [3.00000000e+00 2.36200000e+02 3.01326289e+01]
+ [2.00000000e+00 1.60900000e+02 2.60209899e+01]
+ [3.00000000e+00 6.71000000e+01 1.33253308e+01]
+ [3.00000000e+00 1.03080000e+03 4.07672556e+01]
+ [3.00000000e+00 2.78000000e+01 8.37239557e+00]
+ [3.00000000e+00 8.30000000e+00 4.64972133e+00]
+ [3.00000000e+00 9.03500000e+02 3.63285111e+01]
+ [1.00000000e+00 8.49300000e+02 3.79212226e+01]
+ [0.00000000e+00 8.29800000e+02 3.97877094e+01]
+ [2.00000000e+00 6.78500000e+02 3.25225023e+01]
+ [2.00000000e+00 1.14640000e+03 4.57221917e+01]
+ [2.00000000e+00 8.58000000e+02 3.82043936e+01]]
+可用道路信息列表：[[该车道可用起点, 可用路段终点]...]
+ [[[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]]]
+3
+[193.53648506153536, 15.087297012307697]
+[0, 0]
+3
+[281.4729701230739, 20.087297012307697]
+[0, 0]
+3
+[394.4094551846124, 25.087297012307697]
+[0, 0]
+3
+[532.3459402461509, 30.087297012307697]
+[0, 0]
+3
+[688.1197383324758, 32.22222222222222]
+[0, 0]
+4
+[849.2308494435869, 32.22222222222222]
+[0, 0]
+4
+[1010.341960554698, 32.22222222222222]
+[0, 0]
+4
+[1171.4530716658091, 32.22222222222222]
+[0, 0]
+4
+[1332.5641827769202, 32.22222222222222]
+[0, 0]
+4
+[1493.6752938880313, 32.22222222222222]
+[0, 0]
+4
+[1654.7864049991424, 32.22222222222222]
+[0, 0]
+out:  [0, 62.93648506153849, 15.087297012307697]
+frenet lanelet id axis : [852 858]
+goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: 
+ True 1503.7999999997323
+中线lanelet id:  852
+no front vehicle
+delta_s: 62.93648506153849
+T_duration: 6
+v_end: 15.087297012307697
+velocity: 10.154429954310205
+position: [ 471361.31931907 5555384.41762746]
+process: 106 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.221276271740003
+position: [ 471361.0438685  5555383.43678322]
+process: 107 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.287853315714484
+position: [ 471360.76584567 5555382.44973265]
+process: 108 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.354182751606595
+position: [ 471360.48489488 5555381.45660378]
+process: 109 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.420289820092847
+position: [ 471360.20067394 5555380.45751979]
+process: 110 / 144
+current lanelet id: 852
+current state: 1
+no front vehicle
+delta_s: 62.93648506153849
+T_duration: 5.9
+v_end: 15.087297012307697
+velocity: 10.482826469474771
+position: [ 471359.91377083 5555379.45251105]
+process: 111 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.545050691699062
+position: [ 471359.62469643 5555378.44163493]
+process: 112 / 144
+force to get a new action during straight-going
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.606985500710573
+position: [ 471359.33301882 5555377.42504713]
+process: 113 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.66865917126512
+position: [ 471359.03832687 5555376.40289566]
+process: 114 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.730104150005173
+position: [ 471358.74023114 5555375.3753207 ]
+process: 115 / 144
+current lanelet id: 852
+current state: 1
+goal lanelet 852
+route: [852]
+lanelet_id_matrix:  [[852]
+ [853]
+ [854]
+ [855]]
+自车初始状态列表: [车道，位置，速度]
+ [0, 140.99999999999628, 10.730104150005173]
+地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
+ [4, 0, 1503.7999999997323, 32.22222222222222]
+他车矩阵：[[所在车道编号，位置，速度]...]
+ [[1.00000000e+00 6.87100000e+02 3.49321546e+01]
+ [2.00000000e+00 9.61100000e+02 3.71837680e+01]
+ [2.00000000e+00 5.59700000e+02 3.68379896e+01]
+ [3.00000000e+00 7.57500000e+02 3.28894450e+01]
+ [2.00000000e+00 4.64800000e+02 3.29228231e+01]
+ [1.00000000e+00 3.11400000e+02 3.07771692e+01]
+ [3.00000000e+00 6.76900000e+02 3.34140339e+01]
+ [0.00000000e+00 1.19400000e+02 1.11092703e+01]
+ [2.00000000e+00 1.10100000e+02 2.04287010e+01]
+ [2.00000000e+00 8.26400000e+02 3.23415744e+01]
+ [2.00000000e+00 5.10000000e+01 1.29086311e+01]
+ [3.00000000e+00 5.56100000e+02 4.03815596e+01]
+ [2.00000000e+00 1.70000000e+01 6.64382550e+00]
+ [3.00000000e+00 4.35000000e+02 3.37847234e+01]
+ [2.00000000e+00 3.50000000e+00 1.64697215e+00]
+ [2.00000000e+00 3.78800000e+02 3.64721123e+01]
+ [3.00000000e+00 2.66400000e+02 3.01226973e+01]
+ [2.00000000e+00 1.88200000e+02 2.82082435e+01]
+ [3.00000000e+00 8.12000000e+01 1.48062365e+01]
+ [3.00000000e+00 1.07170000e+03 4.08451415e+01]
+ [3.00000000e+00 3.70000000e+01 9.86822568e+00]
+ [3.00000000e+00 1.40000000e+01 6.58787006e+00]
+ [3.00000000e+00 2.80000000e+00 5.10986262e-01]
+ [3.00000000e+00 9.39900000e+02 3.63127531e+01]
+ [1.00000000e+00 8.87300000e+02 3.80048731e+01]
+ [0.00000000e+00 8.69500000e+02 3.97391063e+01]
+ [2.00000000e+00 7.11100000e+02 3.24859778e+01]
+ [2.00000000e+00 1.19210000e+03 4.58088250e+01]
+ [2.00000000e+00 8.96200000e+02 3.82201519e+01]]
+可用道路信息列表：[[该车道可用起点, 可用路段终点]...]
+ [[[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]]]
+3
+[207.15052075002214, 15.730104150005173]
+[0, 0]
+3
+[298.301041500048, 20.730104150005175]
+[0, 0]
+3
+[414.45156225007383, 25.730104150005175]
+[0, 0]
+3
+[555.6020830000997, 30.730104150005175]
+[0, 0]
+3
+[712.9828989306682, 32.22222222222222]
+[0, 0]
+4
+[874.0940100417793, 32.22222222222222]
+[0, 0]
+4
+[1035.2051211528903, 32.22222222222222]
+[0, 0]
+4
+[1196.3162322640014, 32.22222222222222]
+[0, 0]
+4
+[1357.4273433751125, 32.22222222222222]
+[0, 0]
+4
+[1518.5384544862236, 32.22222222222222]
+[0, 0]
+out:  [0, 66.15052075002586, 15.730104150005173]
+frenet lanelet id axis : [852 858]
+goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: 
+ True 1503.7999999997323
+中线lanelet id:  852
+no front vehicle
+delta_s: 66.15052075002586
+T_duration: 6
+v_end: 15.730104150005173
+velocity: 10.797095788654401
+position: [ 471358.43929178 5555374.34188356]
+process: 116 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.863793798191642
+position: [ 471358.1360154  5555373.30216532]
+process: 117 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.930219819530397
+position: [ 471357.82996225 5555372.25632409]
+process: 118 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 10.996400864807802
+position: [ 471357.52071123 5555371.20451147]
+process: 119 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 11.062368244804945
+position: [ 471357.2078609  5555370.14687195]
+process: 120 / 144
+current lanelet id: 852
+current state: 1
+no front vehicle
+delta_s: 66.15052075002586
+T_duration: 5.9
+v_end: 15.730104150005173
+velocity: 11.158758088144275
+position: [ 471356.89163348 5555369.08176438]
+process: 121 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 11.25488297402799
+position: [ 471356.57220994 5555368.00756612]
+process: 122 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 11.350758512592922
+position: [ 471356.24915128 5555366.92443397]
+process: 123 / 144
+force to get a new action during straight-going
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 11.446405989938626
+position: [ 471355.92203253 5555365.83252089]
+process: 124 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 11.541851534681365
+position: [ 471355.59044283 5555364.73197479]
+process: 125 / 144
+current lanelet id: 852
+current state: 1
+goal lanelet 852
+route: [852]
+lanelet_id_matrix:  [[852]
+ [853]
+ [854]
+ [855]]
+自车初始状态列表: [车道，位置，速度]
+ [0, 152.09999999999565, 11.541851534681365]
+地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
+ [4, 0, 1503.7999999997323, 32.22222222222222]
+他车矩阵：[[所在车道编号，位置，速度]...]
+ [[1.00000000e+00 7.22000000e+02 3.49334728e+01]
+ [2.00000000e+00 9.98200000e+02 3.71450182e+01]
+ [2.00000000e+00 5.96600000e+02 3.68555541e+01]
+ [3.00000000e+00 7.90400000e+02 3.28436559e+01]
+ [2.00000000e+00 4.97800000e+02 3.29813883e+01]
+ [1.00000000e+00 3.43000000e+02 3.23058270e+01]
+ [3.00000000e+00 7.10200000e+02 3.33539942e+01]
+ [0.00000000e+00 1.30700000e+02 1.14896053e+01]
+ [2.00000000e+00 1.31500000e+02 2.23148502e+01]
+ [2.00000000e+00 8.58700000e+02 3.22993801e+01]
+ [2.00000000e+00 6.50000000e+01 1.48451881e+01]
+ [3.00000000e+00 5.96000000e+02 3.96537562e+01]
+ [2.00000000e+00 2.45000000e+01 8.25368700e+00]
+ [3.00000000e+00 4.68800000e+02 3.38142060e+01]
+ [2.00000000e+00 6.30000000e+00 3.80642982e+00]
+ [2.00000000e+00 4.15000000e+02 3.60974091e+01]
+ [3.00000000e+00 2.96600000e+02 3.01297594e+01]
+ [2.00000000e+00 2.17500000e+02 3.02567348e+01]
+ [3.00000000e+00 9.68000000e+01 1.61959604e+01]
+ [3.00000000e+00 1.11250000e+03 4.08593810e+01]
+ [3.00000000e+00 4.76000000e+01 1.11499349e+01]
+ [3.00000000e+00 2.16000000e+01 8.42339261e+00]
+ [3.00000000e+00 4.60000000e+00 2.76545430e+00]
+ [3.00000000e+00 9.76200000e+02 3.62894757e+01]
+ [1.00000000e+00 9.25300000e+02 3.79465764e+01]
+ [0.00000000e+00 9.09300000e+02 3.98193511e+01]
+ [2.00000000e+00 7.43700000e+02 3.25432053e+01]
+ [2.00000000e+00 1.23780000e+03 4.56888986e+01]
+ [2.00000000e+00 9.34500000e+02 3.82910178e+01]]
+可用道路信息列表：[[该车道可用起点, 可用路段终点]...]
+ [[[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]]]
+3
+[222.30925767340247, 16.541851534681363]
+[0, 0]
+3
+[317.5185153468093, 21.541851534681363]
+[0, 0]
+3
+[437.7277730202161, 26.541851534681363]
+[0, 0]
+3
+[582.9370306936229, 31.541851534681363]
+[0, 0]
+3
+[742.3472150858818, 32.22222222222222]
+[0, 0]
+4
+[903.4583261969929, 32.22222222222222]
+[0, 0]
+4
+[1064.569437308104, 32.22222222222222]
+[0, 0]
+4
+[1225.680548419215, 32.22222222222222]
+[0, 0]
+4
+[1386.7916595303261, 32.22222222222222]
+[0, 0]
+4
+[1547.9027706414372, 32.22222222222222]
+[0, 0]
+out:  [0, 70.20925767340682, 16.541851534681363]
+frenet lanelet id axis : [852 858]
+goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: 
+ True 1503.7999999997323
+中线lanelet id:  852
+no front vehicle
+delta_s: 70.20925767340682
+T_duration: 6
+v_end: 16.541851534681363
+velocity: 11.642123514777012
+position: [ 471355.25495464 5555363.62238198]
+debug
+process: 126 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 11.742151643332905
+position: [ 471354.91610645 5555362.50334334]
+process: 127 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 11.841950624189744
+position: [ 471354.57345677 5555361.37501702]
+process: 128 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 11.941540667662244
+position: [ 471354.22657587 5555360.2375577 ]
+process: 129 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 12.04094668857258
+position: [ 471353.87504779 5555359.09111513]
+process: 130 / 144
+current lanelet id: 852
+current state: 1
+no front vehicle
+delta_s: 70.20925767340682
+T_duration: 5.9
+v_end: 16.541851534681363
+velocity: 12.134384862627295
+position: [ 471353.51959679 5555357.93578963]
+process: 131 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 12.22757199889753
+position: [ 471353.16087568 5555356.77170777]
+process: 132 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 12.32052739568846
+position: [ 471352.79838369 5555355.59904965]
+process: 133 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 12.413276682957902
+position: [ 471352.43163867 5555354.41798883]
+process: 134 / 144
+force to get a new action during straight-going
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 12.505850670215374
+position: [ 471352.0601786  5555353.22869166]
+process: 135 / 144
+current lanelet id: 852
+current state: 1
+goal lanelet 852
+route: [852]
+lanelet_id_matrix:  [[852]
+ [853]
+ [854]
+ [855]]
+自车初始状态列表: [车道，位置，速度]
+ [0, 164.09999999999496, 12.505850670215374]
+地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]
+ [4, 0, 1503.7999999997323, 32.22222222222222]
+他车矩阵：[[所在车道编号，位置，速度]...]
+ [[1.00000000e+00 7.57000000e+02 3.49297003e+01]
+ [2.00000000e+00 1.03540000e+03 3.70931790e+01]
+ [2.00000000e+00 6.33400000e+02 3.68730492e+01]
+ [3.00000000e+00 8.23200000e+02 3.27884118e+01]
+ [2.00000000e+00 5.30700000e+02 3.29302104e+01]
+ [1.00000000e+00 3.76200000e+02 3.37262302e+01]
+ [3.00000000e+00 7.43700000e+02 3.32770845e+01]
+ [0.00000000e+00 1.42600000e+02 1.22298736e+01]
+ [2.00000000e+00 1.55000000e+02 2.43804764e+01]
+ [2.00000000e+00 8.91000000e+02 3.22718746e+01]
+ [2.00000000e+00 8.07000000e+01 1.65914361e+01]
+ [3.00000000e+00 6.35400000e+02 3.91079601e+01]
+ [2.00000000e+00 3.37000000e+01 9.84469845e+00]
+ [3.00000000e+00 5.02600000e+02 3.38561533e+01]
+ [2.00000000e+00 1.12000000e+01 5.79139056e+00]
+ [2.00000000e+00 2.80000000e+00 1.95798199e+00]
+ [2.00000000e+00 4.50900000e+02 3.57923417e+01]
+ [3.00000000e+00 3.26800000e+02 3.02356925e+01]
+ [2.00000000e+00 2.48900000e+02 3.24612543e+01]
+ [3.00000000e+00 1.13700000e+02 1.75260737e+01]
+ [3.00000000e+00 1.15330000e+03 4.08229922e+01]
+ [2.00000000e+00 5.96000000e+01 1.27229207e+01]
+ [3.00000000e+00 3.11000000e+01 1.04275740e+01]
+ [3.00000000e+00 8.30000000e+00 4.50822813e+00]
+ [3.00000000e+00 1.01250000e+03 3.63037440e+01]
+ [1.00000000e+00 9.63300000e+02 3.80259380e+01]
+ [0.00000000e+00 9.49100000e+02 3.96962509e+01]
+ [2.00000000e+00 7.76200000e+02 3.25714505e+01]
+ [2.00000000e+00 1.28360000e+03 4.58204043e+01]
+ [2.00000000e+00 9.72800000e+02 3.82569410e+01]]
+可用道路信息列表：[[该车道可用起点, 可用路段终点]...]
+ [[[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]], [[0.0, 42044.37454018674]]]
+3
+[239.12925335107184, 17.505850670215374]
+[0, 0]
+3
+[339.1585067021487, 22.505850670215374]
+[0, 0]
+3
+[464.1877600532256, 27.505850670215374]
+[0, 0]
+3
+[613.5079422843195, 32.22222222222222]
+[0, 0]
+4
+[774.6190533954306, 32.22222222222222]
+[0, 0]
+4
+[935.7301645065417, 32.22222222222222]
+[0, 0]
+4
+[1096.8412756176529, 32.22222222222222]
+[0, 0]
+4
+[1257.952386728764, 32.22222222222222]
+[0, 0]
+4
+[1419.063497839875, 32.22222222222222]Simulation ended at time: 29.40
+Reason: TraCI requested termination.
+Performance: 
+ Duration: 141.38s
+ TraCI-Duration: 140.50s
+ Real time factor: 0.207949
+ UPS: 79.459050
+Vehicles: 
+ Inserted: 59 (Loaded: 467)
+ Running: 56
+ Waiting: 398
+
+
+[0, 0]
+4
+[1580.174608950986, 32.22222222222222]
+[0, 0]
+out:  [0, 75.02925335107687, 17.505850670215374]
+frenet lanelet id axis : [852 858]
+goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: 
+ True 1503.7999999997323
+中线lanelet id:  852
+no front vehicle
+delta_s: 75.02925335107687
+T_duration: 6
+v_end: 17.505850670215374
+velocity: 12.606011826328592
+position: [ 471351.68462592 5555352.03057255]
+process: 136 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 12.705957749582899
+position: [ 471351.3055749 5555350.8230692]
+process: 137 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 12.805704795379686
+position: [ 471350.92253952 5555349.60635218]
+process: 138 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 12.9052750716819
+position: [ 471350.53505189 5555348.38058997]
+process: 139 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 13.00469544734966
+position: [ 471350.14266235 5555347.14594442]
+process: 140 / 144
+current lanelet id: 852
+current state: 1
+no front vehicle
+delta_s: 75.02925335107687
+T_duration: 5.9
+v_end: 17.505850670215374
+velocity: 13.098041871152875
+position: [ 471349.74616165 5555345.90249161]
+process: 141 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 13.191177836759573
+position: [ 471349.34626297 5555344.65033617]
+process: 142 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 13.284123165563605
+position: [ 471348.94242999 5555343.38967096]
+process: 143 / 144
+current lanelet id: 852
+current state: 1
+use next_states_buffer
+velocity: 13.376904055179692
+position: [ 471348.53414956 5555342.12068072]
+Feasible? True
+Trajectory saved to solution file.

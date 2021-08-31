@@ -190,13 +190,14 @@ class Lattice_CRv3():
             #          'lanelet_network': {'lanelet': {'show_label': True, }, },
             #          },
             # }
+            # plt.clf()
             # draw_object(self.scenario, draw_params=draw_parameters)
             # trajectory = np.array(traj_points)
             # plt.plot(trajectory[:, 0], trajectory[:, 1], 'r*', zorder=30)
             # plt.plot(self.ego_state.position[0], self.ego_state.position[1], 'b*', zorder=30)
             # plt.axis([trajectory[0, 0] - 10., trajectory[0, 0] + 10.,
             #           trajectory[0, 1] - 10., trajectory[0, 1] + 10.])
-            #
+            
             # plt.pause(0.01)
             # plt.show()
             n_points = min(len(traj_points), 5)

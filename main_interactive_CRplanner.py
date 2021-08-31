@@ -152,7 +152,7 @@ class InteractiveCRPlanner:
         scenario_wrapper.initial_scenario = self.scenario
 
         self.num_of_steps = conf.simulation_steps
-        # self.num_of_steps = 40
+        # self.num_of_steps = 144
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -301,7 +301,7 @@ class InteractiveCRPlanner:
                     action = action_temp
 
             # print('init position:', action.ego_state_init)
-            # print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
+            print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
             print('delta_s:', action.delta_s)
             print('T_duration:', action.T)
             print('v_end:', action.v_end)
@@ -368,13 +368,13 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    # folder_scenarios = os.path.abspath(
-    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
-    # 晓聪
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive')
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
+    # 晓聪
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-12_12_I-1"
+    name_scenario = "DEU_Frankfurt-46_6_I-1"
 
     main_planner = InteractiveCRPlanner()
 
@@ -383,8 +383,8 @@ if __name__ == '__main__':
     simulated_scenario, ego_vehicles = main_planner.process(sumo_sim)
 
     # path for outputting results
-    output_path = '/home/zxc/Videos/CR_outputs/'
-    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    # output_path = '/home/zxc/Videos/CR_outputs/'
+    output_path = '/home/thicv/codes/commonroad/CR_outputs'
 
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
