@@ -375,19 +375,25 @@ def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_
     return map
 
 
-def get_frenet_lanelet_axis(lanelet_id_matrix):
-    ''' 取lanelet_id_matrix中第一列中第一个可行的 lanelet 的中心线为frenet坐标系参考线
+def get_frenet_lanelet_axis(lanelet_id_matrix, len_map):
+    ''' 取lanelet_id_matrix中第一列中第一个可行(必要，否则在自车附近的值不准)
+    且最长的 lanelet 的中心线为frenet坐标系参考线
+    corner case: lanelet_id_matrix: 
     Return:
         lanelet id.
     '''
-
+    
     lanelet00id = -1
     lanelet00_line = -1
-    for i in range(lanelet_id_matrix.shape[1]):
+    lanelet00_len = -1
+    for i in range(lanelet_id_matrix.shape[0]):
         if lanelet_id_matrix[i, 0] !=-1:
-            lanelet00id =  lanelet_id_matrix[i, 0]
-            lanelet00_line = i
-            break
+            if len_map[i][0][1] > lanelet00_len:
+                lanelet00_len = len_map[i][0][1] 
+                lanelet00id =  lanelet_id_matrix[i, 0]
+                lanelet00_line = i
+
+            
     # laneletid第一列不应该全都不可行
     assert lanelet00id != -1
 

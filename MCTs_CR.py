@@ -177,9 +177,12 @@ class MCTs_CR():
 
         # 将 有向无环图 的道路结构。展开成矩阵
         _lanelet_id_matrix = lanelet_network2grid(ln, self.lanelet_route[start_route_id:end_route_id + 1])
+        # 获取可行地图信息
+        _map_info = generate_len_map(ln, _lanelet_id_matrix)
 
         # 在直道中，选择一条可行的lanelet序列，使其中线做frenet轴线
-        lanelet_ids_frenet_axis = get_frenet_lanelet_axis(_lanelet_id_matrix)
+        lanelet_ids_frenet_axis = get_frenet_lanelet_axis(_lanelet_id_matrix, _map_info)
+
         # 获取：障碍物矩阵
         _obstacles = get_obstacle_info(lanelet_ids_frenet_axis, _lanelet_id_matrix, ln, scenario.obstacles, T)
 
@@ -193,8 +196,7 @@ class MCTs_CR():
         _map = get_map_info(is_goal, lanelet_id_goal, lanelet_ids_frenet_axis, _lanelet_id_matrix, ln, planning_problem,
                             is_interactive=True)
 
-        # 获取可行地图信息
-        _map_info = generate_len_map(ln, _lanelet_id_matrix)
+
         # print for debug
         print('lanelet_id_matrix: ', _lanelet_id_matrix)
         print('自车初始状态列表: [车道，位置，速度]\n', _ego_state_mcts)
@@ -254,7 +256,7 @@ class MCTs_CR():
 
         goal_info = self.get_goal_info(is_goal, frenet_cv, _map[2])
         print('goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: \n', goal_info[0], goal_info[3])
-        print('中线lanelet id: ', lanelet_ids_frenet_axis)
+        print('中线lanelet id: ', lanelet_id_target)
         return semantic_action, action_addition, goal_info
 
 
