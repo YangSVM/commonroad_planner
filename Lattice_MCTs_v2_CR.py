@@ -14,8 +14,8 @@ from intersection_planner import distance_lanelet
 from grid_lanelet import edit_scenario4test
 from grid_lanelet import lanelet_network2grid
 from grid_lanelet import get_obstacle_info
-from MCTs_v2 import NaughtsAndCrossesState
-from MCTs_v2 import mcts
+# from MCTs_v2 import NaughtsAndCrossesState
+# from MCTs_v2 import mcts
 
 from commonroad.geometry.shape import Rectangle
 from commonroad.scenario.obstacle import DynamicObstacle, ObstacleType
