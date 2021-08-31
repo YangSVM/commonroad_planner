@@ -93,7 +93,7 @@ class InteractiveCRPlanner:
         if self.lanelet_state == 3:
             ip = IntersectionPlanner(current_scenario, self.lanelet_route, ego_vehicle, self.lanelet_state)
             dis_ego2cp, _ = ip.desicion_making()
-            if len(dis_ego2cp) == 0 or dis_ego2cp > 150:
+            if len(dis_ego2cp) == 0 or min(dis_ego2cp) > 150:
                 self.lanelet_state = 4
                 if not self.last_state == 4:  # 如果已经在4 不需要新的action
                     self.is_new_action_needed = 1  # 必须进入MCTS
@@ -368,7 +368,7 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-7_6_I-1"
+    name_scenario = "DEU_Frankfurt-12_12_I-1"
 
     main_planner = InteractiveCRPlanner()
 
