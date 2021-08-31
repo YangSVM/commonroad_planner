@@ -285,7 +285,7 @@ class IntersectionPlanner():
             lanelet_ids = iinfo.dict_agent_lanelets[o_ids[i]]
             conf_point = iinfo.dict_lanelet_conf_point[lanelet_ids[-1]]
             a4c, dis_ego2cp_tmp = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids,
-                                                                o_ids[i], t)
+                                                                o_ids[i])
             a.append(a4c)
             dis_ego2cp.append(dis_ego2cp_tmp)
         return dis_ego2cp, a 
@@ -390,7 +390,7 @@ class IntersectionPlanner():
                 lanelet_ids = iinfo.dict_agent_lanelets[o_ids[i]]
                 conf_point = iinfo.dict_lanelet_conf_point[lanelet_ids[-1]]
                 a4c, dis_ego2cp_tmp = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids,
-                                                                 o_ids[i], t)
+                                                                 o_ids[i])
                 a.append(a4c)
                 dis_ego2cp.append(dis_ego2cp_tmp)
 
@@ -704,7 +704,7 @@ class IntersectionPlanner():
 
         return dict_lanelet_potential_agent
 
-    def compute_acc4cooperate(self, ego_state, ref_cv, ref_s, conf_point, conf_lanelet_ids, obstacle_id, T):
+    def compute_acc4cooperate(self, ego_state, ref_cv, ref_s, conf_point, conf_lanelet_ids, obstacle_id):
         '''计算单辆车的协作加速度。用于之后的运动规划。协作加速度为，自车匀速到达冲突点，他车同时到达该点需要的加速度
         params:
             ego_state: common-road state。起码包含属性position, v,
