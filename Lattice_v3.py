@@ -809,7 +809,7 @@ class LocalPlanner:
         dist_samp = self.s_decision_end - s_cond_init[0] # delta_s sampling
         for delta_s in dist_samp:              # s_cond_end[0] sampling
             # total_t = delta_s / self.v_end  #constant speed during lane change
-            for delta_v in [-2,-1,0,1,2]:
+            for delta_v in [-1, -0.5, 0, 0.5, 1]:
                 total_t = self.total_t
                 poly_traj = PolyTraj(s_cond_init, d_cond_init, total_t)
                 s_cond_end = np.array([s_cond_init[0] + delta_s, self.v_end + delta_v, self.acc_end])
