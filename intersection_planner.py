@@ -232,14 +232,13 @@ class IntersectionPlanner():
 
 
 
-        dict_lanelet_agent = self.conf_agent_checker(iinfo.dict_lanelet_conf_point, T)
+        dict_lanelet_agent = self.conf_agent_checker(iinfo.dict_lanelet_conf_point)
         # print('直接冲突车辆', dict_lanelet_agent)
         iinfo.dict_lanelet_agent = dict_lanelet_agent
 
         # 间接冲突车辆
         dict_lanelet_potential_agent = self.potential_conf_agent_checker(iinfo.dict_lanelet_conf_point,
-                                                                            iinfo.dict_parent_lanelet, self.route,
-                                                                            T)
+                                                                            iinfo.dict_parent_lanelet, self.route)
         # print('间接冲突车辆', dict_lanelet_potential_agent)
         iinfo.dict_lanelet_potential_agent = dict_lanelet_potential_agent
 
@@ -335,88 +334,86 @@ class IntersectionPlanner():
         s_list = [s]
         state_list = []
         state_list.append(ego_state)
-        for t in time:
 
-            dict_lanelet_agent = self.conf_agent_checker(iinfo.dict_lanelet_conf_point, t)
-            # print('直接冲突车辆', dict_lanelet_agent)
-            iinfo.dict_lanelet_agent = dict_lanelet_agent
+        dict_lanelet_agent = self.conf_agent_checker(iinfo.dict_lanelet_conf_point)
+        # print('直接冲突车辆', dict_lanelet_agent)
+        iinfo.dict_lanelet_agent = dict_lanelet_agent
 
-            # 间接冲突车辆
-            dict_lanelet_potential_agent = self.potential_conf_agent_checker(iinfo.dict_lanelet_conf_point,
-                                                                             iinfo.dict_parent_lanelet, self.route,
-                                                                             t)
-            # print('间接冲突车辆', dict_lanelet_potential_agent)
-            iinfo.dict_lanelet_potential_agent = dict_lanelet_potential_agent
+        # 间接冲突车辆
+        dict_lanelet_potential_agent = self.potential_conf_agent_checker(iinfo.dict_lanelet_conf_point,
+                                                                         iinfo.dict_parent_lanelet, self.route)
+        # print('间接冲突车辆', dict_lanelet_potential_agent)
+        iinfo.dict_lanelet_potential_agent = dict_lanelet_potential_agent
 
-            # 运动规划
-            isConfFound = False
-            # 冲突点排序
-            iinfo.sorted_lanelet, iinfo.i_ego = sort_conf_point(ego_state.position, iinfo.dict_lanelet_conf_point,
-                                                                ref_cv, ref_s)
+        # 运动规划
+        isConfFound = False
+        # 冲突点排序
+        iinfo.sorted_lanelet, iinfo.i_ego = sort_conf_point(ego_state.position, iinfo.dict_lanelet_conf_point,
+                                                            ref_cv, ref_s)
 
-            # 按照冲突点先后顺序进行决策。找车，给冲突车辆排序
-            sorted_conf_agent = []
-            dict_agent_lanelets = {}
-            for i_lanelet in range(iinfo.i_ego, len(iinfo.sorted_lanelet)):
-                lanelet_id = iinfo.sorted_lanelet[i_lanelet]
-                # 直接冲突
-                if lanelet_id in dict_lanelet_agent.keys():
-                    sorted_conf_agent.append(iinfo.dict_lanelet_agent[lanelet_id])
-                    dict_agent_lanelets[sorted_conf_agent[-1]] = [lanelet_id]
-                else:
-                    # 查找父节点
-                    lanelet = lanelet_network.find_lanelet_by_id(lanelet_id)
-                    for parent_lanelet_id in lanelet.predecessor:
-                        if parent_lanelet_id not in dict_lanelet_potential_agent.keys():
-                            # 如果是None, 没有父节点，也会进入该循环
-                            continue
-                        else:
-                            sorted_conf_agent.append(iinfo.dict_lanelet_potential_agent[parent_lanelet_id])
-                            if sorted_conf_agent[-1] not in dict_agent_lanelets.keys():
-                                dict_agent_lanelets[sorted_conf_agent[-1]] = [parent_lanelet_id, lanelet_id]
-                            continue
-            iinfo.sorted_conf_agent = sorted_conf_agent
-            iinfo.dict_agent_lanelets = dict_agent_lanelets
-            # print('车辆重要性排序：', iinfo.sorted_conf_agent)
-            # print('对应车辆可能lanelet：', iinfo.dict_agent_lanelets)
+        # 按照冲突点先后顺序进行决策。找车，给冲突车辆排序
+        sorted_conf_agent = []
+        dict_agent_lanelets = {}
+        for i_lanelet in range(iinfo.i_ego, len(iinfo.sorted_lanelet)):
+            lanelet_id = iinfo.sorted_lanelet[i_lanelet]
+            # 直接冲突
+            if lanelet_id in dict_lanelet_agent.keys():
+                sorted_conf_agent.append(iinfo.dict_lanelet_agent[lanelet_id])
+                dict_agent_lanelets[sorted_conf_agent[-1]] = [lanelet_id]
+            else:
+                # 查找父节点
+                lanelet = lanelet_network.find_lanelet_by_id(lanelet_id)
+                for parent_lanelet_id in lanelet.predecessor:
+                    if parent_lanelet_id not in dict_lanelet_potential_agent.keys():
+                        # 如果是None, 没有父节点，也会进入该循环
+                        continue
+                    else:
+                        sorted_conf_agent.append(iinfo.dict_lanelet_potential_agent[parent_lanelet_id])
+                        if sorted_conf_agent[-1] not in dict_agent_lanelets.keys():
+                            dict_agent_lanelets[sorted_conf_agent[-1]] = [parent_lanelet_id, lanelet_id]
+                        continue
+        iinfo.sorted_conf_agent = sorted_conf_agent
+        iinfo.dict_agent_lanelets = dict_agent_lanelets
+        # print('车辆重要性排序：', iinfo.sorted_conf_agent)
+        # print('对应车辆可能lanelet：', iinfo.dict_agent_lanelets)
 
-            # 目前。根据未来两辆车进行决策。不够两辆车怎么搞？
-            n_o = min(len(iinfo.sorted_conf_agent), 2)
-            o_ids = []
-            a = []
-            dis_ego2cp = []
-            for i in range(n_o):
-                o_ids.append(iinfo.sorted_conf_agent[i])
-                lanelet_ids = iinfo.dict_agent_lanelets[o_ids[i]]
-                conf_point = iinfo.dict_lanelet_conf_point[lanelet_ids[-1]]
-                a4c, dis_ego2cp_tmp = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids,
-                                                                 o_ids[i])
-                a.append(a4c)
-                dis_ego2cp.append(dis_ego2cp_tmp)
+        # 目前。根据未来两辆车进行决策。不够两辆车怎么搞？
+        n_o = min(len(iinfo.sorted_conf_agent), 2)
+        o_ids = []
+        a = []
+        dis_ego2cp = []
+        for i in range(n_o):
+            o_ids.append(iinfo.sorted_conf_agent[i])
+            lanelet_ids = iinfo.dict_agent_lanelets[o_ids[i]]
+            conf_point = iinfo.dict_lanelet_conf_point[lanelet_ids[-1]]
+            a4c, dis_ego2cp_tmp = self.compute_acc4cooperate(ego_state, ref_cv, ref_s, conf_point, lanelet_ids,
+                                                             o_ids[i])
+            a.append(a4c)
+            dis_ego2cp.append(dis_ego2cp_tmp)
 
-        # # ① ==== test planner
-        #     # 前车信息提取
-        #     front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
-        #     next_state, s = self.motion_planner_test(a,
-        #                                              ego_state, s,
-        #                                              [ref_cv, ref_orientation, ref_s], t,
-        #                                              [front_vehicle['dhw'], front_vehicle['v']],
-        #                                              )
-        #
-        #     s_list.append(s)
-        #     state_list.append(next_state)
-        # # generate a ego vehicle for visualization
-        # ego_vehicle = self.generate_ego_vehicle(state_list)
-        #
-        # # self.analysis_intersection(s_list, scenario)
-        # return state_list[1]
-        # # ① ===== test planner
+    # # ① ==== test planner
+    #     # 前车信息提取
+    #     front_vehicle = front_vehicle_info_extraction(scenario, lanelet_network, ego_state.position, self.route, T)
+    #     next_state, s = self.motion_planner_test(a,
+    #                                              ego_state, s,
+    #                                              [ref_cv, ref_orientation, ref_s], t,
+    #                                              [front_vehicle['dhw'], front_vehicle['v']],
+    #                                              )
+    #
+    #     s_list.append(s)
+    #     state_list.append(next_state)
+    # # generate a ego vehicle for visualization
+    # ego_vehicle = self.generate_ego_vehicle(state_list)
+    #
+    # # self.analysis_intersection(s_list, scenario)
+    # return state_list[1]
+    # # ① ===== test planner
 
-        # ② ==== lattice planner
-            front_vehicle = front_vehicle_info_extraction(scenario, ego_state.position, self.route)
-            next_state, is_new_action_needed = self.motion_planner_lattice(a, dis_ego2cp, front_vehicle)
-            state_list.append(next_state)
-        return state_list[1]
+    # ② ==== lattice planner
+        front_vehicle = front_vehicle_info_extraction(scenario, ego_state.position, self.route)
+        action = self.motion_planner_lattice(a, dis_ego2cp, front_vehicle)
+        # state_list.append(next_state)
+        return action
         # ② ==== lattice planner
 
     def generate_ego_vehicle(self, state_list):
@@ -612,12 +609,12 @@ class IntersectionPlanner():
         print('v_end', action.v_end)
         print('cv: from', action.frenet_cv[0, :], 'to ', action.frenet_cv[-1, :])
 
-        # lattice planning
-        lattice_planner = Lattice_CRv3(self.scenario, self.ego_vehicle)
-        next_states, is_new_action_needed = lattice_planner.planner(action)
-        return next_states, is_new_action_needed
+        # # lattice planning
+        # lattice_planner = Lattice_CRv3(self.scenario, self.ego_vehicle)
+        # next_states, is_new_action_needed = lattice_planner.planner(action, 4)
+        return action
 
-    def conf_agent_checker(self, dict_lanelet_conf_points, T):
+    def conf_agent_checker(self, dict_lanelet_conf_points):
         """  找直接冲突点 conf_lanelets中最靠近冲突点的车，为冲突车辆
         params:
             dict_lanelet_conf_points: 字典。直接冲突点的lanelet_id->冲突点位置
@@ -678,7 +675,7 @@ class IntersectionPlanner():
 
         return dict_lanelet_agent
 
-    def potential_conf_agent_checker(self, dict_lanelet_conf_point, dict_parent_lanelet, ego_lanelets, T):
+    def potential_conf_agent_checker(self, dict_lanelet_conf_point, dict_parent_lanelet, ego_lanelets):
         '''找间接冲突lanelet.
         params:
             dict_lanelet_conf_point: intersectioninfo类成员。
@@ -700,7 +697,7 @@ class IntersectionPlanner():
             if ego_lanelet in dict_parent_conf_point.keys():
                 dict_parent_conf_point.pop(ego_lanelet)
 
-        dict_lanelet_potential_agent = self.conf_agent_checker(dict_parent_conf_point, T)
+        dict_lanelet_potential_agent = self.conf_agent_checker(dict_parent_conf_point)
 
         return dict_lanelet_potential_agent
 
