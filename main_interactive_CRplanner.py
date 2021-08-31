@@ -94,9 +94,10 @@ class InteractiveCRPlanner:
         if self.lanelet_state == 3:
             ip = IntersectionPlanner(current_scenario, self.lanelet_route, ego_vehicle, self.lanelet_state)
             dis_ego2cp, _ = ip.desicion_making()
-            if len(dis_ego2cp)==0 or dis_ego2cp>150:
+            if len(dis_ego2cp) == 0 or dis_ego2cp > 150:
                 self.lanelet_state = 4
-                self.is_new_action_needed = 1       #必须进入MCTS
+                if not self.last_state == 4:  # 如果已经在4 不需要新的action
+                    self.is_new_action_needed = 1       # 必须进入MCTS
         return
 
     def generate_route(self, scenario, planning_problem):
@@ -256,14 +257,15 @@ class InteractiveCRPlanner:
             return next_state
 
         # check state 1:straight-going /2:incoming /3:in-intersection
+        self.last_state = copy.deepcopy(self.lanelet_state)
         self.check_state()
         if self.lanelet_state == 3:
             self.check_state_again(current_scenario, ego_vehicle)
         print("current state:", self.lanelet_state)
         # self.lanelet_state = 1
         # send to sub planner according to current lanelet state
-        if self.lanelet_state == 2 or self.lanelet_state == 1 or self.lanelet_state==4:
-            action_temp = []
+        if self.lanelet_state in {1, 2, 4}:
+
             # === insert straight-going planner here
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, self.lanelet_route, ego_vehicle)
@@ -291,15 +293,13 @@ class InteractiveCRPlanner:
                     action_temp.delta_s = front_veh_info['dhw']
                     action_temp.v_end = front_veh_info['v'] - 3
                     action_temp.T = action_temp.delta_s / (action_temp.v_end + self.ego_state.velocity) * 2
+                    action = action_temp
 
             print('init position:', action.ego_state_init)
             print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
             print('delta_s:', action.delta_s)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            if action_temp:
-                next_state, self.is_new_action_needed = lattice_planner.planner(action_temp)
-            else:
-                next_state, self.is_new_action_needed = lattice_planner.planner(action)
+            next_state, self.is_new_action_needed = lattice_planner.planner(action)
             # === end of straight-going planner
 
         # if self.lanelet_state == 2 or self.lanelet_state == 3:
@@ -360,11 +360,11 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    folder_scenarios = os.path.abspath(
-        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
-    # 晓聪
     # folder_scenarios = os.path.abspath(
-    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
+    # 晓聪
+    folder_scenarios = os.path.abspath(
+        '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
     name_scenario = "DEU_Frankfurt-7_6_I-1"
 
@@ -375,8 +375,8 @@ if __name__ == '__main__':
     simulated_scenario, ego_vehicles = main_planner.process(sumo_sim)
 
     # path for outputting results
-    # output_path = '/home/zxc/Videos/CR_outputs/'
-    output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    output_path = '/home/zxc/Videos/CR_outputs/'
+    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
 
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
