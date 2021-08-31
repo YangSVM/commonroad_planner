@@ -53,7 +53,7 @@ class InteractiveCRPlanner:
         self.last_action = []
         self.last_semantic_action = []
 
-        self.next_states_buffer = []
+        self.next_states_queue = []
         # goal infomation. [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]
         self.goal_info = None
 
@@ -151,8 +151,8 @@ class InteractiveCRPlanner:
         scenario_wrapper.sumo_cfg_file = os.path.join(interactive_scenario_path, f"{conf.scenario_name}.sumo.cfg")
         scenario_wrapper.initial_scenario = self.scenario
 
-        self.num_of_steps = conf.simulation_steps
-        # self.num_of_steps = 60
+        # self.num_of_steps = conf.simulation_steps
+        self.num_of_steps = 40
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -267,9 +267,9 @@ class InteractiveCRPlanner:
         # send to sub planner according to current lanelet state
         if self.lanelet_state in {1, 2, 4}:
 
-            if len(self.next_states_buffer)>0:
+            if len(self.next_states_queue)>0:
                 print('use next_states_buffer')
-                next_state = self.next_states_buffer.pop(0)
+                next_state = self.next_states_queue.pop(0)
                 return next_state
             # === insert straight-going planner here
             if self.is_new_action_needed:
@@ -306,8 +306,8 @@ class InteractiveCRPlanner:
             print('T_duration:', action.T)
             print('v_end:', action.v_end)
             lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            self.next_states_buffer, self.is_new_action_needed = lattice_planner.planner(action)
-            next_state = self.next_states_buffer.pop(0)
+            self.next_states_queue, self.is_new_action_needed = lattice_planner.planner(action)
+            next_state = self.next_states_queue.pop(0)
             # === end of straight-going planner
 
         # if self.lanelet_state == 2 or self.lanelet_state == 3:
