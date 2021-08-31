@@ -459,7 +459,7 @@ def generate_len_map(lanelet_network, lanelet_map, isContinous=True):
     ln = lanelet_network
 
     # calculate length of each parallel lanelet set [m by 1]
-    len_lanelet = np.zeros(3)
+    len_lanelet = np.zeros(lm.shape[1])
     for m in range(lm.shape[1]):
         for n in range(lm.shape[0]):
             if not lm[n, m] == -1:  # find id of a solid lanelet
