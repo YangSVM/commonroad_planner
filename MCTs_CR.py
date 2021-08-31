@@ -217,7 +217,7 @@ class MCTs_CR():
             searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
             action = searcher.search(initialState=initialState)  # 一整个类都是其状态
             semantic_action = action.act
-            speed_limit = map[3] + 10
+            speed_limit = map[3]
             out = output(ego_state_mcts, action.act, speed_limit)
         elif flag == 1:
             print('第一步mcts无解，进入跟车')
