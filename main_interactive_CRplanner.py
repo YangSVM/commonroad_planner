@@ -254,7 +254,7 @@ class InteractiveCRPlanner:
 
             # lattice planning
             lattice_planner = Lattice_CRv3(self.scenario, ego_vehicle)
-            next_state, _ = lattice_planner.planner(action)
+            next_state, _ = lattice_planner.planner(action, 3)
             return next_state
 
         # check state 1:straight-going /2:incoming /3:in-intersection
@@ -380,7 +380,7 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-12_12_I-1"
+    name_scenario = "DEU_Frankfurt-71_6_I-1"
 
     main_planner = InteractiveCRPlanner()
 
