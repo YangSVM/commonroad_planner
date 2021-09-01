@@ -162,7 +162,7 @@ class InteractiveCRPlanner:
         scenario_wrapper.initial_scenario = self.scenario
 
         self.num_of_steps = conf.simulation_steps
-        # self.num_of_steps = 144
+        # self.num_of_steps = 116
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -387,7 +387,7 @@ def motion_planner_interactive(scenario_path: str):
 if __name__ == '__main__':
 
     # 曹雷
-    # folder_scenarios = os.path.abspath(
+    # folder_scenarios = os.path.abspath(   
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
     folder_scenarios = os.path.abspath(
@@ -396,7 +396,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-7_3_I-1"
+    name_scenario = "DEU_Frankfurt-75_2_I-1"
 
     main_planner = InteractiveCRPlanner()
 
