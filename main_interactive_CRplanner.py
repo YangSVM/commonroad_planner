@@ -5,6 +5,7 @@ import copy
 from time import sleep
 
 from commonroad.planning.planning_problem import PlanningProblem
+from networkx.generators import ego
 
 from CR_tools.utility import distance_lanelet, brake
 import os
@@ -56,6 +57,8 @@ class InteractiveCRPlanner:
         # goal infomation. [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]
         self.goal_info = None
 
+        self.is_reach_goal_region = False
+        
     def check_state(self):
         """check if ego car is straight-going /incoming /in-intersection"""
         lanelet_id_ego = self.lanelet_ego
@@ -114,7 +117,13 @@ class InteractiveCRPlanner:
 
         return self.lanelet_route
 
-    def check_goal_state(self, position):
+    def check_goal_state(self, position, goal_lanelet_ids):
+        is_reach_goal_lanelets = False
+        ego_lanelets = self.scenario.lanelet_network.find_lanelet_by_position([position])[0]
+        for ego_lanelet in ego_lanelets:
+            if ego_lanelet in goal_lanelet_ids:
+                is_reach_goal_lanelets = True
+
         # 没有经过
         goal_info = self.goal_info
         if goal_info is None:
@@ -127,8 +136,10 @@ class InteractiveCRPlanner:
             cv, cv_s, s_goal = goal_info[1:]
             s_ego = distance_lanelet(cv, cv_s, cv[0, :], position)
             # 自车s距离已经超过终点距离
-            if s_ego >= s_goal:
+            
+            if s_ego >= s_goal and is_reach_goal_lanelets:
                 is_goal = True
+
         return is_goal
 
     def initialize(self, folder_scenarios, name_scenario):
@@ -241,9 +252,14 @@ class InteractiveCRPlanner:
         self.generate_route(current_scenario, planning_problem)
 
         # check for goal info
-        is_goal = self.check_goal_state(ego_vehicle.current_state.position)
-        if is_goal and self.is_new_action_needed:
+        is_goal = self.check_goal_state(ego_vehicle.current_state.position, planning_problem.goal.lanelets_of_goal_position)
+        if is_goal:
             print('goal reached! braking!')
+            if self.is_reach_goal_region and len(self.next_states_queue)>0:
+                next_state = self.next_states_queue.pop(0)
+                return next_state
+            
+            self.is_reach_goal_region = True
             # 直接刹车
             # next_state = brake(ego_vehicle.current_state, self.goal_info[1], self.goal_info[2])
             action = brake(self.scenario, ego_vehicle)
@@ -253,7 +269,8 @@ class InteractiveCRPlanner:
 
             # lattice planning
             lattice_planner = Lattice_CRv3(self.scenario, ego_vehicle)
-            next_state, _ = lattice_planner.planner(action)
+            self.next_states_queue, _ = lattice_planner.planner(action, 3)
+            next_state = self.next_states_queue.pop(0)
             return next_state
 
         # check state 1:straight-going /2:incoming /3:in-intersection
@@ -263,13 +280,15 @@ class InteractiveCRPlanner:
             self.check_state_again(current_scenario, ego_vehicle)
         print("current state:", self.lanelet_state)
         # self.lanelet_state = 1
+
+        if len(self.next_states_queue) > 0:
+            print('use next_states_buffer')
+            next_state = self.next_states_queue.pop(0)
+            return next_state
+
         # send to sub planner according to current lanelet state
         if self.lanelet_state in {1, 2, 4}:
 
-            if len(self.next_states_queue) > 0:
-                print('use next_states_buffer')
-                next_state = self.next_states_queue.pop(0)
-                return next_state
             # === insert straight-going planner here
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, self.lanelet_route, ego_vehicle)
@@ -315,7 +334,10 @@ class InteractiveCRPlanner:
             self.is_new_action_needed = 1
             semantic_action = 9
             ip = IntersectionPlanner(current_scenario, self.lanelet_route, ego_vehicle, self.lanelet_state)
-            self.next_states_queue = ip.planning(current_time_step)
+            action = ip.planning(current_time_step)
+
+            lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
+            self.next_states_queue, self.is_new_action_needed = lattice_planner.planner(action, 4)
             next_state = self.next_states_queue.pop(0)
             # === end of intersection planner
 
