@@ -246,6 +246,12 @@ def output(state,action,speedLimit):
         if speedLimit - state[2] >= 1 * t:
             state_out[1] = t * state[2] + 0.5 * t * t
             state_out[2] = state[2] + t
+        if speedLimit - state[2] >= 2 * t:
+            state_out[1] = t * state[2] + 0.5 * 2 * t * t
+            state_out[2] = state[2] + 2 * t
+        if speedLimit - state[2] >= 3 * t:
+            state_out[1] = t * state[2] + 0.5 * 3 * t * t
+            state_out[2] = state[2] + 3 * t
         else:
             accel = (speedLimit - state[2]) / t
             state_out[1] = t * state[2] + 0.5 * accel * t * t
@@ -707,17 +713,17 @@ class Action():
 
 if __name__ == "__main__":
     # start = time.time()
-    state = [1, 101.89999999999849, 31.068532257370617]
-    map = [3, 2, 1194.600000000009, 32]
+    state = [1, 79.89999999999974, 9.15442577807287]
+    map = [4, 1, 598.5000000000664, 37.77777777777778]
     # obstacles = [[0, 100, 25], [0, 150, 20], [1, 180, 10], [1, 120, 20], [2, 80, 15], [3, 80, 10], [4, 80, 15]]
     obstacles = [[2., 4.9, 29.88358094],
                  [0., 99.8, 31.28789092],
-                 [1., 166.3, 28.0214067],
+                 [0., 166.3, 28.0214067],
                  [0., 37.6, 34.11789059],
                  [0., 153.7, 29.02353197],
                  [2., 98.5, 29.58975459],
                  [2., 61.9, 29.365209]]
-    mapInfo = [[[0.0, 46560.93503873471]], [[0.0, 46560.93503873471]], [[0.0, 792.1928512579925]]]
+    mapInfo = [[[0.0, 21131.477924610976]], [[0.0, 21131.477924610976]], [[0.0, 21131.477924610976]], [[1293.654770544371, 20339.28507335298]]]
     actionChecker = checker(state, map, obstacles, mapInfo)
     flag = actionChecker.checkPossibleActions()
     if flag == 0:
