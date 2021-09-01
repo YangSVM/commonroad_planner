@@ -7,7 +7,6 @@ from time import sleep
 from commonroad.planning.planning_problem import PlanningProblem
 
 from CR_tools.utility import distance_lanelet, brake
-from networkx.generators import ego
 import os
 
 from commonroad.common.file_reader import CommonRoadFileReader
@@ -375,7 +374,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-75_8_I-1"
+    name_scenario = "DEU_Frankfurt-7_3_I-1"
 
     main_planner = InteractiveCRPlanner()
 

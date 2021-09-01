@@ -614,7 +614,7 @@ class IntersectionPlanner():
 
         # lattice planning
         lattice_planner = Lattice_CRv3(self.scenario, self.ego_vehicle)
-        next_states, is_new_action_needed = lattice_planner.planner(action)
+        next_states, is_new_action_needed = lattice_planner.planner(action, 4)
         return next_states, is_new_action_needed
 
     def conf_agent_checker(self, dict_lanelet_conf_points, T):

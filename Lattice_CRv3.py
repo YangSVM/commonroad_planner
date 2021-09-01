@@ -182,22 +182,22 @@ class Lattice_CRv3():
         if traj_points_opt != False:
             for tp_opt in traj_points_opt:
                 traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
+            # plt.clf()
+            # draw_parameters = {
+            #     'time_begin': 1,
+            #     'scenario':
+            #         {'dynamic_obstacle': {'show_label': True, },
+            #          'lanelet_network': {'lanelet': {'show_label': True, }, },
+            #          },
+            # }
+            # draw_object(self.scenario, draw_params=draw_parameters)
+            # trajectory = np.array(traj_points)
+            # plt.plot(trajectory[:, 0], trajectory[:, 1], 'r*', zorder=30)
+            # plt.plot(self.ego_state.position[0], self.ego_state.position[1], 'b*', zorder=30)
+            # plt.axis([trajectory[0, 0] - 40., trajectory[0, 0] + 40.,
+            #           trajectory[0, 1] - 40., trajectory[0, 1] + 40.])
 
-            draw_parameters = {
-                'time_begin': 1,
-                'scenario':
-                    {'dynamic_obstacle': {'show_label': True, },
-                     'lanelet_network': {'lanelet': {'show_label': True, }, },
-                     },
-            }
-            draw_object(self.scenario, draw_params=draw_parameters)
-            trajectory = np.array(traj_points)
-            plt.plot(trajectory[:, 0], trajectory[:, 1], 'r*', zorder=30)
-            plt.plot(self.ego_state.position[0], self.ego_state.position[1], 'b*', zorder=30)
-            plt.axis([trajectory[0, 0] - 40., trajectory[0, 0] + 40.,
-                      trajectory[0, 1] - 40., trajectory[0, 1] + 40.])
-
-            plt.pause(0.01)
+            # plt.pause(0.01)
             # plt.show()
 
             horizon = 5
