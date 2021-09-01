@@ -50,7 +50,11 @@ class ActionAddition:
             if len_lanelet[0] < s_goal and s_goal < len_lanelet[1]:
                 index_target = i
                 break
-        assert index_target != -1
+        if index_target == -1:
+            # 如果超出边界，直接认定为最后一个lanelet
+            print('error! replan')
+
+        #     return -1
         lanelet_id_target = lanelet_id_matrix[n_target, index_target]
         assert lanelet_id_target != -1
         return lanelet_id_target
@@ -198,7 +202,7 @@ class MCTs_CR():
 
 
         # print for debug
-        print('lanelet_id_matrix: ', _lanelet_id_matrix)
+        print('lanelet_id_matrix: \n', _lanelet_id_matrix)
         print('自车初始状态列表: [车道，位置，速度]\n', _ego_state_mcts)
         print('地图信息: [总车道数, 目标车道编号, 目标位置, 场景限速(m/s)]\n', _map)
         print('他车矩阵：[[所在车道编号，位置，速度]...]\n', _obstacles)
