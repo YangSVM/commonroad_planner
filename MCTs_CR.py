@@ -225,8 +225,8 @@ class MCTs_CR():
             out = output(ego_state_mcts, action.act, speed_limit)
         elif flag == 1:
             print('第一步mcts无解，进入跟车')
-            semantic_action = 5
-            out = output(ego_state_mcts, 5, map[3])
+            semantic_action = 9
+            out = output(ego_state_mcts, 9, map[3])
 
         print('out: ', out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
         # print(action.act)
