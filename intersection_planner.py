@@ -570,8 +570,9 @@ class IntersectionPlanner():
             dhw = front_veh['dhw']
             v_f = front_veh['v']
             ttc = dhw / (ego_state_init[2] - v_f)
-            delta_s_cf = dhw
-            v_end_cf = v_f
+            if 0 < ttc < 5:
+                delta_s_cf = dhw
+                v_end_cf = v_f
 
         # print('v_end_conf', v_end_conf)
         # print('v_end_cf', v_end_cf)
