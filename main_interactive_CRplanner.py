@@ -6,6 +6,7 @@ from time import sleep
 
 from commonroad.planning.planning_problem import PlanningProblem
 from networkx.generators import ego
+from numpy import size
 
 from CR_tools.utility import distance_lanelet, brake
 import os
@@ -18,6 +19,7 @@ import commonroad_dc.feasibility.feasibility_checker as feasibility_checker
 from commonroad_dc.feasibility.vehicle_dynamics import VehicleDynamics
 # from commonroad_dc.costs.evaluation import CostFunctionEvaluator
 from commonroad_dc.feasibility.solution_checker import valid_solution
+from commonroad.scenario.trajectory import Trajectory
 from sumocr.visualization.video import create_video
 from sumocr.maps.sumo_scenario import ScenarioWrapper
 from sumocr.interface.sumo_simulation import SumoSimulation
@@ -58,7 +60,7 @@ class InteractiveCRPlanner:
         self.goal_info = None
 
         self.is_reach_goal_region = False
-        
+
     def check_state(self):
         """check if ego car is straight-going /incoming /in-intersection"""
         lanelet_id_ego = self.lanelet_ego
@@ -136,7 +138,7 @@ class InteractiveCRPlanner:
             cv, cv_s, s_goal = goal_info[1:]
             s_ego = distance_lanelet(cv, cv_s, cv[0, :], position)
             # 自车s距离已经超过终点距离
-            
+
             if s_ego >= s_goal and is_reach_goal_lanelets:
                 is_goal = True
 
@@ -257,13 +259,14 @@ class InteractiveCRPlanner:
             return next_state
 
         # check for goal info
-        is_goal = self.check_goal_state(ego_vehicle.current_state.position, planning_problem.goal.lanelets_of_goal_position)
+        is_goal = self.check_goal_state(ego_vehicle.current_state.position,
+                                        planning_problem.goal.lanelets_of_goal_position)
         if is_goal:
             print('goal reached! braking!')
-            if self.is_reach_goal_region and len(self.next_states_queue)>0:
+            if self.is_reach_goal_region and len(self.next_states_queue) > 0:
                 next_state = self.next_states_queue.pop(0)
                 return next_state
-            
+
             self.is_reach_goal_region = True
             # 直接刹车
             # next_state = brake(ego_vehicle.current_state, self.goal_info[1], self.goal_info[2])
@@ -370,7 +373,20 @@ def motion_planner_interactive(scenario_path: str):
     print('Feasible? {}'.format(feasible))
     if not feasible:
         # if not feasible. reconstruct the inputs
-        ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
+        initial_state = trajectory.state_list[0]
+        vehicle = VehicleDynamics.KS(VehicleType.FORD_ESCORT)
+        dt = 0.1
+        reconstructed_states = [vehicle.convert_initial_state(initial_state)] + [
+            vehicle.simulate_next_state(trajectory.state_list[idx], inp, dt)
+            for idx, inp in enumerate(reconstructed_inputs.state_list)
+        ]
+        trajectory_reconstructed = Trajectory(initial_time_step=0, state_list=reconstructed_states)
+        feasible_re, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory_reconstructed,
+                                                                                       main_planner.vehicle,
+                                                                                       main_planner.dt)
+        for i, state in enumerate(trajectory_reconstructed.state_list):
+            ego_vehicle.driven_trajectory.trajectory.state_list[i] = trajectory_reconstructed.state_list[i]
+        print('after recon, Feasible? {}'.format(feasible_re))
 
     # create solution object for benchmark
     pps = []
@@ -399,7 +415,7 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-7_14_I-1"
+    name_scenario = "DEU_Frankfurt-15_4_I-1"
 
     main_planner = InteractiveCRPlanner()
 
@@ -439,7 +455,20 @@ if __name__ == '__main__':
     print('Feasible? {}'.format(feasible))
     if not feasible:
         # if not feasible. reconstruct the inputs
-        ego_vehicle.driven_trajectory.trajectory.state_list = reconstructed_inputs.state_list
+        initial_state = trajectory.state_list[0]
+        vehicle = VehicleDynamics.KS(VehicleType.FORD_ESCORT)
+        dt = 0.1
+        reconstructed_states = [vehicle.convert_initial_state(initial_state)] + [
+            vehicle.simulate_next_state(trajectory.state_list[idx], inp, dt)
+            for idx, inp in enumerate(reconstructed_inputs.state_list)
+        ]
+        trajectory_reconstructed = Trajectory(initial_time_step=0, state_list=reconstructed_states)
+        feasible_re, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory_reconstructed,
+                                                                                       main_planner.vehicle,
+                                                                                       main_planner.dt)
+        for i, state in enumerate(trajectory_reconstructed.state_list):
+            ego_vehicle.driven_trajectory.trajectory.state_list[i] = trajectory_reconstructed.state_list[i]
+        print('after recon, Feasible? {}'.format(feasible_re))
 
     # saves trajectory to solution file
     save_solution(simulated_scenario, main_planner.planning_problem_set, ego_vehicles,
