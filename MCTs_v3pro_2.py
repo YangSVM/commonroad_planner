@@ -228,11 +228,81 @@ class checker():
         #print('Flag:',Flag)
         return Flag  # 输出为所有可能落子位置的集合
 
-def output(state,action,speedLimit):
+def findFrontVechicle(position, lane):
+    FrontVehicle = 0
+    state_FrontVehicle = [0,0]
+    count = 0
+    for iVeh in range(30):
+        if lane[iVeh][0] < position:
+            count = iVeh
+            FrontVehicle = count
+            break
+    if count == 0:
+        state_FrontVehicle = [1000000, 100000]
+    else:
+        state_FrontVehicle = lane[FrontVehicle-1]
+    #print('FrontVehicle',state_FrontVehicle)
+    return state_FrontVehicle
+
+def findTargetLane(lane00,lane01,lane02,lane03,lane04,lane05,laneNum):
+    if laneNum == 0:
+        TargetLane = deepcopy(lane00)
+    if laneNum == 1:
+        TargetLane = deepcopy(lane01)
+    if laneNum == 2:
+        TargetLane = deepcopy(lane02)
+    if laneNum == 3:
+        TargetLane = deepcopy(lane03)
+    if laneNum == 4:
+        TargetLane = deepcopy(lane04)
+    if laneNum == 5:
+        TargetLane = deepcopy(lane05)
+    return TargetLane
+
+def output(state,action,speedLimit,obstacles):
     state_out = [0,0,0]
     state_out[0] = state[0]
     state_out[1] = state[1]
     state_out[2] = state[2]
+    number = len(obstacles)
+    lane00 = numpy.zeros(shape=(30, 2))  # 建立6条车道的存储空间
+    lane01 = numpy.zeros(shape=(30, 2))
+    lane02 = numpy.zeros(shape=(30, 2))
+    lane03 = numpy.zeros(shape=(30, 2))
+    lane04 = numpy.zeros(shape=(30, 2))
+    lane05 = numpy.zeros(shape=(30, 2))
+    pointer = numpy.zeros(shape=6).astype(int)
+    for i in range(number):
+        if obstacles[i][0] == 0:
+            lane00[pointer[0]][0] = obstacles[i][1]
+            lane00[pointer[0]][1] = obstacles[i][2]
+            pointer[0] = pointer[0] + 1
+        if obstacles[i][0] == 1:
+            lane01[pointer[1]][0] = obstacles[i][1]
+            lane01[pointer[1]][1] = obstacles[i][2]
+            pointer[1] = pointer[1] + 1
+        if obstacles[i][0] == 2:
+            lane02[pointer[2]][0] = obstacles[i][1]
+            lane02[pointer[2]][1] = obstacles[i][2]
+            pointer[2] = pointer[2] + 1
+        if obstacles[i][0] == 3:
+            lane03[pointer[3]][0] = obstacles[i][1]
+            lane03[pointer[3]][1] = obstacles[i][2]
+            pointer[3] = pointer[3] + 1
+        if obstacles[i][0] == 4:
+            lane04[pointer[4]][0] = obstacles[i][1]
+            lane04[pointer[4]][1] = obstacles[i][2]
+            pointer[4] = pointer[4] + 1
+        if obstacles[i][0] == 5:
+            lane05[pointer[5]][0] = obstacles[i][1]
+            lane05[pointer[5]][1] = obstacles[i][2]
+            pointer[5] = pointer[5] + 1
+    lane00 = sorted(lane00, key=lambda s: s[0], reverse=True)  # 基于位置，将各车道车辆从前之后排序，更新列表
+    lane01 = sorted(lane01, key=lambda s: s[0], reverse=True)
+    lane02 = sorted(lane02, key=lambda s: s[0], reverse=True)
+    lane03 = sorted(lane03, key=lambda s: s[0], reverse=True)
+    lane04 = sorted(lane04, key=lambda s: s[0], reverse=True)
+    lane05 = sorted(lane05, key=lambda s: s[0], reverse=True)
     t = 5                                       # 调节每步时间（用于目标位置输出）（第1处，共2处）
     if action == 1:
         state_out[0] = state[0] - 1
@@ -243,15 +313,30 @@ def output(state,action,speedLimit):
         state_out[1] = t * state[2]
         state_out[2] = state[2]
     if action == 3:
+        targetLane = findTargetLane(lane00,lane01,lane02,lane03,lane04,lane05,state[0])
+        frontVehicle = findFrontVechicle(state[1],targetLane)
         if speedLimit - state[2] >= 1 * t:
             state_out[1] = t * state[2] + 0.5 * t * t
             state_out[2] = state[2] + t
-        if speedLimit - state[2] >= 2 * t:
-            state_out[1] = t * state[2] + 0.5 * 2 * t * t
-            state_out[2] = state[2] + 2 * t
-        if speedLimit - state[2] >= 3 * t:
-            state_out[1] = t * state[2] + 0.5 * 3 * t * t
-            state_out[2] = state[2] + 3 * t
+            if speedLimit - state[2] >= 2 * t:                    # 考虑能否用2加速
+                ego_ss = state[1] + t * state[2] + 0.5 * 2 * t * t
+                front_ss = frontVehicle[0] + frontVehicle[1] * t
+                if (front_ss - ego_ss) >= 5:                       # 参数：要求行为结束后距离前车5m
+                    state_out[1] = t * state[2] + 0.5 * 2 * t * t
+                    state_out[2] = state[2] + 2 * t
+                if (front_ss - ego_ss) < 5:
+                    acc2 = (front_ss - 5 - t * state[2] - state[1]) / (0.5 * t * t)
+                    state_out[1] = t * state[2] + 0.5 * acc2 * t * t
+                    state_out[2] = state[2] + acc2 * t
+                if speedLimit - state[2] >= 3 * t:                 # 考虑能否用3加速
+                    ego_ss = state[1] + t * state[2] + 0.5 * 3 * t * t
+                    if (front_ss - ego_ss) >= 8:                   # 参数：要求行为结束后距离前车8m
+                        state_out[1] = t * state[2] + 0.5 * 3 * t * t
+                        state_out[2] = state[2] + 3 * t
+                    if (front_ss - ego_ss) < 8:
+                        acc3 = (front_ss - 8 - t * state[2] - state[1]) / (0.5 * t * t)
+                        state_out[1] = t * state[2] + 0.5 * acc3 * t * t
+                        state_out[2] = state[2] + acc3 * t
         else:
             accel = (speedLimit - state[2]) / t
             state_out[1] = t * state[2] + 0.5 * accel * t * t
@@ -259,8 +344,13 @@ def output(state,action,speedLimit):
     if action == 4:
         state_out[1] = t * state[2]
     if action == 5:
-        state_out[1] = t * state[2] - 0.5 * t * t
-        state_out[2] = state[2] - t
+        if state[2] - t > 0:
+            state_out[1] = t * state[2] - 0.5 * t * t
+            state_out[2] = state[2] - t
+        else:
+            dccel = state[2] / t
+            state_out[1] = t * state[2] - 0.5 * dccel * t * t
+            state_out[2] = state[2] - t * dccel
     if action == 6:
         state_out = [0,0,0]
     return state_out
@@ -598,7 +688,7 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
 
         # 下面考虑直行--减速（-1 m/s2）
         flag5 = 0
-        if self.laststate[1] < 3:
+        if self.laststate[1] <= 0:
             flag5 = 1
         else:
             st = self.laststate[0] + self.Tstep * self.laststate[1] - 0.5 * self.Tstep * self.Tstep
@@ -713,27 +803,24 @@ class Action():
 
 if __name__ == "__main__":
     # start = time.time()
-    state = [1, 79.89999999999974, 9.15442577807287]
-    map = [4, 1, 598.5000000000664, 37.77777777777778]
+    state = [0, 266.79999999999217, 25.863049516499174]
+    map = [2, 0, 362.0000000000127, 37.77777777777778]
     # obstacles = [[0, 100, 25], [0, 150, 20], [1, 180, 10], [1, 120, 20], [2, 80, 15], [3, 80, 10], [4, 80, 15]]
-    obstacles = [[2., 4.9, 29.88358094],
-                 [0., 99.8, 31.28789092],
-                 [0., 166.3, 28.0214067],
-                 [0., 37.6, 34.11789059],
-                 [0., 153.7, 29.02353197],
-                 [2., 98.5, 29.58975459],
-                 [2., 61.9, 29.365209]]
-    mapInfo = [[[0.0, 21131.477924610976]], [[0.0, 21131.477924610976]], [[0.0, 21131.477924610976]], [[1293.654770544371, 20339.28507335298]]]
+    obstacles = [[0.,         302.6,         25.84448145],
+    [1.,        219.7,         24.88470455],
+    [1.,        173.9,       27.11482083],
+    [0.,        100.9 ,        28.16625028]]
+    mapInfo = [[[0.0, 8589.283042053188]], [[0.0, 8589.283042053188]]]
     actionChecker = checker(state, map, obstacles, mapInfo)
     flag = actionChecker.checkPossibleActions()
     if flag == 0:
         initialState = NaughtsAndCrossesState(state, map, obstacles, mapInfo)
         searcher = mcts(iterationLimit=5000)  # 改变循环次数或者时间
         action = searcher.search(initialState=initialState)  # 一整个类都是其状态
-        out = output(state, action.act, map[3])
+        out = output(state, action.act, map[3], obstacles)
     if flag == 1:
         print('第一步mcts无解，进入跟车')
-        out = output(state, 5, map[3])
+        out = output(state, 5, map[3], obstacles)
     print(out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
     print('state',state)
     print('map', map)
