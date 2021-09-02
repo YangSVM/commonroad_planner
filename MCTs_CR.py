@@ -43,16 +43,29 @@ class ActionAddition:
         '''
         # 仅需要判断在哪个 len 区间中即可。
         len_map = generate_len_map(ln, lanelet_id_matrix, isContinous=False)
-        n_s_lanelet = len(lanelet_id_matrix[n_target, :])
-        index_target = -1
+        n_s_lanelet = len(len_map[n_target])
+        index_target_len = -1
         for i in range(n_s_lanelet):
             len_lanelet = len_map[n_target][i]
             if len_lanelet[0] < s_goal and s_goal < len_lanelet[1]:
-                index_target = i
+                index_target_len = i
                 break
-        if index_target == -1:
+        
+        # index_target现在是len_lanelet的id。实际ID是lanelet_id_matrix中的。
+        
+
+        if index_target_len == -1:
             # 如果超出边界，直接认定为最后一个lanelet
             print('error! replan')
+            index_target = index_target_len
+        else:
+            index_target = 0
+            while lanelet_id_matrix[n_target, index_target] == -1:
+                index_target += 1
+            for i in range(index_target_len):
+                index_target += 1
+                while lanelet_id_matrix[n_target, index_target] == -1:
+                    index_target += 1
 
         #     return -1
         lanelet_id_target = lanelet_id_matrix[n_target, index_target]
