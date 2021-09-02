@@ -54,7 +54,7 @@ class InteractiveCRPlanner:
         # initialize the last action info
         self.is_new_action_needed = True
         self.last_action = []
-        self.last_semantic_action = []
+        self.last_semantic_action = None
 
         self.next_states_queue = []
         # goal infomation. [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]
@@ -123,8 +123,8 @@ class InteractiveCRPlanner:
     def check_goal_state(self, position, goal_lanelet_ids:Dict):
         is_reach_goal_lanelets = False
         ego_lanelets = self.scenario.lanelet_network.find_lanelet_by_position([position])[0]
-        
-        # goal_lanelet_ids need to change from dict to list. 
+
+        # goal_lanelet_ids need to change from dict to list.
         # eg. goal_lanelet_ids={0: [212], 1: [213, 214]}
         goal_lanelet_ids_list = []
         for value in goal_lanelet_ids.values():
@@ -206,7 +206,7 @@ class InteractiveCRPlanner:
 
             # force to get a new action every 1 sceonds
             self.t_record += 0.1
-            if self.t_record > 1 and (len(self.last_semantic_action)==0 or self.last_semantic_action not in {1, 2}):
+            if self.t_record > 1 and (self.last_semantic_action is None or self.last_semantic_action not in {1, 2}):
                 self.is_new_action_needed = True
                 print('force to get a new action during straight-going')
                 self.t_record = 0
@@ -428,13 +428,13 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(   
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    folder_scenarios = os.path.abspath(
-        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
-    # 晓聪
     # folder_scenarios = os.path.abspath(
-    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
+    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
+    # 晓聪
+    folder_scenarios = os.path.abspath(
+        '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-22_7_I-1"
+    name_scenario = "DEU_Frankfurt-48_7_I-1"
 
     main_planner = InteractiveCRPlanner()
 
@@ -443,8 +443,8 @@ if __name__ == '__main__':
     simulated_scenario, ego_vehicles = main_planner.process(sumo_sim)
 
     # path for outputting results
-    # output_path = '/home/zxc/Videos/CR_outputs/'
-    output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    output_path = '/home/zxc/Videos/CR_outputs/'
+    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
 
     # video
     output_folder_path = os.path.join(output_path, 'videos/')

@@ -97,14 +97,14 @@ class checker():
                 if (self.laststate[0] + self.Tstep * self.laststate[1]) >= \
                         self.positions(self.T + self.Tstep, self.lastlane[0] - 1, i)[0]:  # 并道后在车前
                     if (self.laststate[0] + self.Tstep * self.laststate[1]) < \
-                            8 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
+                            5 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
                         flag1 = 1
-                    if self.laststate[0] <= 5 + self.positions(self.T, self.lastlane[0] - 1, i)[0]:  # 不能并道之前在车后
+                    if self.laststate[0] <= 3 + self.positions(self.T, self.lastlane[0] - 1, i)[0]:  # 不能并道之前在车后
                         flag1 = 1
                 else:  # 并道后在车后
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0] - 1, i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0] - 1, i)[0] - (
-                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 10:
+                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 5:
                         flag1 = 1  # 不能小于安全车距
         if self.lastlane[0] != self.target[0] + 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
@@ -125,14 +125,14 @@ class checker():
                 if (self.laststate[0] + self.Tstep * self.laststate[1]) >= \
                         self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
                     if (self.laststate[0] + self.Tstep * self.laststate[1]) < \
-                            8 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
+                            5 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
                         flag2 = 1
-                    if self.laststate[0] <= 5 + self.positions(self.T, self.lastlane[0] + 1, i)[0]:  # 不能并道前在车后
+                    if self.laststate[0] <= 3 + self.positions(self.T, self.lastlane[0] + 1, i)[0]:  # 不能并道前在车后
                         flag2 = 1
                 else:  # 并道后在车后
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0] - (
-                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 10:
+                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 5:
                         flag2 = 1  # 不能小于安全车距
         if self.lastlane[0] != self.target[0] - 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
@@ -308,10 +308,42 @@ def output(state,action,speedLimit,obstacles):
         state_out[0] = state[0] - 1
         state_out[1] = t * state[2]
         state_out[2] = state[2]
+        targetLane0 = findTargetLane(lane00, lane01, lane02, lane03, lane04, lane05, state[0])
+        frontVehicle0 = findFrontVechicle(state[1], targetLane0)
+        targetLane1 = findTargetLane(lane00, lane01, lane02, lane03, lane04, lane05, state[0]-1)
+        frontVehicle1 = findFrontVechicle(state[1], targetLane1)
+        if speedLimit - state[2] >= 1 * t:
+            front0_ss = frontVehicle0[0] + frontVehicle0[1] * t
+            front1_ss = frontVehicle1[0] + frontVehicle1[1] * t
+            ego_ss = state[1] + t * state[2] + 0.5 * 1 * t * t
+            if front0_ss > ego_ss - 3 * state[2]:                    # 参数：要求原车道前车在t时间后，跑到安全位置
+                if (front1_ss - ego_ss) >= 5:                       # 参数：要求行为结束后，距离目标车道前车5m
+                    state_out[1] = t * state[2] + 0.5 * 1 * t * t
+                    state_out[2] = state[2] + 1 * t
+                if (front1_ss - ego_ss) < 5:
+                    acc2 = (front1_ss - 5 - t * state[2] - state[1]) / (0.5 * t * t)
+                    state_out[1] = t * state[2] + 0.5 * acc2 * t * t
+                    state_out[2] = state[2] + acc2 * t
     if action == 2:
         state_out[0] = state[0] + 1
         state_out[1] = t * state[2]
         state_out[2] = state[2]
+        targetLane0 = findTargetLane(lane00, lane01, lane02, lane03, lane04, lane05, state[0])
+        frontVehicle0 = findFrontVechicle(state[1], targetLane0)
+        targetLane1 = findTargetLane(lane00, lane01, lane02, lane03, lane04, lane05, state[0] + 1)
+        frontVehicle1 = findFrontVechicle(state[1], targetLane1)
+        if speedLimit - state[2] >= 1 * t:
+            front0_ss = frontVehicle0[0] + frontVehicle0[1] * t
+            front1_ss = frontVehicle1[0] + frontVehicle1[1] * t
+            ego_ss = state[1] + t * state[2] + 0.5 * 1 * t * t
+            if front0_ss > ego_ss - 1 * state[2]:  # 参数：要求原车道前车在t时间后，跑到安全位置
+                if (front1_ss - ego_ss) >= 5:  # 参数：要求行为结束后，距离目标车道前车5m
+                    state_out[1] = t * state[2] + 0.5 * 1 * t * t
+                    state_out[2] = state[2] + 1 * t
+                if (front1_ss - ego_ss) < 5:
+                    acc2 = (front1_ss - 5 - t * state[2] - state[1]) / (0.5 * t * t)
+                    state_out[1] = t * state[2] + 0.5 * acc2 * t * t
+                    state_out[2] = state[2] + acc2 * t
     if action == 3:
         targetLane = findTargetLane(lane00,lane01,lane02,lane03,lane04,lane05,state[0])
         frontVehicle = findFrontVechicle(state[1],targetLane)
@@ -587,14 +619,14 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
                 if (self.laststate[0] + self.Tstep * self.laststate[1]) >= \
                         self.positions(self.T + self.Tstep, self.lastlane[0] - 1, i)[0]:  # 并道后在车前
                     if (self.laststate[0] + self.Tstep * self.laststate[1]) < \
-                            8 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
+                            5 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
                         flag1 = 1
-                    if self.laststate[0] <= 5 + self.positions(self.T, self.lastlane[0] - 1, i)[0]:  # 不能并道之前在车后
+                    if self.laststate[0] <= 3 + self.positions(self.T, self.lastlane[0] - 1, i)[0]:  # 不能并道之前在车后
                         flag1 = 1
                 else:  # 并道后在车后
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0] - 1, i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0] - 1, i)[0] - (
-                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 10:
+                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 5:
                         flag1 = 1  # 不能小于安全车距
         if self.lastlane[0] != self.target[0] + 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
@@ -615,14 +647,14 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
                 if (self.laststate[0] + self.Tstep * self.laststate[1]) >= \
                         self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
                     if (self.laststate[0] + self.Tstep * self.laststate[1]) < \
-                            8 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
+                            5 + self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0]:  # 并道后在车前
                         flag2 = 1
-                    if self.laststate[0] <= 5 + self.positions(self.T, self.lastlane[0] + 1, i)[0]:  # 不能并道前在车后
+                    if self.laststate[0] <= 3 + self.positions(self.T, self.lastlane[0] + 1, i)[0]:  # 不能并道前在车后
                         flag2 = 1
                 else:  # 并道后在车后
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0] + 1, i)[0] - (
-                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 10:
+                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 5:
                         flag2 = 1  # 不能小于安全车距
         if self.lastlane[0] != self.target[0] - 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
@@ -804,9 +836,9 @@ class Action():
 if __name__ == "__main__":
     # start = time.time()
     state = [0, 266.79999999999217, 25.863049516499174]
-    map = [2, 0, 362.0000000000127, 37.77777777777778]
+    map = [2, 1, 362.0000000000127, 37.77777777777778]
     # obstacles = [[0, 100, 25], [0, 150, 20], [1, 180, 10], [1, 120, 20], [2, 80, 15], [3, 80, 10], [4, 80, 15]]
-    obstacles = [[0.,         302.6,         25.84448145],
+    obstacles = [[1.,         302.6,         25.84448145],
     [1.,        219.7,         24.88470455],
     [1.,        173.9,       27.11482083],
     [0.,        100.9 ,        28.16625028]]
