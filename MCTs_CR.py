@@ -28,7 +28,7 @@ class ActionAddition:
         self.a_end = -1
         self.delta_s = -1
         self.lanelet_id_target = -1
-        self.T = 6
+        self.T = 5
         self.ego_state_init = []
         self.frenet_cv = None
 
