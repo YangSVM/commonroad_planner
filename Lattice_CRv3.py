@@ -117,13 +117,37 @@ class Lattice_CRv3():
         plt.show()
 
     def planner(self, action, semantic_action):
+        # Exception handling while mcts tell lattice v_end should be zero
+        # and the initial vecocity is zero
+        ego_pos = self.ego_state.position
+        ego_v = self.ego_state.velocity
+        ego_heading = self.ego_state.orientation
+        if action.v_end == 0 and ego_v == 0:
+            tp_list_init = [0, 0, 0, 0, 0, 0]
+            tp_opt = TrajPoint(tp_list_init)
+            tp_opt.a = 0
+            tp_opt.v = 0
+            tp_opt.x = ego_pos[0]
+            tp_opt.y = ego_pos[1]
+            tp_opt.theta = ego_heading
+            traj_points = []
+            traj_points.append([tp_opt.x, tp_opt.y, tp_opt.v, tp_opt.a, tp_opt.theta, tp_opt.kappa])
+            print('Need to stop for a while!')
+            is_new_action_needed = 1
+
+            next_state = State()
+            next_state.position = np.array([traj_points[0][0], traj_points[0][1]])
+            next_state.velocity = traj_points[0][2]
+            next_state.acceleration = traj_points[0][3]
+            next_state.orientation = traj_points[0][4]
+            return [next_state], is_new_action_needed
         t=0
         M_PI = 3.141593
         path_points = self.get_reference_line(action.frenet_cv)
         # action.frenet_cv = path_points
         # plot reference line
         # self.plot_reference_line(path_points)
-        is_new_action_needed = self.is_require_decision(action,path_points)
+        is_new_action_needed = self.is_require_decision(action, path_points)
         if is_new_action_needed:
             print('current action finished, new action needed!')
         
@@ -204,7 +228,7 @@ class Lattice_CRv3():
 
             horizon = 5
             if semantic_action in {1, 2}:
-                horizon = 20
+                horizon = 15
             n_points = min(len(traj_points), horizon)
             next_states = []
             for i_point in range(n_points):
