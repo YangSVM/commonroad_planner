@@ -19,7 +19,7 @@ import commonroad_dc.feasibility.feasibility_checker as feasibility_checker
 from commonroad_dc.feasibility.vehicle_dynamics import VehicleDynamics
 # from commonroad_dc.costs.evaluation import CostFunctionEvaluator
 from commonroad_dc.feasibility.solution_checker import valid_solution
-from commonroad.scenario.trajectory import Trajectory
+from commonroad.scenario.trajectory import State, Trajectory
 from sumocr.visualization.video import create_video
 from sumocr.maps.sumo_scenario import ScenarioWrapper
 from sumocr.interface.sumo_simulation import SumoSimulation
@@ -164,7 +164,7 @@ class InteractiveCRPlanner:
         scenario_wrapper.initial_scenario = self.scenario
 
         self.num_of_steps = conf.simulation_steps
-        # self.num_of_steps = 48
+        # self.num_of_steps = 149
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -180,7 +180,7 @@ class InteractiveCRPlanner:
         ego_vehicles = sumo_sim.ego_vehicles
 
         for step in range(self.num_of_steps):
-            if step == 126:
+            if step == 150:
                 print('debug')
                 pass
 
@@ -256,6 +256,11 @@ class InteractiveCRPlanner:
         if len(self.next_states_queue) > 0:
             print('use next_states_buffer')
             next_state = self.next_states_queue.pop(0)
+            # update action
+            if self.last_action in {1, 2}:
+                action.T -= 0.1
+                if action.T <= 0.5:
+                    self.is_new_action_needed = True
             return next_state
 
         # check for goal info
@@ -297,31 +302,40 @@ class InteractiveCRPlanner:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, self.lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
                 self.is_new_action_needed = False
-                # if semantic_action in {3, 4, 5}:
-                #     action.T = action.T / 4
-                #     action.v_end = action.ego_state_init[2] + (action.v_end - action.ego_state_init[2]) / 4
-                #     action.delta_s = action.T * action.v_end
+
             else:
                 # update action
                 action.T -= 0.1
+                if action.T <= 0.5:
+                    self.is_new_action_needed = True
 
             # get front car info.
             front_veh_info = front_vehicle_info_extraction(self.scenario,
                                                            self.ego_state.position,
                                                            self.lanelet_route)
-            if semantic_action in {3, 4, 5}:
-                # too close to front car, start to car-following
-                ttc = front_veh_info['dhw'] / (self.ego_state.velocity - front_veh_info['v'])
-                if 0 < ttc < 5:
+            print('dhw', front_veh_info['dhw'])
+            print('v_front', front_veh_info['v'])
+            # too close to front car, start to car-following
+            if not front_veh_info['dhw'] == -1:
+                ttc = (front_veh_info['dhw'] - 5) / (self.ego_state.velocity - front_veh_info['v'])
+                if 0 < ttc < 5 or front_veh_info['dhw'] < 20 or semantic_action == 9:
                     print('ttc', ttc)
                     print('too close to front car, start to car-following')
                     action_temp = copy.deepcopy(action)
-                    action_temp.delta_s = front_veh_info['dhw']
-                    action_temp.v_end = front_veh_info['v'] - 3
-                    action_temp.T = action_temp.delta_s / (action_temp.v_end + self.ego_state.velocity) * 2
-                    if action_temp.T < 0.5:
-                        action_temp.T = 0.5
-                        action_temp.delta_s = (action_temp.v_end + self.ego_state.velocity) / 2 * action_temp.T
+
+                    # IDM
+                    s_t = 2 + max([0, self.ego_state.velocity * 1.5 - self.ego_state.velocity * (
+                            self.ego_state.velocity - front_veh_info['v']) / 2 / (7 * 2) ** 0.5])
+                    acc = max(7 * (1 - (self.ego_state.velocity /
+                                        60 * 3.6) ** 5 - (s_t / (front_veh_info['dhw'] - 5)) ** 2), -7)
+                    if acc > 5:
+                        acc = 5
+                    action_temp.T = 5
+                    action_temp.v_end = self.ego_state.velocity + action_temp.T * acc
+                    if action_temp.v_end < 0:
+                        action_temp.v_end = 0
+                    action_temp.delta_s = self.ego_state.velocity * 5 + 0.5 * acc * action_temp.T ** 2
+
                     action = action_temp
 
             # print('init position:', action.ego_state_init)
@@ -370,7 +384,7 @@ def motion_planner_interactive(scenario_path: str):
     feasible, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory,
                                                                                 main_planner.vehicle,
                                                                                 main_planner.dt)
-    print('Feasible? {}'.format(feasible))
+    # print('Feasible? {}'.format(feasible))
     if not feasible:
         # if not feasible. reconstruct the inputs
         initial_state = trajectory.state_list[0]
@@ -381,12 +395,12 @@ def motion_planner_interactive(scenario_path: str):
             for idx, inp in enumerate(reconstructed_inputs.state_list)
         ]
         trajectory_reconstructed = Trajectory(initial_time_step=0, state_list=reconstructed_states)
-        feasible_re, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory_reconstructed,
-                                                                                       main_planner.vehicle,
-                                                                                       main_planner.dt)
+        # feasible_re, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory_reconstructed,
+        #                                                                                main_planner.vehicle,
+        #                                                                                main_planner.dt)
         for i, state in enumerate(trajectory_reconstructed.state_list):
             ego_vehicle.driven_trajectory.trajectory.state_list[i] = trajectory_reconstructed.state_list[i]
-        print('after recon, Feasible? {}'.format(feasible_re))
+        # print('after recon, Feasible? {}'.format(feasible_re))
 
     # create solution object for benchmark
     pps = []
@@ -415,7 +429,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-48_4_I-1"
+    name_scenario = "DEU_Frankfurt-7_14_I-1"
 
     main_planner = InteractiveCRPlanner()
 
@@ -441,10 +455,10 @@ if __name__ == '__main__':
                  ego_vehicles,
                  True,
                  "_planner")
-    print('current scenario:', name_scenario)
-    # write simulated scenario to file
-    fw = CommonRoadFileWriter(simulated_scenario, main_planner.planning_problem_set, author, affiliation, source, tags)
-    fw.write_to_file(f"{path_scenarios_simulated}{name_scenario}_planner.xml", OverwriteExistingFile.ALWAYS)
+
+    # # write simulated scenario to file
+    # fw = CommonRoadFileWriter(simulated_scenario, main_planner.planning_problem_set, author, affiliation, source, tags)
+    # fw.write_to_file(f"{path_scenarios_simulated}{name_scenario}_planner.xml", OverwriteExistingFile.ALWAYS)
 
     # get trajectory
     ego_vehicle = list(ego_vehicles.values())[0]
@@ -453,7 +467,9 @@ if __name__ == '__main__':
                                                                                 main_planner.vehicle,
                                                                                 main_planner.dt)
     print('Feasible? {}'.format(feasible))
-    if not feasible:
+    recon_num = 0
+    while not (feasible or recon_num >= 3):
+        recon_num += 1
         # if not feasible. reconstruct the inputs
         initial_state = trajectory.state_list[0]
         vehicle = VehicleDynamics.KS(VehicleType.FORD_ESCORT)
@@ -463,12 +479,13 @@ if __name__ == '__main__':
             for idx, inp in enumerate(reconstructed_inputs.state_list)
         ]
         trajectory_reconstructed = Trajectory(initial_time_step=0, state_list=reconstructed_states)
-        feasible_re, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory_reconstructed,
+
+        for i, state in enumerate(trajectory_reconstructed.state_list):
+            ego_vehicle.driven_trajectory.trajectory.state_list[i] = state
+        feasible, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory_reconstructed,
                                                                                        main_planner.vehicle,
                                                                                        main_planner.dt)
-        for i, state in enumerate(trajectory_reconstructed.state_list):
-            ego_vehicle.driven_trajectory.trajectory.state_list[i] = trajectory_reconstructed.state_list[i]
-        print('after recon, Feasible? {}'.format(feasible_re))
+        print('after recon, Feasible? {}'.format(feasible))
 
     # saves trajectory to solution file
     save_solution(simulated_scenario, main_planner.planning_problem_set, ego_vehicles,
