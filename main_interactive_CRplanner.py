@@ -417,14 +417,14 @@ def motion_planner_interactive(scenario_path: str):
 if __name__ == '__main__':
 
     # 曹雷
-    # folder_scenarios = os.path.abspath(
+    # folder_scenarios = os.path.abspath(   
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    # folder_scenarios = os.path.abspath(
-    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
-    # 晓聪
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive')
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
+    # 晓聪
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
     name_scenario = "DEU_Frankfurt-7_14_I-1"
 
@@ -435,8 +435,8 @@ if __name__ == '__main__':
     simulated_scenario, ego_vehicles = main_planner.process(sumo_sim)
 
     # path for outputting results
-    output_path = '/home/zxc/Videos/CR_outputs/'
-    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    # output_path = '/home/zxc/Videos/CR_outputs/'
+    output_path = '/home/thicv/codes/commonroad/CR_outputs'
 
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
@@ -495,6 +495,7 @@ if __name__ == '__main__':
                                                           f"solution_KS1:TR1:{name_scenario}:2020a.xml"))
     res = valid_solution(main_planner.scenario, main_planner.planning_problem_set, solution)
     print(res)
+
     # ce = CostFunctionEvaluator.init_from_solution(solution)
     # cost_result = ce.evaluate_solution(scenario, planning_problem_set, solution)
     # print(cost_result)

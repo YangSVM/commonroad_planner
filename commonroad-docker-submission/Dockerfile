@@ -13,4 +13,7 @@ ENV PYTHONPATH="/commonroad-interactive-scenarios/:${PYTHONPATH}"
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
-ENTRYPOINT python3.7 /commonroad/planner
+COPY run.sh run.sh
+RUN chmod a+x run.sh
+
+ENTRYPOINT ./run.sh
