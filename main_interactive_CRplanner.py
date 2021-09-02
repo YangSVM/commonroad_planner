@@ -3,6 +3,7 @@
 # and outputs the next state of the ego vehicle
 import copy
 from time import sleep
+from typing import Dict
 
 from commonroad.planning.planning_problem import PlanningProblem
 from networkx.generators import ego
@@ -119,11 +120,18 @@ class InteractiveCRPlanner:
 
         return self.lanelet_route
 
-    def check_goal_state(self, position, goal_lanelet_ids):
+    def check_goal_state(self, position, goal_lanelet_ids:Dict):
         is_reach_goal_lanelets = False
         ego_lanelets = self.scenario.lanelet_network.find_lanelet_by_position([position])[0]
+        
+        # goal_lanelet_ids need to change from dict to list. 
+        # eg. goal_lanelet_ids={0: [212], 1: [213, 214]}
+        goal_lanelet_ids_list = []
+        for value in goal_lanelet_ids.values():
+            goal_lanelet_ids_list=goal_lanelet_ids_list+value
+
         for ego_lanelet in ego_lanelets:
-            if ego_lanelet in goal_lanelet_ids:
+            if ego_lanelet in goal_lanelet_ids_list:
                 is_reach_goal_lanelets = True
 
         # 没有经过
@@ -426,7 +434,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-77_5_I-1"
+    name_scenario = "DEU_Frankfurt-22_7_I-1"
 
     main_planner = InteractiveCRPlanner()
 
