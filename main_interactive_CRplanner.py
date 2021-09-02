@@ -164,7 +164,7 @@ class InteractiveCRPlanner:
         scenario_wrapper.initial_scenario = self.scenario
 
         self.num_of_steps = conf.simulation_steps
-        # self.num_of_steps = 156
+        # self.num_of_steps = 149
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -313,10 +313,11 @@ class InteractiveCRPlanner:
             front_veh_info = front_vehicle_info_extraction(self.scenario,
                                                            self.ego_state.position,
                                                            self.lanelet_route)
-
+            print('dhw', front_veh_info['dhw'])
+            print('v_front', front_veh_info['v'])
             # too close to front car, start to car-following
             if not front_veh_info['dhw'] == -1:
-                ttc = front_veh_info['dhw'] / (self.ego_state.velocity - front_veh_info['v'])
+                ttc = (front_veh_info['dhw'] - 5) / (self.ego_state.velocity - front_veh_info['v'])
                 if 0 < ttc < 5 or front_veh_info['dhw'] < 20 or semantic_action == 9:
                     print('ttc', ttc)
                     print('too close to front car, start to car-following')
@@ -326,7 +327,7 @@ class InteractiveCRPlanner:
                     s_t = 2 + max([0, self.ego_state.velocity * 1.5 - self.ego_state.velocity * (
                             self.ego_state.velocity - front_veh_info['v']) / 2 / (7 * 2) ** 0.5])
                     acc = max(7 * (1 - (self.ego_state.velocity /
-                                        60 * 3.6) ** 5 - (s_t / front_veh_info['dhw']) ** 2), -5)
+                                        60 * 3.6) ** 5 - (s_t / (front_veh_info['dhw'] - 5)) ** 2), -7)
                     if acc > 5:
                         acc = 5
                     action_temp.T = 5
@@ -394,9 +395,9 @@ def motion_planner_interactive(scenario_path: str):
             for idx, inp in enumerate(reconstructed_inputs.state_list)
         ]
         trajectory_reconstructed = Trajectory(initial_time_step=0, state_list=reconstructed_states)
-        feasible_re, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory_reconstructed,
-                                                                                       main_planner.vehicle,
-                                                                                       main_planner.dt)
+        # feasible_re, reconstructed_inputs = feasibility_checker.trajectory_feasibility(trajectory_reconstructed,
+        #                                                                                main_planner.vehicle,
+        #                                                                                main_planner.dt)
         for i, state in enumerate(trajectory_reconstructed.state_list):
             ego_vehicle.driven_trajectory.trajectory.state_list[i] = trajectory_reconstructed.state_list[i]
         # print('after recon, Feasible? {}'.format(feasible_re))
@@ -428,7 +429,7 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-7_3_I-1"
+    name_scenario = "DEU_Frankfurt-7_14_I-1"
 
     main_planner = InteractiveCRPlanner()
 
