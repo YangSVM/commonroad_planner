@@ -302,7 +302,7 @@ class InteractiveCRPlanner:
         print('dhw', front_veh_info['dhw'])
         print('v_front', front_veh_info['v'])
         # too close to front car, start to car-following
-        if not (front_veh_info['dhw'] == -1 or current_time_step == 0):
+        if not (front_veh_info['dhw'] == -1 or current_time_step == 0 or self.ego_state.velocity == 0):
             ttc = (front_veh_info['dhw'] - 5) / (self.ego_state.velocity - front_veh_info['v'])
             if 0 < ttc < 5 or front_veh_info['dhw'] < 20:
                 print('ttc', ttc)
@@ -434,7 +434,7 @@ if __name__ == '__main__':
     folder_scenarios = os.path.abspath(
         '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-71_8_I-1"
+    name_scenario = "DEU_Frankfurt-38_4_I-1"
 
     main_planner = InteractiveCRPlanner()
 
