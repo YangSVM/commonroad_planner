@@ -3,7 +3,7 @@ import os.path
 from commonroad.common.solution import Solution, CommonRoadSolutionWriter
 
 # Load planner module
-from iterator import scenario_iterator_interactive, scenario_iterator_non_interactive
+from iterator import scenario_iterator_interactive, scenario_iterator_non_interactive, _search_interactive_scenarios
 from main_interactive_CRplanner import motion_planner_interactive
 
 
@@ -29,13 +29,17 @@ if __name__ == "__main__":
     #     solution = motion_planner(scenario)
     #     save_solution(solution, solution_dir)
 
-    # solve all interactive scenarios
-    for scenario_path in scenario_iterator_interactive(scenario_dir):
+    # solvethe first interactive scenarios
+    interactive_paths = _search_interactive_scenarios(scenario_dir)
+    n_interactive_scenarios = len(interactive_paths)
+    first_half_scenario_path = interactive_paths[:int(n_interactive_scenarios/2)]
+
+    for scenario_path in first_half_scenario_path:
         print(f"Processing scenario {os.path.basename(scenario_path)} ...")
         try:
             solution = motion_planner_interactive(scenario_path)
             save_solution(solution, solution_dir)
-        except :  
-            print('cannot solve this scenario', scenario_path)
+        except:  
+            print('-'*20,'cannot solve this scenario', scenario_path,'-'*20)
         else:
-            print(scenario_path, 'solved already')
+            print('-'*20,scenario_path, 'solved already','-'*20)

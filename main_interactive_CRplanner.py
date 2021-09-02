@@ -164,7 +164,7 @@ class InteractiveCRPlanner:
         scenario_wrapper.initial_scenario = self.scenario
 
         self.num_of_steps = conf.simulation_steps
-        # self.num_of_steps = 116
+        # self.num_of_steps = 48
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -409,13 +409,13 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(   
     #     '/home/thor/commonroad-interactive-scenarios/competition_scenarios_new/interactive')
     # 奕彬
-    # folder_scenarios = os.path.abspath(
-    #     '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
-    # 晓聪
     folder_scenarios = os.path.abspath(
-        '/home/zxc/Downloads/competition_scenarios_new/interactive')
+        '/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/scenarios_cr_competition/competition_scenarios_new/interactive')
+    # 晓聪
+    # folder_scenarios = os.path.abspath(
+    #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-75_2_I-1"
+    name_scenario = "DEU_Frankfurt-48_4_I-1"
 
     main_planner = InteractiveCRPlanner()
 
@@ -424,8 +424,8 @@ if __name__ == '__main__':
     simulated_scenario, ego_vehicles = main_planner.process(sumo_sim)
 
     # path for outputting results
-    output_path = '/home/zxc/Videos/CR_outputs/'
-    # output_path = '/home/thicv/codes/commonroad/CR_outputs'
+    # output_path = '/home/zxc/Videos/CR_outputs/'
+    output_path = '/home/thicv/codes/commonroad/CR_outputs'
 
     # video
     output_folder_path = os.path.join(output_path, 'videos/')
@@ -441,7 +441,7 @@ if __name__ == '__main__':
                  ego_vehicles,
                  True,
                  "_planner")
-
+    print('current scenario:', name_scenario)
     # write simulated scenario to file
     fw = CommonRoadFileWriter(simulated_scenario, main_planner.planning_problem_set, author, affiliation, source, tags)
     fw.write_to_file(f"{path_scenarios_simulated}{name_scenario}_planner.xml", OverwriteExistingFile.ALWAYS)
@@ -481,6 +481,7 @@ if __name__ == '__main__':
                                                           f"solution_KS1:TR1:{name_scenario}:2020a.xml"))
     res = valid_solution(main_planner.scenario, main_planner.planning_problem_set, solution)
     print(res)
+
     # ce = CostFunctionEvaluator.init_from_solution(solution)
     # cost_result = ce.evaluate_solution(scenario, planning_problem_set, solution)
     # print(cost_result)
