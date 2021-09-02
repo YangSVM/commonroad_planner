@@ -135,22 +135,22 @@ class InteractiveCRPlanner:
                 is_reach_goal_lanelets = True
 
         # 没有经过
-        goal_info = self.goal_info
-        if goal_info is None:
-            return False
+        # goal_info = self.goal_info
+        # if goal_info is None:
+        #     return False
 
-        is_goal = False
-        is_goal4mcts = goal_info[0]
-        # 必须是mcts的终点是问题终点
-        if is_goal4mcts:
-            cv, cv_s, s_goal = goal_info[1:]
-            s_ego = distance_lanelet(cv, cv_s, cv[0, :], position)
-            # 自车s距离已经超过终点距离
+        # is_goal = False
+        # is_goal4mcts = goal_info[0]
+        # # 必须是mcts的终点是问题终点
+        # if is_goal4mcts:
+        #     cv, cv_s, s_goal = goal_info[1:]
+        #     s_ego = distance_lanelet(cv, cv_s, cv[0, :], position)
+        #     # 自车s距离已经超过终点距离
 
-            if s_ego >= s_goal and is_reach_goal_lanelets:
-                is_goal = True
+        #     if s_ego >= s_goal and is_reach_goal_lanelets:
+        #         is_goal = True
 
-        return is_goal
+        return is_reach_goal_lanelets
 
     def initialize(self, folder_scenarios, name_scenario):
 
@@ -206,7 +206,7 @@ class InteractiveCRPlanner:
 
             # force to get a new action every 1 sceonds
             self.t_record += 0.1
-            if self.t_record > 1 and self.last_semantic_action not in {1, 2}:
+            if self.t_record > 1 and (len(self.last_semantic_action)==0 or self.last_semantic_action not in {1, 2}):
                 self.is_new_action_needed = True
                 print('force to get a new action during straight-going')
                 self.t_record = 0
