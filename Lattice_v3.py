@@ -26,7 +26,7 @@ MAX_LAT_A = 100 #参考apollo，横向约束应该是给到向心加速度，而
 SPEED_COST_WEIGHT = 1  #速度和目标速度差距，暂时不用
 DIST_TRAVEL_COST_WEIGHT = 1  #实际轨迹长度，暂时不用
 LAT_COMFORT_COST_WEIGHT = 1 #横向舒适度
-LAT_OFFSET_COST_WEIGHT = 1 #横向偏移量
+LAT_OFFSET_COST_WEIGHT = 2 #横向偏移量
 
 #前四个是中间计算时用到的权重，后三个是最终合并时用到的
 LON_OBJECTIVE_COST_WEIGHT = 1  #纵向目标cost，暂时不用
@@ -714,7 +714,7 @@ class PolyTraj:
 class SampleBasis:
     # the basis of sampling: theta, dist, d_end (, v_end); normally for the planning_out cruising case
     # def __init__(self, traj_point, theta_thr, ttcs):
-    def __init__(self, traj_point, theta_thr, action, s_decision_end):
+    def __init__(self, traj_point, action, s_decision_end):
         # delta_s = action.delta_s
         d_end = 0
         # ego_state_decision = action.ego_state_init  

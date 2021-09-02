@@ -452,7 +452,9 @@ def generate_len_map(lanelet_network, lanelet_map, isContinous=True):
     [210, 212, 239],
     [231, 232, 240]]
     (ps: -1 means unusable lanelet)
-    :return: a list of usable length range in each lane
+    :return: a list of usable length range in each lane.
+        isContinous=True 情况下，自动拼接连续的lanelet
+        isContinous=False 情况下. 返回的数目是非-1的数目
     """
 
     lm = lanelet_map  # lanelet map

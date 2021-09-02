@@ -3,6 +3,7 @@
 # and outputs the next state of the ego vehicle
 import copy
 from time import sleep
+from typing import Dict
 
 from commonroad.planning.planning_problem import PlanningProblem
 from networkx.generators import ego
@@ -119,30 +120,37 @@ class InteractiveCRPlanner:
 
         return self.lanelet_route
 
-    def check_goal_state(self, position, goal_lanelet_ids):
+    def check_goal_state(self, position, goal_lanelet_ids:Dict):
         is_reach_goal_lanelets = False
         ego_lanelets = self.scenario.lanelet_network.find_lanelet_by_position([position])[0]
+        
+        # goal_lanelet_ids need to change from dict to list. 
+        # eg. goal_lanelet_ids={0: [212], 1: [213, 214]}
+        goal_lanelet_ids_list = []
+        for value in goal_lanelet_ids.values():
+            goal_lanelet_ids_list=goal_lanelet_ids_list+value
+
         for ego_lanelet in ego_lanelets:
-            if ego_lanelet in goal_lanelet_ids:
+            if ego_lanelet in goal_lanelet_ids_list:
                 is_reach_goal_lanelets = True
 
         # 没有经过
-        goal_info = self.goal_info
-        if goal_info is None:
-            return False
+        # goal_info = self.goal_info
+        # if goal_info is None:
+        #     return False
 
-        is_goal = False
-        is_goal4mcts = goal_info[0]
-        # 必须是mcts的终点是问题终点
-        if is_goal4mcts:
-            cv, cv_s, s_goal = goal_info[1:]
-            s_ego = distance_lanelet(cv, cv_s, cv[0, :], position)
-            # 自车s距离已经超过终点距离
+        # is_goal = False
+        # is_goal4mcts = goal_info[0]
+        # # 必须是mcts的终点是问题终点
+        # if is_goal4mcts:
+        #     cv, cv_s, s_goal = goal_info[1:]
+        #     s_ego = distance_lanelet(cv, cv_s, cv[0, :], position)
+        #     # 自车s距离已经超过终点距离
 
-            if s_ego >= s_goal and is_reach_goal_lanelets:
-                is_goal = True
+        #     if s_ego >= s_goal and is_reach_goal_lanelets:
+        #         is_goal = True
 
-        return is_goal
+        return is_reach_goal_lanelets
 
     def initialize(self, folder_scenarios, name_scenario):
 
@@ -164,7 +172,7 @@ class InteractiveCRPlanner:
         scenario_wrapper.initial_scenario = self.scenario
 
         self.num_of_steps = conf.simulation_steps
-        # self.num_of_steps = 149
+        # self.num_of_steps = 86
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -198,7 +206,7 @@ class InteractiveCRPlanner:
 
             # force to get a new action every 1 sceonds
             self.t_record += 0.1
-            if self.t_record > 1 and self.last_semantic_action not in {1, 2}:
+            if self.t_record > 1 and (len(self.last_semantic_action)==0 or self.last_semantic_action not in {1, 2}):
                 self.is_new_action_needed = True
                 print('force to get a new action during straight-going')
                 self.t_record = 0
@@ -426,7 +434,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-7_14_I-1"
+    name_scenario = "DEU_Frankfurt-22_7_I-1"
 
     main_planner = InteractiveCRPlanner()
 
