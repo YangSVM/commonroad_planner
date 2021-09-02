@@ -223,9 +223,9 @@ class Lattice_CRv3():
             plt.pause(0.01)
             # plt.show()
 
-            horizon = 5
+            horizon = 10
             if semantic_action in {1, 2}:
-                horizon = 10
+                horizon = 20
             n_points = min(len(traj_points), horizon)
             next_states = []
             for i_point in range(n_points):
@@ -237,7 +237,7 @@ class Lattice_CRv3():
                 next_state.orientation = traj_points[i_point][4]
                 next_states.append(next_state)
             return next_states, is_new_action_needed
-        # In the car following scenerio if lattice has no solution, 
+        # In the car following scenerio if lattice has no solution,
         # replanning by v_end=v_init along the road reference line
         else:
             # tp_list_init = [0,0,0,0,0,0]

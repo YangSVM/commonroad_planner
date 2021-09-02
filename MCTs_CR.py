@@ -235,11 +235,11 @@ class MCTs_CR():
             action = searcher.search(initialState=initialState)  # 一整个类都是其状态
             semantic_action = action.act
             speed_limit = map[3]
-            out = output(ego_state_mcts, action.act, speed_limit)
+            out = output(ego_state_mcts, action.act, speed_limit, obstacles)
         elif flag == 1:
             print('第一步mcts无解，进入跟车')
             semantic_action = 9
-            out = output(ego_state_mcts, 9, map[3])
+            out = output(ego_state_mcts, 9, map[3], obstacles)
 
         print('out: ', out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
         # print(action.act)
