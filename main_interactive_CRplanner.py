@@ -253,6 +253,10 @@ class InteractiveCRPlanner:
         # generate a global lanelet route from initial position to goal region
         self.generate_route(current_scenario, planning_problem)
 
+        # check for goal info
+        is_goal = self.check_goal_state(ego_vehicle.current_state.position,
+                                        planning_problem.goal.lanelets_of_goal_position)
+
         if len(self.next_states_queue) > 0:
             print('use next_states_buffer')
             next_state = self.next_states_queue.pop(0)
@@ -263,9 +267,6 @@ class InteractiveCRPlanner:
                     self.is_new_action_needed = True
             return next_state
 
-        # check for goal info
-        is_goal = self.check_goal_state(ego_vehicle.current_state.position,
-                                        planning_problem.goal.lanelets_of_goal_position)
         if is_goal:
             print('goal reached! braking!')
             if self.is_reach_goal_region and len(self.next_states_queue) > 0:
@@ -286,82 +287,78 @@ class InteractiveCRPlanner:
             next_state = self.next_states_queue.pop(0)
             return next_state
 
-        # check state 1:straight-going /2:incoming /3:in-intersection
+        "check if start to car-following"
+        front_veh_info = front_vehicle_info_extraction(self.scenario,
+                                                       self.ego_state.position,
+                                                       self.lanelet_route)
+        print('dhw', front_veh_info['dhw'])
+        print('v_front', front_veh_info['v'])
+        # too close to front car, start to car-following
+        if not front_veh_info['dhw'] == -1:
+            ttc = (front_veh_info['dhw'] - 5) / (self.ego_state.velocity - front_veh_info['v'])
+            if 0 < ttc < 5 or front_veh_info['dhw'] < 20:
+                print('ttc', ttc)
+                print('too close to front car, start to car-following')
+                action_temp = copy.deepcopy(action)
+                # IDM
+                s_t = 2 + max([0, self.ego_state.velocity * 1.5 - self.ego_state.velocity * (
+                        self.ego_state.velocity - front_veh_info['v']) / 2 / (7 * 2) ** 0.5])
+                acc = max(7 * (1 - (self.ego_state.velocity /
+                                    60 * 3.6) ** 5 - (s_t / (front_veh_info['dhw'] - 5)) ** 2), -7)
+                if acc > 5:
+                    acc = 5
+                action_temp.T = 5
+                action_temp.v_end = self.ego_state.velocity + action_temp.T * acc
+                if action_temp.v_end < 0:
+                    action_temp.v_end = 0
+                action_temp.delta_s = self.ego_state.velocity * 5 + 0.5 * acc * action_temp.T ** 2
+                action = action_temp
+
+                print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
+                print('delta_s:', action.delta_s)
+                print('T_duration:', action.T)
+                print('v_end:', action.v_end)
+                lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
+                self.next_states_queue, self.is_new_action_needed = lattice_planner.planner(action, semantic_action)
+                next_state = self.next_states_queue.pop(0)
+                self.is_new_action_needed = True
+                return next_state
+
+        "check state 1:straight-going /2:incoming /3:in-intersection/4:straight-going in intersection"
         self.last_state = copy.deepcopy(self.lanelet_state)
         self.check_state()
         if self.lanelet_state == 3:
             self.check_state_again(current_scenario, ego_vehicle)
         print("current state:", self.lanelet_state)
-        # self.lanelet_state = 1
 
-        # send to sub planner according to current lanelet state
-        if self.lanelet_state in {1, 2, 4}:
-
-            # === insert straight-going planner here
+        "send to sub planner according to current lanelet state"
+        if self.lanelet_state in {1, 2, 4}:   # MCTs
             if self.is_new_action_needed:
                 mcts_planner = MCTs_CR(current_scenario, planning_problem, self.lanelet_route, ego_vehicle)
                 semantic_action, action, self.goal_info = mcts_planner.planner(current_time_step)
                 self.is_new_action_needed = False
-
             else:
                 # update action
                 action.T -= 0.1
                 if action.T <= 0.5:
                     self.is_new_action_needed = True
 
-            # get front car info.
-            front_veh_info = front_vehicle_info_extraction(self.scenario,
-                                                           self.ego_state.position,
-                                                           self.lanelet_route)
-            print('dhw', front_veh_info['dhw'])
-            print('v_front', front_veh_info['v'])
-            # too close to front car, start to car-following
-            if not front_veh_info['dhw'] == -1:
-                ttc = (front_veh_info['dhw'] - 5) / (self.ego_state.velocity - front_veh_info['v'])
-                if 0 < ttc < 5 or front_veh_info['dhw'] < 20 or semantic_action == 9:
-                    print('ttc', ttc)
-                    print('too close to front car, start to car-following')
-                    action_temp = copy.deepcopy(action)
-
-                    # IDM
-                    s_t = 2 + max([0, self.ego_state.velocity * 1.5 - self.ego_state.velocity * (
-                            self.ego_state.velocity - front_veh_info['v']) / 2 / (7 * 2) ** 0.5])
-                    acc = max(7 * (1 - (self.ego_state.velocity /
-                                        60 * 3.6) ** 5 - (s_t / (front_veh_info['dhw'] - 5)) ** 2), -7)
-                    if acc > 5:
-                        acc = 5
-                    action_temp.T = 5
-                    action_temp.v_end = self.ego_state.velocity + action_temp.T * acc
-                    if action_temp.v_end < 0:
-                        action_temp.v_end = 0
-                    action_temp.delta_s = self.ego_state.velocity * 5 + 0.5 * acc * action_temp.T ** 2
-
-                    action = action_temp
-
-            # print('init position:', action.ego_state_init)
-            print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
-            print('delta_s:', action.delta_s)
-            print('T_duration:', action.T)
-            print('v_end:', action.v_end)
-            lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            self.next_states_queue, self.is_new_action_needed = lattice_planner.planner(action, semantic_action)
-            next_state = self.next_states_queue.pop(0)
-            # === end of straight-going planner
-
-        # if self.lanelet_state == 2 or self.lanelet_state == 3:
-        if self.lanelet_state == 3:
-            # === insert intersection planner here
-            self.is_new_action_needed = 1
-            semantic_action = 9
+        elif self.lanelet_state == 3:   # intersection planner
+            self.is_new_action_needed = True
             ip = IntersectionPlanner(current_scenario, self.lanelet_route, ego_vehicle, self.lanelet_state)
             action = ip.planning(current_time_step)
+            semantic_action = 4
 
-            lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
-            self.next_states_queue, self.is_new_action_needed = lattice_planner.planner(action, 4)
-            next_state = self.next_states_queue.pop(0)
-            # === end of intersection planner
+        "lattice planning according to action"
+        print('frenet_cv:', action.frenet_cv[0, :], 'to', action.frenet_cv[-1:])
+        print('delta_s:', action.delta_s)
+        print('T_duration:', action.T)
+        print('v_end:', action.v_end)
+        lattice_planner = Lattice_CRv3(current_scenario, ego_vehicle)
+        self.next_states_queue, self.is_new_action_needed = lattice_planner.planner(action, semantic_action)
+        next_state = self.next_states_queue.pop(0)
 
-        # update the last action info
+        "update the last action info"
         self.last_action = action
         self.last_semantic_action = semantic_action
 
