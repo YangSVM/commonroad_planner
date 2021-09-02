@@ -336,7 +336,7 @@ def output(state,action,speedLimit,obstacles):
             front0_ss = frontVehicle0[0] + frontVehicle0[1] * t
             front1_ss = frontVehicle1[0] + frontVehicle1[1] * t
             ego_ss = state[1] + t * state[2] + 0.5 * 1 * t * t
-            if front0_ss > ego_ss - 1 * state[2]:  # 参数：要求原车道前车在t时间后，跑到安全位置
+            if front0_ss > ego_ss - 3 * state[2]:  # 参数：要求原车道前车在t时间后，跑到安全位置
                 if (front1_ss - ego_ss) >= 5:  # 参数：要求行为结束后，距离目标车道前车5m
                     state_out[1] = t * state[2] + 0.5 * 1 * t * t
                     state_out[2] = state[2] + 1 * t
