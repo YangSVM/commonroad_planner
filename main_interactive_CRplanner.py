@@ -164,7 +164,7 @@ class InteractiveCRPlanner:
         scenario_wrapper.initial_scenario = self.scenario
 
         self.num_of_steps = conf.simulation_steps
-        # self.num_of_steps = 149
+        # self.num_of_steps = 86
         sumo_sim = SumoSimulation()
 
         # initialize simulation
@@ -429,7 +429,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-7_14_I-1"
+    name_scenario = "DEU_Frankfurt-77_5_I-1"
 
     main_planner = InteractiveCRPlanner()
 
