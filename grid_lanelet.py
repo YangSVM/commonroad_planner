@@ -398,6 +398,8 @@ def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_
     
     # 目标s位置. 增加5米，直接延长至路口内。
     goal_s = distance_lanelet(cv, s_cv, cv[0, :], goal_pos_end) + 5
+    if is_goal:
+        goal_s = goal_s + 20
 
     speed_limit = extract_speed_limit_from_traffic_sign(ln) + 10
 

@@ -16,12 +16,12 @@ from grid_lanelet import get_detail_cv_of_lanelets, lanelet_network2grid, state_
 from grid_lanelet import get_obstacle_info
 from grid_lanelet import get_map_info
 from grid_lanelet import edit_scenario4test
-from MCTs_v3pro_2 import NaughtsAndCrossesState, mcts, output, checker
+from MCTs_v3proSP3T import NaughtsAndCrossesState, mcts, output, checker
 
 from grid_lanelet import get_frenet_lanelet_axis, find_adj_lanelets
 from grid_lanelet import generate_len_map, find_target_frenet_axis, extract_speed_limit_from_traffic_sign
 
-PLANNING_HORIZON = 5
+PLANNING_HORIZON = 4
 
 
 class ActionAddition:
