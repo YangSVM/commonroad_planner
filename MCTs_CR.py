@@ -18,7 +18,7 @@ from grid_lanelet import get_map_info
 from grid_lanelet import edit_scenario4test
 from MCTs_v3pro_2 import NaughtsAndCrossesState, mcts, output, checker
 
-from grid_lanelet import get_frenet_lanelet_axis
+from grid_lanelet import get_frenet_lanelet_axis, find_adj_lanelets
 from grid_lanelet import generate_len_map, find_target_frenet_axis, extract_speed_limit_from_traffic_sign
 
 
@@ -146,18 +146,18 @@ class MCTs_CR():
 
                 for idx_inc, incoming in enumerate(incomings):
                     incoming_lanelets = list(incoming.incoming_lanelets)  # 进入路口的lanelet
-                    in_intersection_lanelets = list(incoming.successors_straight)  # 出路口的lanelet
-                    # 如果self.route中有lanelet在路口上,**并且左右侧lanelet不在route内**, 赋值为end_lanelet_id
+                    in_intersection_lanelets = list(incoming.successors_straight) + \
+                                           list(incoming.successors_right) + list(incoming.successors_left)  # 出路口的lanelet
+                    # 如果self.route中有lanelet在路口上, 直接循环到最后一个相邻的lanelet
                     if tmp_lanelet_id_route in incoming_lanelets or tmp_lanelet_id_route in in_intersection_lanelets:
-                        # print('left', ln.find_lanelet_by_id(tmp_lanelet_id_route).adj_left_same_direction)
-                        # print('right', ln.find_lanelet_by_id(tmp_lanelet_id_route).adj_right_same_direction)
-                        if not (ln.find_lanelet_by_id(
-                                tmp_lanelet_id_route).adj_left in self.lanelet_route or
-                                ln.find_lanelet_by_id(
-                                    tmp_lanelet_id_route).adj_right in self.lanelet_route):
-                            end_lanelet_id = tmp_lanelet_id_route
-                            is_meet_intersection = True
-                            break
+                        adj_lanelet_ids = find_adj_lanelets(ln, tmp_lanelet_id_route, include_ego=True)
+                        
+                        while i_route+1<len(self.lanelet_route) and self.lanelet_route[i_route+1] in adj_lanelet_ids:
+                            i_route = i_route +1
+                            
+                        end_lanelet_id = self.lanelet_route[i_route]
+                        is_meet_intersection = True
+                        break
                 if is_meet_intersection:
                     break
             if is_meet_intersection:
@@ -192,8 +192,12 @@ class MCTs_CR():
         # 直接判断是否在终点lanelet 是否是 planning problem的goal
         is_goal = self.lanelet_route[end_route_id] in planning_problem.goal.lanelets_of_goal_position[0]
 
+        if is_goal:
+            cut_route = self.lanelet_route[start_route_id:end_route_id + 1]
+        else:
+            cut_route = self.lanelet_route[start_route_id:end_route_id+2]
         # 将 有向无环图 的道路结构。展开成矩阵
-        _lanelet_id_matrix = lanelet_network2grid(ln, self.lanelet_route[start_route_id:end_route_id + 1])
+        _lanelet_id_matrix = lanelet_network2grid(ln, cut_route)
         # 获取可行地图信息
         _map_info = generate_len_map(ln, _lanelet_id_matrix)
 

@@ -217,8 +217,8 @@ class Lattice_CRv3():
             # plt.plot(trajectory[:, 0], trajectory[:, 1], 'r*', zorder=30)
             # plt.plot(self.ego_state.position[0], self.ego_state.position[1], 'b*', zorder=30)
             # plt.plot(action.frenet_cv[:, 0], action.frenet_cv[:, 1], 'b', zorder=30)
-            # plt.axis([trajectory[0, 0] - 200., trajectory[0, 0] + 200.,
-            #           trajectory[0, 1] - 100., trajectory[0, 1] + 100.])
+            # plt.axis([trajectory[0, 0] - 40., trajectory[0, 0] + 40.,
+            #           trajectory[0, 1] - 40., trajectory[0, 1] + 40.])
 
             # plt.pause(0.01)
             # plt.show()
@@ -249,10 +249,11 @@ class Lattice_CRv3():
             # tp_opt.theta = ego_heading
             # traj_points.append([tp_opt.x,tp_opt.y,tp_opt.v,tp_opt.a,tp_opt.theta,tp_opt.kappa])
             action_follow = copy.deepcopy(action)
-            action_follow.v_end = action_follow.ego_state_init[2]
+            action_follow.v_end = 0
+            # action_follow.v_end = action_follow.ego_state_init[2]
             action_follow.a_end = 0
             action_follow.T = 3
-            s_decision_end_follow = s_cond_decision_init[0] + action_follow.T * action_follow.v_end
+            s_decision_end_follow = s_cond_decision_init[0] + 0.5 * action_follow.T * action_follow.v_end
             # sample basis
             samp_basis = SampleBasis(traj_point, action_follow, s_decision_end_follow)
             # global variable
