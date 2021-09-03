@@ -13,7 +13,7 @@ folder_scenarios = "/home/thicv/codes/commonroad/commonroad-scenarios/scenarios/
 # folder_scenarios = "/home/zxc/Downloads/competition_scenarios_new/interactive"
 # name_scenario = "DEU_Frankfurt-4_3_I-1"  # 交叉口测试场景
 # name_scenario = "DEU_Frankfurt-95_6_I-1"  # 直道测试场景
-name_scenario = "DEU_Frankfurt-47_8_I-1" 
+name_scenario = "DEU_Frankfurt-86_6_I-1" 
 interactive_scenario_path = os.path.join(folder_scenarios, name_scenario)
 
 conf = load_sumo_configuration(interactive_scenario_path)
