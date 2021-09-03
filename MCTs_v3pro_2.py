@@ -10,6 +10,8 @@ from copy import deepcopy
 import numpy
 
 import time
+PLANNING_HORIZON = 5
+
 
 class checker():
     def __init__(self, b, tar, obstacles, mapInfo):
@@ -29,7 +31,7 @@ class checker():
         self.lastlane = [b[0], 0]
         self.laststate = [b[1], b[2]]
         self.T = 0
-        self.Tstep = 5
+        self.Tstep = PLANNING_HORIZON
         self.num = len(obstacles)
         self.lane0 = numpy.zeros(shape=(30, 2))  # 建立6条车道的存储空间
         self.lane1 = numpy.zeros(shape=(30, 2))
@@ -309,7 +311,7 @@ def output(state,action,speedLimit,obstacles):
     lane03 = sorted(lane03, key=lambda s: s[0], reverse=True)
     lane04 = sorted(lane04, key=lambda s: s[0], reverse=True)
     lane05 = sorted(lane05, key=lambda s: s[0], reverse=True)
-    t = 5                                       # 调节每步时间（用于目标位置输出）（第1处，共2处）
+    t = PLANNING_HORIZON                                       # 调节每步时间（用于目标位置输出）（第1处，共2处）
     if action == 1:
         state_out[0] = state[0] - 1
         state_out[1] = t * state[2]
@@ -554,7 +556,7 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
         self.lastlane = [b[0], 0]
         self.laststate = [b[1], b[2]]
         self.T = 0
-        self.Tstep = 5                           # 调节每步时间（用于MCTS内部计算）（第2处，共2处）
+        self.Tstep = PLANNING_HORIZON                           # 调节每步时间（用于MCTS内部计算）（第2处，共2处）
 
         self.num = len(obstacles)
         self.lane0 = numpy.zeros(shape=(30, 2))  # 建立5条车道的存储空间
