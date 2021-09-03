@@ -21,6 +21,8 @@ from MCTs_v3pro_2 import NaughtsAndCrossesState, mcts, output, checker
 from grid_lanelet import get_frenet_lanelet_axis, find_adj_lanelets
 from grid_lanelet import generate_len_map, find_target_frenet_axis, extract_speed_limit_from_traffic_sign
 
+PLANNING_HORIZON = 5
+
 
 class ActionAddition:
     def __init__(self):
@@ -28,7 +30,7 @@ class ActionAddition:
         self.a_end = -1
         self.delta_s = -1
         self.lanelet_id_target = -1
-        self.T = 5
+        self.T = PLANNING_HORIZON
         self.ego_state_init = []
         self.frenet_cv = None
 
@@ -243,8 +245,8 @@ class MCTs_CR():
             out = output(ego_state_mcts, action.act, speed_limit, obstacles)
         elif flag == 1:
             print('第一步mcts无解，进入跟车')
-            semantic_action = 5
-            out = output(ego_state_mcts, 5, map[3], obstacles)
+            semantic_action = 4
+            out = output(ego_state_mcts, 4, map[3], obstacles)
             out[0] = map[1]             # 无解时横向直接修改到目标位置，避免飞出去
 
         print('out: ', out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
