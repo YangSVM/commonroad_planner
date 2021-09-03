@@ -55,13 +55,44 @@ def find_adj_lanelets(ln:LaneletNetwork, lanelet_id, include_ego=True):
         lanelets_id_adj =  lanelets_id_adj_left[::-1] + lanelets_id_adj_right
     return lanelets_id_adj, n_left, n_right
 
-def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetwork):
+def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetwork, lanelet_id_ego):
     ''' 寻找穿过目标车道frenet s轴。为便于lattice使用，延长至下一个lanelet
     '''
-    # 判断在第几条车道
-    n_lane = np.where(lanelet_id_matrix == lanelet_id_target)[0]
+    # 判断在第几条车道,该车道的第几个
+    n_lane, n_x_lane = np.where(lanelet_id_matrix == lanelet_id_target)
+    
     assert n_lane.shape[0]>0, 'lanelet_id_target do not in lanelet_id_matrix!'
-    lanelets_frenet_axis = lanelet_id_matrix[n_lane[0], :]
+    lanelets_frenet_axis = lanelet_id_matrix[n_lane[0], :n_x_lane[0]+1]
+
+    # 增加判断。lanelet_id_matrix不能完全在岔路口等价展开，避免lanlets_frenet_axis跳变
+    len_axis = len(lanelets_frenet_axis)
+    is_found_parent = False
+
+    for i_route in range(len_axis-1):
+        is_found_parent = False
+        # 倒着往回看lanelet
+        i_dec = len_axis-i_route-1
+        lanelet = ln.find_lanelet_by_id(lanelets_frenet_axis[i_dec])
+        lanelet_parents = lanelet.predecessor
+        if lanelets_frenet_axis[i_dec -1] in lanelet_parents:
+            continue
+        # 此时lanelets_frenet_axis跳变，在lanelet_id_matrix里面找
+        for i_lane in range(lanelet_id_matrix.shape[0]):
+        # for adj_matrix_lanelet in lanelet_id_matrix[i_dec-1, :]:
+            adj_matrix_lanelet = lanelet_id_matrix[i_lane, i_dec-1]
+            if adj_matrix_lanelet in lanelet_parents:
+                lanelets_frenet_axis[:i_dec] = lanelet_id_matrix[i_lane, :i_dec]
+                is_found_parent = True
+        if not is_found_parent:
+            print('erro! cannot found frenet axis')
+            break
+    
+    # 如果倒推找不到frenet axis，从前往后找
+    if not is_found_parent:
+        n_ego, _ = np.where(lanelet_id_matrix == lanelet_id_ego)
+        assert n_ego.shape[0]>0, 'lanelet_id_target do not in lanelet_id_matrix!'
+        lanelets_frenet_axis = lanelet_id_matrix[n_ego[0], :n_x_lane[0]+1]
+
 
     lanelets_frenet_axis_ = []
     for lanelet_id in lanelets_frenet_axis:

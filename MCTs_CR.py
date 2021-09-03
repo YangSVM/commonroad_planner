@@ -56,7 +56,7 @@ class ActionAddition:
 
         if index_target_len == -1:
             # 如果超出边界，直接认定为最后一个lanelet
-            print('error! replan')
+            print('error! replan. 目标位置不在可用车道内')
             index_target = index_target_len
         else:
             index_target = 0
@@ -185,10 +185,11 @@ class MCTs_CR():
         scenario = self.scenario
         ln = scenario.lanelet_network
         ego_vehicle = self.ego_vehicle
-
+       
         start_route_id, end_route_id, is_meet_intersection = self.cut_lanelet_route(ego_vehicle.current_state)
         print('goal lanelet', self.lanelet_route[end_route_id])
         print('route:', self.lanelet_route)
+        lanelet_id_ego = self.lanelet_route[start_route_id]
         # 直接判断是否在终点lanelet 是否是 planning problem的goal
         is_goal = self.lanelet_route[end_route_id] in planning_problem.goal.lanelets_of_goal_position[0]
 
@@ -242,8 +243,9 @@ class MCTs_CR():
             out = output(ego_state_mcts, action.act, speed_limit, obstacles)
         elif flag == 1:
             print('第一步mcts无解，进入跟车')
-            semantic_action = 9
-            out = output(ego_state_mcts, 9, map[3], obstacles)
+            semantic_action = 5
+            out = output(ego_state_mcts, 5, map[3], obstacles)
+            out[0] = map[1]             # 无解时横向直接修改到目标位置，避免飞出去
 
         print('out: ', out)  # 包括三个信息：[车道，纵向距离的增量，纵向车速]
         # print(action.act)
@@ -266,7 +268,7 @@ class MCTs_CR():
         s_goal_temp = action_addition.delta_s + s_ego
         lanelet_id_target = action_addition.find_lanelet_id_target(s_goal_temp, _lanelet_id_matrix, out[0], ln)
         action_addition.lanelet_id_target = lanelet_id_target
-        frenet_cv = find_target_frenet_axis(_lanelet_id_matrix, lanelet_id_target, ln)
+        frenet_cv = find_target_frenet_axis(_lanelet_id_matrix, lanelet_id_target, ln, lanelet_id_ego)
         action_addition.frenet_cv = frenet_cv
 
         # print('目标车道lanelet_id :\n', lanelet_id_target)
