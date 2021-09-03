@@ -16,12 +16,14 @@ from grid_lanelet import get_detail_cv_of_lanelets, lanelet_network2grid, state_
 from grid_lanelet import get_obstacle_info
 from grid_lanelet import get_map_info
 from grid_lanelet import edit_scenario4test
-from MCTs_v3proSP3T import NaughtsAndCrossesState, mcts, output, checker
+# from MCTs_v3proSP3T import NaughtsAndCrossesState, mcts, output, checker
+from MCTs_v3pro_2 import NaughtsAndCrossesState, mcts, output, checker
+
 
 from grid_lanelet import get_frenet_lanelet_axis, find_adj_lanelets
 from grid_lanelet import generate_len_map, find_target_frenet_axis, extract_speed_limit_from_traffic_sign
 
-PLANNING_HORIZON = 4
+PLANNING_HORIZON = 5
 
 
 class ActionAddition:
@@ -152,7 +154,7 @@ class MCTs_CR():
                                            list(incoming.successors_right) + list(incoming.successors_left)  # 出路口的lanelet
                     # 如果self.route中有lanelet在路口上, 直接循环到最后一个相邻的lanelet
                     if tmp_lanelet_id_route in incoming_lanelets or tmp_lanelet_id_route in in_intersection_lanelets:
-                        adj_lanelet_ids = find_adj_lanelets(ln, tmp_lanelet_id_route, include_ego=True)
+                        adj_lanelet_ids, _, _ = find_adj_lanelets(ln, tmp_lanelet_id_route, include_ego=True)
                         
                         while i_route+1<len(self.lanelet_route) and self.lanelet_route[i_route+1] in adj_lanelet_ids:
                             i_route = i_route +1
@@ -281,7 +283,7 @@ class MCTs_CR():
 
         goal_info = self.get_goal_info(is_goal, frenet_cv, _map[2])
         print('goal_info [MCTs目标是否为goal_region, frenet中线(略)，中线距离(略)，目标位置]: \n', goal_info[0], goal_info[3])
-        print('中线lanelet id: ', lanelet_id_target)
+        print('目标lanelet id: ', lanelet_id_target)
         return semantic_action, action_addition, goal_info
 
 
