@@ -813,6 +813,8 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
             newState.reward = newState.reward - 100
         if action.act == 2:
             newState.reward = newState.reward - 100
+        if action.act == 3:
+            newState.reward = newState.reward + 1000
         if action.act == 5:
             newState.reward = newState.reward - 25 * (self.target[1] + 200 - newState.laststate[0])
         if action.act == 6:

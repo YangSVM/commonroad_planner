@@ -6,8 +6,6 @@ from time import sleep
 from typing import Dict
 
 from commonroad.planning.planning_problem import PlanningProblem
-from networkx.generators import ego
-from numpy import size
 
 from CR_tools.utility import distance_lanelet, brake
 import os
@@ -434,7 +432,7 @@ if __name__ == '__main__':
     # folder_scenarios = os.path.abspath(
     #     '/home/zxc/Downloads/competition_scenarios_new/interactive')
     # name_scenario = "DEU_Frankfurt-24_7_I-1"
-    name_scenario = "DEU_Frankfurt-7_6_I-1"
+    name_scenario = "DEU_Frankfurt-73_6_I-1"
 
     main_planner = InteractiveCRPlanner()
 
