@@ -19,9 +19,11 @@ class checker():
         self.map = tar[0]
         self.target = [tar[1], tar[2]]
         self.speedLimit = tar[3]
+        self.start = [0, 0, 0, 0, 0, 0]
         self.termi = [0,0,0,0,0,0]
         for i in range (tar[0]):
             self.termi[i] = mapInfo[i][0][1]
+            self.start[i] = mapInfo[i][0][0]
         self.reward = 100
         self.edge = [75, 120, 300]
         self.lastlane = [b[0], 0]
@@ -109,8 +111,10 @@ class checker():
         if self.lastlane[0] != self.target[0] + 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
                 flag1 = 1
-        lane = self.lastlane[0]
-        if (self.laststate[0] + 0.5 * self.Tstep * self.laststate[1]) >= self.termi[lane]:  # 换道前，不能距离原车道终点太近
+        lane0 = self.lastlane[0]
+        if (self.laststate[0] + 0.5 * self.Tstep * self.laststate[1]) >= self.termi[lane0]:  # 换道前，不能距离原车道终点太近
+            flag1 = 1
+        if self.laststate[0] <= self.start[lane0-1]:  # 换道前，不能还没到上方车道的起始
             flag1 = 1
         if flag1 == 0:  # 满足所有条件时，可以向上换道
             possibleActions.append(Action(player=self.currentPlayer, x=1, y=1, act=1))
@@ -137,8 +141,10 @@ class checker():
         if self.lastlane[0] != self.target[0] - 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
                 flag2 = 1
-        lane = self.lastlane[0]
-        if (self.laststate[0] + 0.5 * self.Tstep * self.laststate[1]) >= self.termi[lane]:  # 换道前，不能距离原车道终点太近
+        lane0 = self.lastlane[0]
+        if (self.laststate[0] + 0.5 * self.Tstep * self.laststate[1]) >= self.termi[lane0]:  # 换道前，不能距离原车道终点太近
+            flag2 = 1
+        if self.laststate[0] <= self.start[lane0+1]:  # 换道前，不能还没到上方车道的起始
             flag2 = 1
         if flag2 == 0:  # 满足所有条件时，可以向下换道
             possibleActions.append(Action(player=self.currentPlayer, x=1, y=1, act=2))
@@ -164,7 +170,7 @@ class checker():
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0], i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0], i)[0] - (
                             self.laststate[0] + self.Tstep * self.laststate[
-                        1] + 0.5 * self.Tstep * self.Tstep)) <= 0.1 * (
+                        1] + 0.5 * self.Tstep * self.Tstep)) <= 0.05 * (
                             self.laststate[1] * self.laststate[1] - aa * aa):
                         flag3 = 1  # 不能小于安全车距
         if flag3 == 0:  # 满足所有条件时，可以加速
@@ -190,7 +196,7 @@ class checker():
                 else:  # 行为完成后，在障碍车后方
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0], i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0], i)[0] - (
-                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.1 * (
+                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.05 * (
                             self.laststate[1] * self.laststate[1] - aa * aa):
                         flag4 = 1  # 不能小于安全车距
         if flag4 == 0:  # 满足所有条件时，可以向上换道
@@ -336,7 +342,7 @@ def output(state,action,speedLimit,obstacles):
             front0_ss = frontVehicle0[0] + frontVehicle0[1] * t
             front1_ss = frontVehicle1[0] + frontVehicle1[1] * t
             ego_ss = state[1] + t * state[2] + 0.5 * 1 * t * t
-            if front0_ss > ego_ss - 3 * state[2]:  # 参数：要求原车道前车在t时间后，跑到安全位置
+            if front0_ss > ego_ss - 3*state[2]:  # 参数：要求原车道前车在t时间后，跑到安全位置
                 if (front1_ss - ego_ss) >= 5:  # 参数：要求行为结束后，距离目标车道前车5m
                     state_out[1] = t * state[2] + 0.5 * 1 * t * t
                     state_out[2] = state[2] + 1 * t
@@ -538,9 +544,11 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
         self.map = tar[0]
         self.target = [tar[1], tar[2]]
         self.speedLimit = tar[3]
+        self.start = [0, 0, 0, 0, 0, 0]
         self.termi = [0,0,0,0,0,0]
         for i in range (tar[0]):
             self.termi[i] = mapInfo[i][0][1]
+            self.start[i] = mapInfo[i][0][0]
         self.reward = 100
         self.edge = [75, 120, 300]
         self.lastlane = [b[0], 0]
@@ -631,8 +639,10 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
         if self.lastlane[0] != self.target[0] + 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
                 flag1 = 1
-        lane = self.lastlane[0]
-        if (self.laststate[0] + 0.5 * self.Tstep * self.laststate[1]) >= self.termi[lane]:  # 换道前，不能距离原车道终点太近
+        lane0 = self.lastlane[0]
+        if (self.laststate[0] + 0.5 * self.Tstep * self.laststate[1]) >= self.termi[lane0]:  # 换道前，不能距离原车道的终点太近
+            flag1 = 1
+        if self.laststate[0] <= self.start[lane0-1]:  # 换道前，不能还没到上方车道的起始
             flag1 = 1
         if flag1 == 0:  # 满足所有条件时，可以向上换道
             possibleActions.append(Action(player=self.currentPlayer, x=1, y=1, act=1))
@@ -659,8 +669,10 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
         if self.lastlane[0] != self.target[0] - 1:  # 不能超过纵向距离约束（非目标lanelet）
             if (self.laststate[0] + self.Tstep * self.laststate[1]) >= self.target[1]:
                 flag2 = 1
-        lane = self.lastlane[0]
-        if (self.laststate[0] + 0.5 * self.Tstep * self.laststate[1]) >= self.termi[lane]:  # 换道前，不能距离原车道终点太近
+        lane0 = self.lastlane[0]
+        if (self.laststate[0] + 0.5 * self.Tstep * self.laststate[1]) >= self.termi[lane0]:  # 换道前，不能距离原车道终点太近
+            flag2 = 1
+        if self.laststate[0] <= self.start[lane0+1]:  # 换道前，不能还没到下方车道的起始
             flag2 = 1
         if flag2 == 0:  # 满足所有条件时，可以向下换道
             possibleActions.append(Action(player=self.currentPlayer, x=1, y=1, act=2))
@@ -686,7 +698,7 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0], i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0], i)[0] - (
                             self.laststate[0] + self.Tstep * self.laststate[
-                        1] + 0.5 * self.Tstep * self.Tstep)) <= 0.1 * (
+                        1] + 0.5 * self.Tstep * self.Tstep)) <= 0.05 * (
                             self.laststate[1] * self.laststate[1] - aa * aa):
                         flag3 = 1  # 不能小于安全车距
         if flag3 == 0:  # 满足所有条件时，可以加速
@@ -712,7 +724,7 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
                 else:  # 行为完成后，在障碍车后方
                     aa = self.positions(self.T + self.Tstep, self.lastlane[0], i)[1]
                     if (self.positions(self.T + self.Tstep, self.lastlane[0], i)[0] - (
-                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.1 * (
+                            self.laststate[0] + self.Tstep * self.laststate[1])) <= 0.05 * (
                             self.laststate[1] * self.laststate[1] - aa * aa):
                         flag4 = 1  # 不能小于安全车距
         if flag4 == 0:  # 满足所有条件时，可以向上换道
@@ -796,13 +808,15 @@ class NaughtsAndCrossesState():  # 连接到treeNode的state中
 
         newState.T = self.T + self.Tstep
         newState.reward = self.reward - 10 - 1000 * (newState.lastlane[0] - self.target[0]) * (
-                    newState.lastlane[0] - self.target[0]) - 0.5 * (self.target[1] +200 - newState.laststate[0])
+                    newState.lastlane[0] - self.target[0]) - 0.5 * (self.target[1] + 200 - newState.laststate[0])
         if action.act == 1:
             newState.reward = newState.reward - 100
         if action.act == 2:
             newState.reward = newState.reward - 100
+        if action.act == 5:
+            newState.reward = newState.reward - 25 * (self.target[1] + 200 - newState.laststate[0])
         if action.act == 6:
-            newState.reward = newState.reward - 100000
+            newState.reward = newState.reward - 100000000
         return newState
 
     def isTerminal(self):  # 因为treeNode中定义了连接，输入node.isTerminal
@@ -835,14 +849,28 @@ class Action():
 
 if __name__ == "__main__":
     # start = time.time()
-    state = [0, 266.79999999999217, 25.863049516499174]
-    map = [2, 1, 362.0000000000127, 37.77777777777778]
+    state = [1, 616.2000000000716, 35.49808537142544]
+    map = [3, 1, 1549.8999999996904, 43.333333333333336]
     # obstacles = [[0, 100, 25], [0, 150, 20], [1, 180, 10], [1, 120, 20], [2, 80, 15], [3, 80, 10], [4, 80, 15]]
-    obstacles = [[1.,         302.6,         25.84448145],
-    [1.,        219.7,         24.88470455],
-    [1.,        173.9,       27.11482083],
-    [0.,        100.9 ,        28.16625028]]
-    mapInfo = [[[0.0, 8589.283042053188]], [[0.0, 8589.283042053188]]]
+    obstacles =  [[1.00000000e+00, 1.22230000e+03, 3.84660840e+01],
+ [1.00000000e+00, 1.39900000e+02, 2.34867287e+01],
+ [1.00000000e+00, 7.78000000e+01, 1.68350461e+01],
+ [0.00000000e+00, 2.69000000e+01, 8.33863084e+00],
+ [1.00000000e+00, 6.90000000e+00, 3.64456328e+00],
+ [1.00000000e+00, 9.46500000e+02, 3.06818203e+01],
+ [2.00000000e+00, 1.06750000e+03, 3.52290504e+01],
+ [2.00000000e+00, 9.82700000e+02, 3.41876130e+01],
+ [1.00000000e+00, 1.10400000e+03, 3.96644613e+01],
+ [1.00000000e+00, 8.63100000e+02, 3.03480878e+01],
+ [1.00000000e+00, 9.81300000e+02, 3.75637993e+01],
+ [1.00000000e+00, 8.14400000e+02, 3.15314354e+01],
+ [1.00000000e+00, 7.72600000e+02, 3.15792138e+01],
+ [0.00000000e+00, 4.49900000e+02, 3.54025066e+01],
+ [1.00000000e+00, 3.55700000e+02, 3.29370758e+01],
+ [2.00000000e+00, 1.13970000e+03, 3.66337925e+01],
+ [1.00000000e+00, 2.86800000e+02, 3.14619373e+01],
+ [0.00000000e+00, 1.99800000e+02, 2.65687692e+01]]
+    mapInfo =  [[[0.0, 467537.88854708296]], [[0.0, 467537.88854708296]], [[42628.51147501361, 467537.88854708296]]]
     actionChecker = checker(state, map, obstacles, mapInfo)
     flag = actionChecker.checkPossibleActions()
     if flag == 0:
