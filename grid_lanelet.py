@@ -66,7 +66,7 @@ def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetw
 
     # 增加判断。lanelet_id_matrix不能完全在岔路口等价展开，避免lanlets_frenet_axis跳变
     len_axis = len(lanelets_frenet_axis)
-    is_found_parent = False
+    is_found_parent = True              # 如果只有一层lanelet， len_axis =1,不进入下面的循环，此时正确
 
     for i_route in range(len_axis-1):
         is_found_parent = False
@@ -75,6 +75,7 @@ def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetw
         lanelet = ln.find_lanelet_by_id(lanelets_frenet_axis[i_dec])
         lanelet_parents = lanelet.predecessor
         if lanelets_frenet_axis[i_dec -1] in lanelet_parents:
+            is_found_parent = True
             continue
         # 此时lanelets_frenet_axis跳变，在lanelet_id_matrix里面找
         for i_lane in range(lanelet_id_matrix.shape[0]):
@@ -84,7 +85,7 @@ def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetw
                 lanelets_frenet_axis[:i_dec] = lanelet_id_matrix[i_lane, :i_dec]
                 is_found_parent = True
         if not is_found_parent:
-            print('erro! cannot found frenet axis')
+            print('error! 找不到贯穿 target 的lanelet！')
             break
     
     # 如果倒推找不到frenet axis，从前往后找
@@ -113,7 +114,7 @@ def find_target_frenet_axis(lanelet_id_matrix, lanelet_id_target, ln:LaneletNetw
 
     lanelets_frenet_axis = np.array(lanelets_frenet_axis_)
             
-    print('frenet lanelet id axis :', lanelets_frenet_axis)
+    print('找到的frenet axis lanelet id:', lanelets_frenet_axis)
     cv = []
     for lanelet_id in lanelets_frenet_axis:
         lanelet = ln.find_lanelet_by_id(lanelet_id)
@@ -399,7 +400,7 @@ def get_map_info(is_goal, lanelet_id_goal,  lanelet_ids_frenet_axis, lanelet_id_
     # 目标s位置. 增加5米，直接延长至路口内。
     goal_s = distance_lanelet(cv, s_cv, cv[0, :], goal_pos_end) + 5
     if is_goal:
-        goal_s = goal_s + 20
+        goal_s = goal_s + 10
 
     speed_limit = extract_speed_limit_from_traffic_sign(ln) + 10
 
