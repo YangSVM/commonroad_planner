@@ -468,7 +468,7 @@ def generate_len_map(lanelet_network, lanelet_map, isContinous=True):
                 id = lm[n, m]
                 lanelet = ln.find_lanelet_by_id(id)
                 direction, length_temp = get_lane_feature(lanelet.center_vertices)
-                len_lanelet[m] = np.sum(length_temp)
+                len_lanelet[m] = length_temp[-1]
                 break
     len_points = np.hstack((np.array(0), np.cumsum(len_lanelet)))
 
